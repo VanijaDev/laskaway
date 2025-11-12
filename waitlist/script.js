@@ -94,6 +94,24 @@ document.addEventListener('DOMContentLoaded', () => {
   if (stack) {
     let hasInteracted = false;
     let wiggleInterval = null;
+    let likedExperiences = [];
+    const MAX_SELECTIONS = 5;
+    const giftBox = document.getElementById('giftBox');
+    const selectedCardsContainer = document.getElementById('selectedCards');
+
+    const showGiftBox = () => {
+      stack.style.display = 'none';
+      giftBox.classList.remove('hidden');
+      
+      // Populate mini cards
+      likedExperiences.forEach(exp => {
+        const mini = document.createElement('div');
+        mini.className = 'gift-box__card-mini';
+        mini.innerHTML = `<img src="${exp.image}" alt="${exp.title}" />`;
+        mini.title = exp.title;
+        selectedCardsContainer.appendChild(mini);
+      });
+    };
 
     const triggerWiggle = () => {
       if (hasInteracted) return;
@@ -178,12 +196,38 @@ document.addEventListener('DOMContentLoaded', () => {
         lastX = e.clientX;
         // Feedback labels
         const intensity = Math.min(1, Math.abs(dx) / 120);
+        // Auto-advance at 60% threshold with haptic
+        const autoThreshold = 180;
+        
         if (dx > 0) {
           if (likeLabel) likeLabel.style.opacity = String(intensity);
           if (nopeLabel) nopeLabel.style.opacity = '0';
+          // Show count overlay on right swipe at auto-threshold
+          if (countOverlay) {
+            const nextCount = likedExperiences.length + 1;
+            countOverlay.textContent = nextCount;
+            if (Math.abs(dx) >= autoThreshold) {
+              countOverlay.classList.add('visible');
+            } else {
+              countOverlay.classList.remove('visible');
+            }
+          }
         } else {
           if (nopeLabel) nopeLabel.style.opacity = String(intensity);
           if (likeLabel) likeLabel.style.opacity = '0';
+          // Hide count on left swipe
+          if (countOverlay) {
+            countOverlay.classList.remove('visible');
+          }
+        }
+
+        
+        if (Math.abs(dx) > autoThreshold && !card.dataset.autoAdvanced) {
+          card.dataset.autoAdvanced = 'true';
+          // Haptic feedback on mobile
+          if (navigator.vibrate) {
+            navigator.vibrate(20);
+          }
         }
       };
 
@@ -201,7 +245,8 @@ document.addEventListener('DOMContentLoaded', () => {
         card.style.transition = '';
         card.style.zIndex = '';
 
-        const threshold = 140; // horizontal threshold to fling
+        // Lower threshold for auto-advance (was 140, now 200)
+        const threshold = 200;
         if (Math.abs(dx) > threshold) {
           const dirRight = dx > 0;
           const now = performance.now();
@@ -210,10 +255,24 @@ document.addEventListener('DOMContentLoaded', () => {
           // Palette from card data, else fallback
           const palette = (card.dataset.colors || '').split(',').map(s => s.trim()).filter(Boolean);
           const colors = palette.length ? palette : ['#7c5cff', '#ec4899', '#f59e0b', '#60a5fa', '#10b981', '#f43f5e'];
+          
+          // Track liked experiences
+          if (dirRight && likedExperiences.length < MAX_SELECTIONS) {
+            const cardTitle = card.dataset.title || card.querySelector('figcaption')?.textContent || 'Experience';
+            const cardImage = card.querySelector('img')?.src || '';
+            likedExperiences.push({ title: cardTitle, image: cardImage });
+            
+            // Haptic feedback on like
+            if (navigator.vibrate) {
+              navigator.vibrate([30, 50, 30]);
+            }
+          }
+
           // Effects: confetti on like, shake on nope
           if (dirRight) {
             if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-              fireConfetti(card, { speed, colors });
+              const countNumber = likedExperiences.length;
+              fireConfetti(card, { speed, colors, countNumber });
             }
           } else if (nopeLabel) {
             nopeLabel.style.opacity = '1';
@@ -234,7 +293,15 @@ document.addEventListener('DOMContentLoaded', () => {
             card.style.removeProperty('--drag-r');
             card.style.transition = '';
             card.style.zIndex = '';
+            delete card.dataset.autoAdvanced;
             resetLabels();
+
+            // Check if we've reached 5 likes
+            if (likedExperiences.length >= MAX_SELECTIONS) {
+              showGiftBox();
+              return;
+            }
+
             // Move to bottom (firstChild) so another card becomes top
             stack.insertBefore(card, stack.firstElementChild);
             // Smoothly promote remaining cards and randomize new bottom tilt
@@ -242,7 +309,24 @@ document.addEventListener('DOMContentLoaded', () => {
             others.forEach((c) => c.classList.add('base-animate'));
             updateStackBases(true);
             // remove animation class after transition
-            setTimeout(() => others.forEach((c) => c.classList.remove('base-animate')), 240);
+            setTimeout(() => {
+              others.forEach((c) => c.classList.remove('base-animate'));
+            }, 240);
+            
+            // Add dribbling effect to remaining cards after like only
+            if (dirRight) {
+              setTimeout(() => {
+                if (others.length > 0) {
+                  others.forEach((c, idx) => {
+                    const randomDelay = Math.random() * 80;
+                    setTimeout(() => {
+                      c.classList.add('dribble');
+                      setTimeout(() => c.classList.remove('dribble'), 320);
+                    }, idx * 60 + randomDelay); // stagger with random variation
+                  });
+                }
+              }, 200);
+            }
           };
           card.addEventListener('transitionend', handleEnd);
         } else {
@@ -251,6 +335,7 @@ document.addEventListener('DOMContentLoaded', () => {
           card.style.removeProperty('--drag-x');
           card.style.removeProperty('--drag-y');
           card.style.removeProperty('--drag-r');
+          delete card.dataset.autoAdvanced;
           resetLabels();
           const handleBack = () => {
             card.classList.remove('snap-back');
@@ -313,6 +398,28 @@ document.addEventListener('DOMContentLoaded', () => {
       const intensity = 0.8 + (speed / 2.5) * 1.4; // 0.8..2.2
       const bursts = Math.max(2, Math.min(5, Math.round(2 + intensity)));
       const perBurst = Math.max(8, Math.min(24, Math.round(10 * intensity)));
+      const countNumber = opts.countNumber;
+
+      // Add count number as first confetti element if provided
+      if (countNumber !== undefined && countNumber !== null) {
+        const centerX = (bandX1 + bandX2) / 2;
+        const centerY = (bandY1 + bandY2) / 2;
+        const num = document.createElement('div');
+        num.className = 'confetti-number';
+        num.textContent = countNumber;
+        const dx = 20 + Math.random() * 60;
+        const dy = -(80 + Math.random() * 80);
+        const rot = Math.floor(Math.random() * 40 - 20);
+        num.style.left = centerX + 'px';
+        num.style.top = centerY + 'px';
+        num.style.setProperty('--dx', dx + 'px');
+        num.style.setProperty('--dy', dy + 'px');
+        num.style.setProperty('--rot', rot + 'deg');
+        num.style.setProperty('--dur', '1400ms');
+        num.style.setProperty('--delay', '0ms');
+        document.body.appendChild(num);
+        num.addEventListener('animationend', () => num.remove());
+      }
 
       // Remove single-point pop ring to avoid focal origin
       const makeRing = () => {};

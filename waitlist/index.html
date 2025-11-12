@@ -12,6 +12,7 @@
     <meta property="og:image" content="https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1600&q=60" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://images.unsplash.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E🎁%3C/text%3E%3C/svg%3E" />
     <link rel="stylesheet" href="./styles.css" />
@@ -48,25 +49,36 @@
           </div>
 
           <div class="hero__visual">
-            <div class="card-stack">
-              <figure class="card card--hint-wiggle" data-colors="#ec4899,#f59e0b,#7c5cff,#60a5fa">
-                <img src="https://images.unsplash.com/photo-1556228453-efd27e7fc5bb?auto=format&fit=crop&w=1200&q=60" alt="Relaxing spa massage with warm lighting" />
-                <div class="swipe-label swipe-label--like" aria-hidden="true">Like</div>
-                <div class="swipe-label swipe-label--nope" aria-hidden="true">Nope</div>
+            <div class="card-stack" id="cardStack">
+              <figure class="card card--hint-wiggle" data-colors="#ec4899,#f59e0b,#7c5cff,#60a5fa" data-title="Spa Day">
+                <img src="https://images.unsplash.com/photo-1556228453-efd27e7fc5bb?auto=format&fit=crop&w=1200&q=60" alt="Relaxing spa massage with warm lighting" loading="lazy" />
+                <div class="swipe-label swipe-label--like" aria-hidden="true">Gift this!</div>
+                <div class="swipe-label swipe-label--nope" aria-hidden="true">Not today</div>
                 <figcaption>Spa Day</figcaption>
               </figure>
-              <figure class="card card--hint-wiggle" data-colors="#60a5fa,#10b981,#7c5cff,#ec4899">
-                <img src="https://images.unsplash.com/photo-1504215680853-026ed2a45def?auto=format&fit=crop&w=1200&q=60" alt="Skydivers freefalling with blue sky" />
-                <div class="swipe-label swipe-label--like" aria-hidden="true">Like</div>
-                <div class="swipe-label swipe-label--nope" aria-hidden="true">Nope</div>
+              <figure class="card card--hint-wiggle" data-colors="#60a5fa,#10b981,#7c5cff,#ec4899" data-title="Skydiving">
+                <img src="https://images.unsplash.com/photo-1504215680853-026ed2a45def?auto=format&fit=crop&w=1200&q=60" alt="Skydivers freefalling with blue sky" loading="lazy" />
+                <div class="swipe-label swipe-label--like" aria-hidden="true">Gift this!</div>
+                <div class="swipe-label swipe-label--nope" aria-hidden="true">Not today</div>
                 <figcaption>Skydiving</figcaption>
               </figure>
-              <figure class="card card--hint-wiggle" data-colors="#f59e0b,#f43f5e,#ec4899,#7c5cff">
-                <img src="https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=1200&q=60" alt="Hands making fresh pasta in a cooking class" />
-                <div class="swipe-label swipe-label--like" aria-hidden="true">Like</div>
-                <div class="swipe-label swipe-label--nope" aria-hidden="true">Nope</div>
+              <figure class="card card--hint-wiggle" data-colors="#f59e0b,#f43f5e,#ec4899,#7c5cff" data-title="Cooking Class">
+                <img src="https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=1200&q=60" alt="Hands making fresh pasta in a cooking class" loading="lazy" />
+                <div class="swipe-label swipe-label--like" aria-hidden="true">Gift this!</div>
+                <div class="swipe-label swipe-label--nope" aria-hidden="true">Not today</div>
                 <figcaption>Cooking Class</figcaption>
               </figure>
+            </div>
+            <div class="gift-box hidden" id="giftBox">
+              <div class="gift-box__icon">🎁</div>
+              <h3 class="gift-box__title">Your Gift Pack is Ready!</h3>
+              <p class="gift-box__subtitle">You've selected 5 amazing experiences</p>
+              <div class="gift-box__cards" id="selectedCards"></div>
+            </div>
+            <div class="card-skeleton hidden" id="cardSkeleton">
+              <div class="skeleton-card"></div>
+              <div class="skeleton-card skeleton-card--mid"></div>
+              <div class="skeleton-card skeleton-card--back"></div>
             </div>
           </div>
         </div>
