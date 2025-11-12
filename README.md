@@ -1,4 +1,4 @@
-# experience_gift_pack
+# LaskaWay
 
 TODO: add
 Research & use ChatGPT
