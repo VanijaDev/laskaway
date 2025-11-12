@@ -92,6 +92,39 @@ document.addEventListener('DOMContentLoaded', () => {
   // Swipeable card stack (Tinder-like)
   const stack = document.querySelector('.card-stack');
   if (stack) {
+    let hasInteracted = false;
+    let wiggleInterval = null;
+
+    const triggerWiggle = () => {
+      if (hasInteracted) return;
+      const cards = Array.from(stack.children);
+      cards.forEach((card, i) => {
+        card.style.setProperty('--wiggle-delay', (1 + i * 0.3) + 's');
+        card.classList.remove('card--hint-wiggle');
+        void card.offsetWidth; // force reflow
+        card.classList.add('card--hint-wiggle');
+      });
+    };
+
+    const stopAllWiggles = () => {
+      const cards = Array.from(stack.children);
+      cards.forEach(card => {
+        card.classList.remove('card--hint-wiggle');
+        card.style.animation = 'none';
+      });
+    };
+
+    // Initial wiggle after 1s
+    setTimeout(triggerWiggle, 1000);
+
+    // Repeat every 10s until first interaction
+    wiggleInterval = setInterval(() => {
+      if (!hasInteracted) {
+        triggerWiggle();
+      } else {
+        clearInterval(wiggleInterval);
+      }
+    }, 10000);
     const getTopCard = () => stack.lastElementChild;
 
     const POSITIONS = [
@@ -249,6 +282,12 @@ document.addEventListener('DOMContentLoaded', () => {
         card.classList.add('is-dragging');
         card.style.transition = 'none';
         card.style.zIndex = '10';
+        // Mark as interacted on first drag
+        if (!hasInteracted) {
+          hasInteracted = true;
+          if (wiggleInterval) clearInterval(wiggleInterval);
+          stopAllWiggles();
+        }
       };
 
       card.addEventListener('pointerdown', onPointerDown);
