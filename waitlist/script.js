@@ -1,0 +1,378 @@
+/* Live the Gift — Waitlist interactions */
+
+document.addEventListener('DOMContentLoaded', () => {
+  const form = document.getElementById('waitlist-form');
+  const emailInput = document.getElementById('email');
+  const message = document.getElementById('formMessage');
+  const success = document.getElementById('successState');
+  const joinBtn = document.getElementById('joinBtn');
+
+  // If previously joined, show success state
+  try {
+    const joined = JSON.parse(localStorage.getItem('waitlistJoined') || 'null');
+    if (joined && joined.email) {
+      form?.classList.add('hidden');
+      success?.classList.remove('hidden');
+    }
+  } catch (_) { /* ignore */ }
+
+  const setError = (text) => {
+    message.textContent = text;
+    message.classList.add('error');
+    message.classList.remove('success');
+  };
+  const setSuccess = (text) => {
+    message.textContent = text;
+    message.classList.remove('error');
+    message.classList.add('success');
+  };
+  const clearMsg = () => {
+    message.textContent = '';
+    message.classList.remove('error', 'success');
+  };
+
+  const isValidEmail = (value) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value).toLowerCase());
+  };
+
+  form?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    clearMsg();
+
+    const email = emailInput.value.trim();
+    if (!isValidEmail(email)) {
+      emailInput.classList.add('invalid');
+      setError('Please enter a valid email address.');
+      emailInput.focus();
+      return;
+    }
+
+    emailInput.classList.remove('invalid');
+    joinBtn.disabled = true;
+    joinBtn.textContent = 'Joining…';
+
+    // Simulate async submit; replace with your backend later
+    await new Promise((r) => setTimeout(r, 900));
+
+    try {
+      localStorage.setItem('waitlistJoined', JSON.stringify({ email, at: Date.now() }));
+    } catch (_) { /* ignore storage errors */ }
+
+    setSuccess("You're on the waitlist — thank you!");
+    form.classList.add('hidden');
+    success.classList.remove('hidden');
+  });
+
+  emailInput?.addEventListener('input', () => {
+    if (emailInput.classList.contains('invalid')) {
+      emailInput.classList.remove('invalid');
+      clearMsg();
+    }
+  });
+
+  // Experiences scroller: duplicate content for seamless loop and set animation duration
+  const track = document.querySelector('.scroller__track');
+  const scroller = document.querySelector('.scroller');
+  if (track && scroller) {
+    const children = Array.from(track.children);
+    // Duplicate once for 50% translateX end
+    children.forEach((node) => track.appendChild(node.cloneNode(true)));
+
+    // Calculate duration relative to total width for consistent speed
+    requestAnimationFrame(() => {
+      const totalWidth = Array.from(track.children)
+        .slice(0, children.length)
+        .reduce((acc, el) => acc + el.getBoundingClientRect().width + 16 /* gap */, 0);
+      const pixelsPerSecond = 140; // tweak for speed
+      const duration = Math.max(28, Math.min(60, totalWidth / pixelsPerSecond));
+      track.style.setProperty('--duration', `${duration}s`);
+    });
+  }
+
+  // Swipeable card stack (Tinder-like)
+  const stack = document.querySelector('.card-stack');
+  if (stack) {
+    const getTopCard = () => stack.lastElementChild;
+
+    const POSITIONS = [
+      { x: -12, y: 10, r: -5 }, // bottom
+      { x: 16,  y: -6, r: 4  }, // middle
+      { x: 2,   y: 8,  r: -1 }, // top
+    ];
+
+    const setBase = (el, pos, overrideR, overrideX, overrideY) => {
+      const p = POSITIONS[pos] || POSITIONS[0];
+      el.style.setProperty('--base-x', (typeof overrideX === 'number' ? overrideX : p.x) + 'px');
+      el.style.setProperty('--base-y', (typeof overrideY === 'number' ? overrideY : p.y) + 'px');
+      const r = typeof overrideR === 'number' ? overrideR : p.r;
+      el.style.setProperty('--base-r', r + 'deg');
+    };
+
+    const randTilt = () => (Math.random() * 14 - 7); // -7..7 deg
+    const randX = () => (Math.random() * 16 - 8);    // -8..8 px
+    const randY = () => (Math.random() * 14 - 7);    // -7..7 px
+
+    const updateStackBases = (randomizeBottom = false) => {
+      const children = Array.from(stack.children); // 0: bottom ... last: top
+      children.forEach((el, i) => {
+        if (i === 0 && randomizeBottom) {
+          setBase(el, 0, randTilt(), randX(), randY());
+        } else {
+          setBase(el, Math.min(i, 2));
+        }
+      });
+    };
+
+    // Initialize base transforms
+    updateStackBases(true);
+
+    const attachDrag = (card) => {
+      let startX = 0, startY = 0, dx = 0, dy = 0, dragging = false;
+      let dragStartTime = 0, lastMoveTime = 0, lastX = 0;
+
+      const likeLabel = card.querySelector('.swipe-label--like');
+      const nopeLabel = card.querySelector('.swipe-label--nope');
+
+      const onPointerMove = (e) => {
+        if (!dragging) return;
+        dx = e.clientX - startX;
+        dy = e.clientY - startY;
+        const rot = dx * 0.06;
+        card.style.setProperty('--drag-x', dx + 'px');
+        card.style.setProperty('--drag-y', dy + 'px');
+        card.style.setProperty('--drag-r', rot + 'deg');
+        lastMoveTime = performance.now();
+        lastX = e.clientX;
+        // Feedback labels
+        const intensity = Math.min(1, Math.abs(dx) / 120);
+        if (dx > 0) {
+          if (likeLabel) likeLabel.style.opacity = String(intensity);
+          if (nopeLabel) nopeLabel.style.opacity = '0';
+        } else {
+          if (nopeLabel) nopeLabel.style.opacity = String(intensity);
+          if (likeLabel) likeLabel.style.opacity = '0';
+        }
+      };
+
+      const resetLabels = () => {
+        if (likeLabel) likeLabel.style.opacity = '0';
+        if (nopeLabel) nopeLabel.style.opacity = '0';
+      };
+
+      const onPointerUp = () => {
+        if (!dragging) return;
+        card.releasePointerCapture(pointerId);
+        dragging = false;
+        card.classList.remove('is-dragging');
+        // Ensure CSS transitions can run after we disabled them on pointerdown
+        card.style.transition = '';
+        card.style.zIndex = '';
+
+        const threshold = 140; // horizontal threshold to fling
+        if (Math.abs(dx) > threshold) {
+          const dirRight = dx > 0;
+          const now = performance.now();
+          const elapsed = Math.max(16, now - dragStartTime);
+          const speed = Math.abs(dx) / elapsed; // px per ms
+          // Palette from card data, else fallback
+          const palette = (card.dataset.colors || '').split(',').map(s => s.trim()).filter(Boolean);
+          const colors = palette.length ? palette : ['#7c5cff', '#ec4899', '#f59e0b', '#60a5fa', '#10b981', '#f43f5e'];
+          // Effects: confetti on like, shake on nope
+          if (dirRight) {
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+              fireConfetti(card, { speed, colors });
+            }
+          } else if (nopeLabel) {
+            nopeLabel.style.opacity = '1';
+            nopeLabel.classList.add('shake-left');
+            setTimeout(() => nopeLabel.classList.remove('shake-left'), 220);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+              fireVacuum(card, { speed, colors });
+            }
+          }
+          card.classList.add(dirRight ? 'fly-out-right' : 'fly-out-left');
+          // After animation, move card to bottom of stack
+          const handleEnd = () => {
+            card.removeEventListener('transitionend', handleEnd);
+            card.classList.remove('fly-out-right', 'fly-out-left');
+            // Reset drag offsets
+            card.style.removeProperty('--drag-x');
+            card.style.removeProperty('--drag-y');
+            card.style.removeProperty('--drag-r');
+            card.style.transition = '';
+            card.style.zIndex = '';
+            resetLabels();
+            // Move to bottom (firstChild) so another card becomes top
+            stack.insertBefore(card, stack.firstElementChild);
+            // Smoothly promote remaining cards and randomize new bottom tilt
+            const others = Array.from(stack.children).slice(1);
+            others.forEach((c) => c.classList.add('base-animate'));
+            updateStackBases(true);
+            // remove animation class after transition
+            setTimeout(() => others.forEach((c) => c.classList.remove('base-animate')), 240);
+          };
+          card.addEventListener('transitionend', handleEnd);
+        } else {
+          // Snap back
+          card.classList.add('snap-back');
+          card.style.removeProperty('--drag-x');
+          card.style.removeProperty('--drag-y');
+          card.style.removeProperty('--drag-r');
+          resetLabels();
+          const handleBack = () => {
+            card.classList.remove('snap-back');
+            card.style.transition = '';
+            card.style.zIndex = '';
+            card.removeEventListener('transitionend', handleBack);
+            // Haptic-like bounce
+            card.classList.add('haptic-bounce');
+            setTimeout(() => card.classList.remove('haptic-bounce'), 200);
+          };
+          card.addEventListener('transitionend', handleBack);
+        }
+        // reset state
+        dx = dy = 0;
+      };
+
+      let pointerId = null;
+      const onPointerDown = (e) => {
+        // Only allow drag on the top card
+        if (card !== getTopCard()) return;
+        pointerId = e.pointerId;
+        card.setPointerCapture(pointerId);
+        dragging = true;
+        startX = e.clientX;
+        startY = e.clientY;
+        dragStartTime = performance.now();
+        lastMoveTime = dragStartTime;
+        lastX = startX;
+        card.classList.add('is-dragging');
+        card.style.transition = 'none';
+        card.style.zIndex = '10';
+      };
+
+      card.addEventListener('pointerdown', onPointerDown);
+      card.addEventListener('pointermove', onPointerMove);
+      card.addEventListener('pointerup', onPointerUp);
+      card.addEventListener('pointercancel', onPointerUp);
+      card.addEventListener('lostpointercapture', onPointerUp);
+    };
+
+    Array.from(stack.children).forEach(attachDrag);
+
+    function fireConfetti(sourceEl, opts = {}) {
+      const rect = sourceEl.getBoundingClientRect();
+      // Emit from a band along the right side of the card, not a single point
+      const bandX1 = rect.left + rect.width * 0.55;
+      const bandX2 = rect.left + rect.width * 0.9;
+      const bandY1 = rect.top + rect.height * 0.2;
+      const bandY2 = rect.top + rect.height * 0.75;
+      const baseColors = ['#7c5cff', '#ec4899', '#f59e0b', '#60a5fa', '#10b981', '#f43f5e'];
+      const colors = Array.isArray(opts.colors) && opts.colors.length ? opts.colors : baseColors;
+      const shapes = ['square', 'circle', 'triangle', 'ribbon'];
+      const speed = Math.max(0.3, Math.min(2.5, Number(opts.speed) || 1)); // px/ms clamped
+      const intensity = 0.8 + (speed / 2.5) * 1.4; // 0.8..2.2
+      const bursts = Math.max(2, Math.min(5, Math.round(2 + intensity)));
+      const perBurst = Math.max(8, Math.min(24, Math.round(10 * intensity)));
+
+      // Remove single-point pop ring to avoid focal origin
+      const makeRing = () => {};
+
+      const emit = () => {
+        // No central ring; keep bursts distributed
+        if (!emit._ringed) { makeRing(); emit._ringed = true; }
+        for (let i = 0; i < perBurst; i++) {
+          const isEmoji = Math.random() < 0.15;
+          if (isEmoji) {
+            const em = document.createElement('div');
+            em.className = 'confetti-emoji';
+            em.textContent = ['✨','🎉','💖'][Math.floor(Math.random()*3)];
+            const spawnX = bandX1 + Math.random() * (bandX2 - bandX1);
+            const spawnY = bandY1 + Math.random() * (bandY2 - bandY1);
+            const dx = 60 + Math.random() * 180; // bias to the right
+            const dy = -(140 + Math.random() * 200);
+            em.style.left = spawnX + 'px';
+            em.style.top = spawnY + 'px';
+            em.style.setProperty('--dx', dx + 'px');
+            em.style.setProperty('--dy', dy + 'px');
+            em.style.setProperty('--dur', (900 + Math.random()*400) + 'ms');
+            em.style.setProperty('--delay', (Math.random()*120|0) + 'ms');
+            em.style.setProperty('--emojiSize', (18 + Math.random()*8) + 'px');
+            document.body.appendChild(em);
+            em.addEventListener('animationend', () => em.remove());
+            continue;
+          }
+
+          const piece = document.createElement('div');
+          piece.className = 'confetti-piece';
+          const spawnX = bandX1 + Math.random() * (bandX2 - bandX1);
+          const spawnY = bandY1 + Math.random() * (bandY2 - bandY1);
+          const dx = 40 + Math.random() * (160 + intensity * 80); // more spread with speed
+          const dy = -(140 + Math.random() * (160 + intensity * 80));
+          const rot = Math.floor(Math.random() * 720 - 360);
+          piece.style.left = spawnX + 'px';
+          piece.style.top = spawnY + 'px';
+          piece.style.setProperty('--dx', dx + 'px');
+          piece.style.setProperty('--dy', dy + 'px');
+          piece.style.setProperty('--rot', rot + 'deg');
+          piece.style.setProperty('--dur', (700 + Math.random()*500) + 'ms');
+          piece.style.setProperty('--delay', (Math.random()*120|0) + 'ms');
+          piece.style.setProperty('--scale', (0.9 + Math.random()*0.6).toFixed(2));
+
+          const shape = shapes[(Math.random() * shapes.length) | 0];
+          const color = colors[(Math.random() * colors.length) | 0];
+          if (shape === 'circle') {
+            piece.style.borderRadius = '50%';
+          } else if (shape === 'triangle') {
+            piece.style.width = '0';
+            piece.style.height = '0';
+            piece.style.borderLeft = '8px solid transparent';
+            piece.style.borderRight = '8px solid transparent';
+            piece.style.borderBottom = '14px solid ' + color;
+          } else if (shape === 'ribbon') {
+            piece.style.width = '6px';
+            piece.style.height = '18px';
+            piece.style.borderRadius = '3px';
+            piece.style.background = `linear-gradient(180deg, ${color}, rgba(255,255,255,.9))`;
+          }
+          if (shape !== 'triangle' && shape !== 'ribbon') {
+            piece.style.background = color;
+            if (Math.random() > 0.6) piece.style.width = piece.style.height = '10px';
+          }
+          document.body.appendChild(piece);
+          piece.addEventListener('animationend', () => piece.remove());
+        }
+      };
+
+      for (let b = 0; b < bursts; b++) {
+        setTimeout(emit, b * 90);
+      }
+    }
+
+    function fireVacuum(sourceEl, opts = {}) {
+      const rect = sourceEl.getBoundingClientRect();
+      const originX = rect.left + rect.width * 0.28; // toward left side
+      const originY = rect.top + rect.height * 0.5;
+      const baseColors = ['#7c5cff', '#ec4899', '#f59e0b', '#60a5fa', '#10b981', '#f43f5e'];
+      const colors = Array.isArray(opts.colors) && opts.colors.length ? opts.colors : baseColors;
+      const speed = Math.max(0.3, Math.min(2.5, Number(opts.speed) || 1));
+      const pieces = Math.max(10, Math.min(24, Math.round(14 * (0.7 + speed))));
+
+      for (let i = 0; i < pieces; i++) {
+        const startX = originX + 40 + Math.random() * 160; // start to the right
+        const startY = originY + (Math.random() * 120 - 60);
+        const suck = document.createElement('div');
+        suck.className = 'confetti-suck';
+        suck.style.left = startX + 'px';
+        suck.style.top = startY + 'px';
+        suck.style.background = colors[(Math.random()*colors.length)|0];
+        suck.style.setProperty('--toX', (originX - startX) + 'px');
+        suck.style.setProperty('--toY', (originY - startY) + 'px');
+        suck.style.animationDuration = (350 + Math.random()*220) + 'ms';
+        suck.style.animationDelay = (Math.random()*100|0) + 'ms';
+        document.body.appendChild(suck);
+        suck.addEventListener('animationend', () => suck.remove());
+      }
+    }
+  }
+});
