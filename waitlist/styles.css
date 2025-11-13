@@ -330,9 +330,13 @@ body {
   color: var(--muted);
   font-size: 14px;
   user-select: none;
+  opacity: 1;
+  transition: opacity .28s ease;
 }
 .drag-hint__text { font-weight: 600; }
 .drag-hint__arrow { opacity: 0.9; }
+/* Fade-out state but keep layout space */
+.drag-hint.drag-hint--fade { opacity: 0; pointer-events: none; }
 @media (hover: hover) and (pointer: fine) {
   .drag-hint__arrow--left { animation: arrow-left-pulse 1.6s ease-in-out infinite; }
   .drag-hint__arrow--right { animation: arrow-right-pulse 1.6s ease-in-out infinite; }

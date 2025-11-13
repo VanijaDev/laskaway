@@ -115,11 +115,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const giftBox = document.getElementById('giftBox');
     const selectedCardsContainer = document.getElementById('selectedCards');
     const dragHint = document.getElementById('dragHint');
+    let hintDismissed = false;
 
     const showGiftBox = () => {
       stack.style.display = 'none';
       giftBox.classList.remove('hidden');
-      dragHint?.classList.add('hidden');
+      // Fade the hint (keep DOM to avoid layout jump)
+      dragHint?.classList.add('drag-hint--fade');
       
       // Populate mini cards
       likedExperiences.forEach(exp => {
@@ -417,6 +419,11 @@ document.addEventListener('DOMContentLoaded', () => {
               fireVacuum(card, { speed, colors });
             }
           }
+          // Fade out the drag hint on first actual selection
+          if (!hintDismissed) {
+            dragHint?.classList.add('drag-hint--fade');
+            hintDismissed = true;
+          }
           card.classList.add(dirRight ? 'fly-out-right' : 'fly-out-left');
           // After animation, move card to bottom of stack
           const handleEnd = () => {
@@ -512,7 +519,7 @@ document.addEventListener('DOMContentLoaded', () => {
           hasInteracted = true;
           if (wiggleInterval) clearInterval(wiggleInterval);
           stopAllWiggles();
-          dragHint?.classList.add('hidden');
+          // Keep hint visible until a real selection is made (no hide here)
         }
       };
 
