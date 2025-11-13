@@ -168,9 +168,9 @@ body {
 .card.is-dragging { cursor: grabbing; }
 
 /* Swipe labels */
-.swipe-label { position: absolute; top: 16px; padding: 6px 12px; border-radius: 10px; font-weight: 700; letter-spacing: .5px; font-size: 14px; opacity: 0; transition: opacity .12s ease; backdrop-filter: saturate(1.2) blur(2px); }
-.swipe-label--like { left: 16px; color: #065f46; background: rgba(16,185,129,.12); border: 2px solid rgba(16,185,129,.6); transform: rotate(-12deg); }
-.swipe-label--nope { right: 16px; color: #991b1b; background: rgba(239,68,68,.12); border: 2px solid rgba(239,68,68,.6); transform: rotate(12deg); }
+.swipe-label { position: absolute; top: 16px; padding: 12px 20px; border-radius: 14px; font-weight: 700; letter-spacing: .5px; font-size: 28px; opacity: 0; transition: opacity .12s ease; backdrop-filter: saturate(1.2) blur(2px); }
+.swipe-label--like { left: 16px; color: #065f46; background: rgba(16,185,129,.12); border: 3px solid rgba(16,185,129,.6); transform: rotate(-12deg); }
+.swipe-label--nope { right: 16px; color: #991b1b; background: rgba(239,68,68,.12); border: 3px solid rgba(239,68,68,.6); transform: rotate(12deg); }
 
 /* Nope shake (label only to avoid transform conflicts) */
 .swipe-label--nope.shake-left { animation: nope-shake 180ms ease; }
