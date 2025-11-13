@@ -317,6 +317,7 @@ document.addEventListener('DOMContentLoaded', () => {
       let startX = 0, startY = 0, dx = 0, dy = 0, dragging = false;
       let dragStartTime = 0, lastMoveTime = 0, lastX = 0;
       const clickTolerance = 5; // px
+      let suppressClick = false; // prevent click after a drag
 
       const likeLabel = card.querySelector('.swipe-label--like');
       const nopeLabel = card.querySelector('.swipe-label--nope');
@@ -325,6 +326,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!dragging) return;
         dx = e.clientX - startX;
         dy = e.clientY - startY;
+        if (!suppressClick && (Math.abs(dx) > clickTolerance || Math.abs(dy) > clickTolerance)) {
+          suppressClick = true;
+        }
         const rot = dx * 0.06;
         card.style.setProperty('--drag-x', dx + 'px');
         card.style.setProperty('--drag-y', dy + 'px');
@@ -370,6 +374,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // If movement is tiny, treat as click: cleanup only; allow click handler to open link
         if (Math.abs(dx) < clickTolerance && Math.abs(dy) < clickTolerance) {
+          suppressClick = false; // permit click
           delete card.dataset.autoAdvanced;
           const likeLabel = card.querySelector('.swipe-label--like');
           const nopeLabel = card.querySelector('.swipe-label--nope');
@@ -503,6 +508,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (card !== getTopCard()) return;
         // Stop any running demo so user takes over cleanly
         cancelDemoIfAny();
+        suppressClick = false; // reset for new interaction
         pointerId = e.pointerId;
         card.setPointerCapture(pointerId);
         dragging = true;
@@ -530,10 +536,13 @@ document.addEventListener('DOMContentLoaded', () => {
       card.addEventListener('lostpointercapture', onPointerUp);
 
       // Click to open testing URL when not dragging
-      card.addEventListener('click', () => {
-        if (!dragging) {
-          window.open(TEST_URL, '_blank', 'noopener');
+      card.addEventListener('click', (e) => {
+        if (suppressClick) {
+          e.preventDefault();
+          e.stopPropagation();
+          return;
         }
+        window.open(TEST_URL, '_blank', 'noopener');
       });
     };
 
