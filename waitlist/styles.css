@@ -205,15 +205,9 @@ body {
   100% { transform: translate(calc(var(--base-x, 0px)), calc(var(--base-y, 0px))) rotate(var(--base-r, 0deg)) scale(1); }
 }
 
-/* Swipe hint wiggle - staggered for each card */
-.card.card--hint-wiggle:nth-child(1) {
+/* Swipe hint wiggle - apply to all cards; stagger via --wiggle-delay */
+.card.card--hint-wiggle {
   animation: hint-wiggle 4.4s ease-in-out var(--wiggle-delay, 1s) 1;
-}
-.card.card--hint-wiggle:nth-child(2) {
-  animation: hint-wiggle 4.4s ease-in-out var(--wiggle-delay, 1.3s) 1;
-}
-.card.card--hint-wiggle:nth-child(3) {
-  animation: hint-wiggle 4.4s ease-in-out var(--wiggle-delay, 1.6s) 1;
 }
 @keyframes hint-wiggle {
   0%, 100% { transform: translate(calc(var(--base-x, 0px)), calc(var(--base-y, 0px))) rotate(var(--base-r, 0deg)); }
