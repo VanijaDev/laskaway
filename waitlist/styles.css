@@ -148,6 +148,9 @@ body {
   transition: transform .18s ease, box-shadow .18s ease;
 }
 
+/* Hidden card (kept in DOM but not visible) */
+.card.card--invisible { display: none; }
+
 /* Desktop hover preview */
 @media (hover: hover) and (pointer: fine) {
   .card:hover:not(.is-dragging) {

@@ -163,6 +163,15 @@ document.addEventListener('DOMContentLoaded', () => {
       children.forEach((el) => setRandomBase(el));
     };
 
+    // Keep only the top 3 cards visible; others hidden
+    const applyVisibility = () => {
+      const children = Array.from(stack.children);
+      const toHide = children.slice(0, Math.max(0, children.length - 3));
+      const toShow = children.slice(-3);
+      toHide.forEach((el) => el.classList.add('card--invisible'));
+      toShow.forEach((el) => el.classList.remove('card--invisible'));
+    };
+
     const updateStackBases = (randomizeBottom = false) => {
       if (!randomizeBottom) return;
       const children = Array.from(stack.children);
@@ -171,6 +180,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initialize base transforms randomly for all cards
     initializeBases();
+    // Ensure only 3 cards are visible initially
+    applyVisibility();
 
     const attachDrag = (card) => {
       let startX = 0, startY = 0, dx = 0, dy = 0, dragging = false;
@@ -285,8 +296,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Move to bottom (firstChild) so another card becomes top
             stack.insertBefore(card, stack.firstElementChild);
-            // Smoothly promote remaining cards and randomize new bottom tilt
-            const others = Array.from(stack.children).slice(1);
+            // Re-apply visibility so only 3 cards are shown
+            applyVisibility();
+            // Smoothly promote visible cards and randomize new bottom tilt
+            const visibleChildren = Array.from(stack.children).filter(c => !c.classList.contains('card--invisible'));
+            const others = visibleChildren.slice(0, -1); // all visible except the top
             others.forEach((c) => c.classList.add('base-animate'));
             updateStackBases(true);
             // remove animation class after transition
