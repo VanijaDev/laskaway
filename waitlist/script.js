@@ -89,6 +89,15 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // Disable native image dragging on stack and carousel images
+  const disableNativeImageDrag = () => {
+    document.querySelectorAll('.card img, .xp-card img').forEach((img) => {
+      img.setAttribute('draggable', 'false');
+      img.addEventListener('dragstart', (e) => e.preventDefault());
+    });
+  };
+  disableNativeImageDrag();
+
   // Make experience cards clickable (open testing URL)
   const TEST_URL = 'https://www.google.com';
   document.querySelectorAll('.xp-card').forEach((card) => {
@@ -317,7 +326,8 @@ document.addEventListener('DOMContentLoaded', () => {
       let startX = 0, startY = 0, dx = 0, dy = 0, dragging = false;
       let dragStartTime = 0, lastMoveTime = 0, lastX = 0;
       const clickTolerance = 5; // px
-      let suppressClick = false; // prevent click after a drag
+      let moved = false; // exceeded click tolerance
+      let blockClickUntil = 0; // suppress click shortly after drag
 
       const likeLabel = card.querySelector('.swipe-label--like');
       const nopeLabel = card.querySelector('.swipe-label--nope');
@@ -326,8 +336,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!dragging) return;
         dx = e.clientX - startX;
         dy = e.clientY - startY;
-        if (!suppressClick && (Math.abs(dx) > clickTolerance || Math.abs(dy) > clickTolerance)) {
-          suppressClick = true;
+        if (!moved && (Math.abs(dx) > clickTolerance || Math.abs(dy) > clickTolerance)) {
+          moved = true;
         }
         const rot = dx * 0.06;
         card.style.setProperty('--drag-x', dx + 'px');
@@ -374,7 +384,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // If movement is tiny, treat as click: cleanup only; allow click handler to open link
         if (Math.abs(dx) < clickTolerance && Math.abs(dy) < clickTolerance) {
-          suppressClick = false; // permit click
           delete card.dataset.autoAdvanced;
           const likeLabel = card.querySelector('.swipe-label--like');
           const nopeLabel = card.querySelector('.swipe-label--nope');
@@ -383,9 +392,13 @@ document.addEventListener('DOMContentLoaded', () => {
           card.style.removeProperty('--drag-x');
           card.style.removeProperty('--drag-y');
           card.style.removeProperty('--drag-r');
+          moved = false;
           dx = dy = 0;
           return;
         }
+
+        // Suppress click after any meaningful drag
+        blockClickUntil = Date.now() + 800;
 
         // Lower threshold for auto-advance (was 140, now 200)
         const threshold = 200;
@@ -506,12 +519,14 @@ document.addEventListener('DOMContentLoaded', () => {
       const onPointerDown = (e) => {
         // Only allow drag on the top card
         if (card !== getTopCard()) return;
+        // Prevent default image/text dragging behavior when starting a swipe
+        e.preventDefault();
         // Stop any running demo so user takes over cleanly
         cancelDemoIfAny();
-        suppressClick = false; // reset for new interaction
         pointerId = e.pointerId;
         card.setPointerCapture(pointerId);
         dragging = true;
+        moved = false;
         startX = e.clientX;
         startY = e.clientY;
         dragStartTime = performance.now();
@@ -535,11 +550,11 @@ document.addEventListener('DOMContentLoaded', () => {
       card.addEventListener('pointercancel', onPointerUp);
       card.addEventListener('lostpointercapture', onPointerUp);
 
-      // Click to open testing URL when not dragging
-      card.addEventListener('click', (e) => {
-        if (suppressClick) {
-          e.preventDefault();
-          e.stopPropagation();
+      // Click to open testing URL when not dragging or after a drag
+      card.addEventListener('click', (evt) => {
+        if (dragging || moved || Date.now() < blockClickUntil) {
+          evt.preventDefault();
+          evt.stopPropagation();
           return;
         }
         window.open(TEST_URL, '_blank', 'noopener');
