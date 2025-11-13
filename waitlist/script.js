@@ -11,7 +11,12 @@ document.addEventListener('DOMContentLoaded', () => {
   try {
     const joined = JSON.parse(localStorage.getItem('waitlistJoined') || 'null');
     if (joined && joined.email) {
-      form?.classList.add('hidden');
+    const loop = (now) => {
+      const dt = now - last;
+      last = now;
+      avgFrameMs = avgFrameMs * 0.9 + dt * 0.1;
+      requestAnimationFrame(loop);
+    };
       success?.classList.remove('hidden');
     }
   } catch (_) { /* ignore */ }
@@ -191,7 +196,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (hasInteracted || isDemoRunning) return;
       const card = getTopCard();
       if (!card) return;
-      isDemoRunning = true;
+        requestAnimationFrame(() => cap.removeAttribute('tabindex'));
       // Ensure CSS animation on top card doesn't conflict
       card.classList.remove('card--hint-wiggle');
       void card.offsetWidth;
@@ -563,13 +568,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
     Array.from(stack.children).forEach(attachDrag);
 
+    const maxEmojiPercent = 0.1; // 10% chance to use emojis
+
     function fireConfetti(sourceEl, opts = {}) {
-      const rect = sourceEl.getBoundingClientRect();
-      // Emit from a band along the right side of the card, not a single point
-      const bandX1 = rect.left + rect.width * 0.55;
-      const bandX2 = rect.left + rect.width * 0.9;
-      const bandY1 = rect.top + rect.height * 0.2;
-      const bandY2 = rect.top + rect.height * 0.75;
+      // Use the card stack container as reference instead of the card's absolute position
+      // This ensures confetti spawns near the visible stack, not off-screen
+      const stackRect = stack.getBoundingClientRect();
+      const stackCenterX = stackRect.left + stackRect.width / 2;
+      const stackCenterY = stackRect.top + stackRect.height / 2;
+      
+      // Emit from a band along the right side of the stack center
+      const bandWidth = stackRect.width * 0.35;
+      const bandHeight = stackRect.height * 0.55;
+      const bandX1 = stackCenterX + stackRect.width * 0.05;
+      const bandX2 = stackCenterX + bandWidth;
+      const bandY1 = stackCenterY - bandHeight / 2;
+      const bandY2 = stackCenterY + bandHeight / 2;
       const baseColors = ['#7c5cff', '#ec4899', '#f59e0b', '#60a5fa', '#10b981', '#f43f5e'];
       const colors = Array.isArray(opts.colors) && opts.colors.length ? opts.colors : baseColors;
       const shapes = ['square', 'circle', 'triangle', 'ribbon'];
@@ -586,8 +600,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const num = document.createElement('div');
         num.className = 'confetti-number';
         num.textContent = countNumber;
-        const dx = 20 + Math.random() * 60;
-        const dy = -(80 + Math.random() * 80);
+        // Move right and up with the card
+        const dx = 140 + Math.random() * 100;
+        const dy = -(60 + Math.random() * 80);
         const rot = Math.floor(Math.random() * 40 - 20);
         num.style.left = centerX + 'px';
         num.style.top = centerY + 'px';
@@ -607,15 +622,16 @@ document.addEventListener('DOMContentLoaded', () => {
         // No central ring; keep bursts distributed
         if (!emit._ringed) { makeRing(); emit._ringed = true; }
         for (let i = 0; i < perBurst; i++) {
-          const isEmoji = Math.random() < 0.15;
+          const isEmoji = Math.random() < maxEmojiPercent; // 10% chance
           if (isEmoji) {
             const em = document.createElement('div');
             em.className = 'confetti-emoji';
-            em.textContent = ['✨','🎉','💖'][Math.floor(Math.random()*3)];
+            em.textContent = ['✨','🎉','💖', '🥳','💯','🤪','😍','🙌', '🥰','🤩','👌'][Math.floor(Math.random()*11)];
             const spawnX = bandX1 + Math.random() * (bandX2 - bandX1);
             const spawnY = bandY1 + Math.random() * (bandY2 - bandY1);
-            const dx = 60 + Math.random() * 180; // bias to the right
-            const dy = -(140 + Math.random() * 200);
+            // Move right and up/down with the card
+            const dx = 120 + Math.random() * 220;
+            const dy = -(60 + Math.random() * 140);
             em.style.left = spawnX + 'px';
             em.style.top = spawnY + 'px';
             em.style.setProperty('--dx', dx + 'px');
@@ -632,8 +648,9 @@ document.addEventListener('DOMContentLoaded', () => {
           piece.className = 'confetti-piece';
           const spawnX = bandX1 + Math.random() * (bandX2 - bandX1);
           const spawnY = bandY1 + Math.random() * (bandY2 - bandY1);
-          const dx = 40 + Math.random() * (160 + intensity * 80); // more spread with speed
-          const dy = -(140 + Math.random() * (160 + intensity * 80));
+          // Move right with the card, with some vertical spread
+          const dx = 100 + Math.random() * (180 + intensity * 100);
+          const dy = -(40 + Math.random() * (120 + intensity * 60));
           const rot = Math.floor(Math.random() * 720 - 360);
           piece.style.left = spawnX + 'px';
           piece.style.top = spawnY + 'px';
@@ -675,26 +692,57 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function fireVacuum(sourceEl, opts = {}) {
-      const rect = sourceEl.getBoundingClientRect();
-      const originX = rect.left + rect.width * 0.28; // toward left side
-      const originY = rect.top + rect.height * 0.5;
+      // Use stack container as reference for consistent positioning
+      const stackRect = stack.getBoundingClientRect();
+      const stackCenterX = stackRect.left + stackRect.width / 2;
+      const stackCenterY = stackRect.top + stackRect.height / 2;
+      const originX = stackCenterX - stackRect.width * 0.22; // toward left side
+      const originY = stackCenterY;
       const baseColors = ['#7c5cff', '#ec4899', '#f59e0b', '#60a5fa', '#10b981', '#f43f5e'];
       const colors = Array.isArray(opts.colors) && opts.colors.length ? opts.colors : baseColors;
       const speed = Math.max(0.3, Math.min(2.5, Number(opts.speed) || 1));
-      const pieces = Math.max(10, Math.min(24, Math.round(14 * (0.7 + speed))));
+      const intensity = 0.8 + (speed / 2.5) * 1.4; // match confetti intensity
+      const pieces = Math.max(8, Math.min(24, Math.round(10 * intensity))); // match confetti piece count
 
       for (let i = 0; i < pieces; i++) {
-        const startX = originX + 40 + Math.random() * 160; // start to the right
-        const startY = originY + (Math.random() * 120 - 60);
+        // Spawn from a wider band to match confetti spread
+        const bandWidth = stackRect.width * 0.35;
+        const bandHeight = stackRect.height * 0.55;
+        const startX = originX + (Math.random() * bandWidth - bandWidth / 2);
+        const startY = originY + (Math.random() * bandHeight - bandHeight / 2);
+        const isEmoji = Math.random() < maxEmojiPercent; // 10% chance
+        
+        if (isEmoji) {
+          const em = document.createElement('div');
+          em.className = 'confetti-emoji';
+          em.textContent = ['🥱','😴','💩','👾','👎','😴','🥱','🙈','🙉','🙊','🚫','⛔️'][Math.floor(Math.random()*12)];
+          em.style.left = startX + 'px';
+          em.style.top = startY + 'px';
+          // Move left with the card
+          const toX = -(120 + Math.random() * 220);
+          const toY = (Math.random() * 140 - 60);
+          em.style.setProperty('--dx', toX + 'px');
+          em.style.setProperty('--dy', toY + 'px');
+          em.style.setProperty('--dur', (900 + Math.random()*400) + 'ms');
+          em.style.setProperty('--delay', (Math.random()*120|0) + 'ms');
+          em.style.setProperty('--emojiSize', (18 + Math.random()*8) + 'px');
+          document.body.appendChild(em);
+          em.addEventListener('animationend', () => em.remove());
+          continue;
+        }
+        
         const suck = document.createElement('div');
         suck.className = 'confetti-suck';
         suck.style.left = startX + 'px';
         suck.style.top = startY + 'px';
         suck.style.background = colors[(Math.random()*colors.length)|0];
-        suck.style.setProperty('--toX', (originX - startX) + 'px');
-        suck.style.setProperty('--toY', (originY - startY) + 'px');
-        suck.style.animationDuration = (350 + Math.random()*220) + 'ms';
-        suck.style.animationDelay = (Math.random()*100|0) + 'ms';
+        // Move left with similar distance to confetti moving right
+        const toX = -(100 + Math.random() * (180 + intensity * 100));
+        const toY = (Math.random() * (120 + intensity * 60) - 60);
+        suck.style.setProperty('--toX', toX + 'px');
+        suck.style.setProperty('--toY', toY + 'px');
+        suck.style.animationDuration = (700 + Math.random()*500) + 'ms'; // match confetti duration
+        suck.style.animationDelay = (Math.random()*120|0) + 'ms';
         document.body.appendChild(suck);
         suck.addEventListener('animationend', () => suck.remove());
       }
