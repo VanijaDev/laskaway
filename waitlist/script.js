@@ -161,9 +161,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const initializeBases = () => {
       const children = Array.from(stack.children);
       children.forEach((el) => setRandomBase(el));
-      // Show only last 3 cards initially; hide the rest
-      const toHide = children.slice(0, Math.max(0, children.length - 3));
-      toHide.forEach((el) => el.classList.add('card--hidden'));
     };
 
     const updateStackBases = (randomizeBottom = false) => {
@@ -286,33 +283,22 @@ document.addEventListener('DOMContentLoaded', () => {
               return;
             }
 
-            // Move to bottom (firstChild), then hide it to keep only 3 visible
+            // Move to bottom (firstChild) so another card becomes top
             stack.insertBefore(card, stack.firstElementChild);
-            card.classList.add('card--hidden');
-
-            // Reveal a random hidden card and make it the new top
-            const hiddenPool = Array.from(stack.children).filter(c => c.classList.contains('card--hidden') && c !== card);
-            if (hiddenPool.length > 0) {
-              const nextCard = hiddenPool[(Math.random() * hiddenPool.length) | 0];
-              nextCard.classList.remove('card--hidden');
-              setRandomBase(nextCard);
-              stack.appendChild(nextCard); // becomes top
-            }
-
-            // Smoothly promote remaining visible cards and randomize new bottom tilt
-            const visibleCards = Array.from(stack.children).filter(c => !c.classList.contains('card--hidden'));
-            visibleCards.forEach((c) => c.classList.add('base-animate'));
+            // Smoothly promote remaining cards and randomize new bottom tilt
+            const others = Array.from(stack.children).slice(1);
+            others.forEach((c) => c.classList.add('base-animate'));
             updateStackBases(true);
             // remove animation class after transition
             setTimeout(() => {
-              visibleCards.forEach((c) => c.classList.remove('base-animate'));
+              others.forEach((c) => c.classList.remove('base-animate'));
             }, 240);
             
             // Add dribbling effect to remaining cards after like only
             if (dirRight) {
               setTimeout(() => {
-                if (visibleCards.length > 0) {
-                  visibleCards.forEach((c, idx) => {
+                if (others.length > 0) {
+                  others.forEach((c, idx) => {
                     const randomDelay = Math.random() * 80;
                     setTimeout(() => {
                       c.classList.add('dribble');
