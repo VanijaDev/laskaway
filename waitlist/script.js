@@ -89,6 +89,22 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // Make experience cards clickable (open testing URL)
+  const TEST_URL = 'https://www.google.com';
+  document.querySelectorAll('.xp-card').forEach((card) => {
+    card.setAttribute('role', 'link');
+    card.setAttribute('tabindex', '0');
+    card.addEventListener('click', () => {
+      window.open(TEST_URL, '_blank', 'noopener');
+    });
+    card.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        window.open(TEST_URL, '_blank', 'noopener');
+      }
+    });
+  });
+
   // Swipeable card stack (Tinder-like)
   const stack = document.querySelector('.card-stack');
   if (stack) {
@@ -296,6 +312,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const attachDrag = (card) => {
       let startX = 0, startY = 0, dx = 0, dy = 0, dragging = false;
       let dragStartTime = 0, lastMoveTime = 0, lastX = 0;
+      const clickTolerance = 5; // px
 
       const likeLabel = card.querySelector('.swipe-label--like');
       const nopeLabel = card.querySelector('.swipe-label--nope');
@@ -346,6 +363,20 @@ document.addEventListener('DOMContentLoaded', () => {
         // Ensure CSS transitions can run after we disabled them on pointerdown
         card.style.transition = '';
         card.style.zIndex = '';
+
+        // If movement is tiny, treat as click: cleanup only; allow click handler to open link
+        if (Math.abs(dx) < clickTolerance && Math.abs(dy) < clickTolerance) {
+          delete card.dataset.autoAdvanced;
+          const likeLabel = card.querySelector('.swipe-label--like');
+          const nopeLabel = card.querySelector('.swipe-label--nope');
+          if (likeLabel) likeLabel.style.opacity = '0';
+          if (nopeLabel) nopeLabel.style.opacity = '0';
+          card.style.removeProperty('--drag-x');
+          card.style.removeProperty('--drag-y');
+          card.style.removeProperty('--drag-r');
+          dx = dy = 0;
+          return;
+        }
 
         // Lower threshold for auto-advance (was 140, now 200)
         const threshold = 200;
@@ -487,6 +518,13 @@ document.addEventListener('DOMContentLoaded', () => {
       card.addEventListener('pointerup', onPointerUp);
       card.addEventListener('pointercancel', onPointerUp);
       card.addEventListener('lostpointercapture', onPointerUp);
+
+      // Click to open testing URL when not dragging
+      card.addEventListener('click', () => {
+        if (!dragging) {
+          window.open(TEST_URL, '_blank', 'noopener');
+        }
+      });
     };
 
     Array.from(stack.children).forEach(attachDrag);
