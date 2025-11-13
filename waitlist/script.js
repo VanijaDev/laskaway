@@ -135,14 +135,97 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initial wiggle after 1s
     setTimeout(triggerWiggle, 1000);
 
+    // Top-card deep wiggle to auto-threshold with label visibility
+    let isDemoRunning = false;
+    let demoRAF = null;
+    const cancelDemoIfAny = () => {
+      if (!isDemoRunning) return;
+      isDemoRunning = false;
+      if (demoRAF) cancelAnimationFrame(demoRAF);
+      demoRAF = null;
+      const topCard = getTopCard();
+      if (!topCard) return;
+      // Cleanup drag vars and labels
+      topCard.style.removeProperty('--drag-x');
+      topCard.style.removeProperty('--drag-y');
+      topCard.style.removeProperty('--drag-r');
+      const likeLabel = topCard.querySelector('.swipe-label--like');
+      const nopeLabel = topCard.querySelector('.swipe-label--nope');
+      if (likeLabel) likeLabel.style.opacity = '0';
+      if (nopeLabel) nopeLabel.style.opacity = '0';
+    };
+
+    const demoTopCardDrag = () => {
+      if (hasInteracted || isDemoRunning) return;
+      const card = getTopCard();
+      if (!card) return;
+      isDemoRunning = true;
+      // Ensure CSS animation on top card doesn't conflict
+      card.classList.remove('card--hint-wiggle');
+      void card.offsetWidth;
+      const likeLabel = card.querySelector('.swipe-label--like');
+      const nopeLabel = card.querySelector('.swipe-label--nope');
+      const autoThreshold = 180;
+      const duration = 2400; // slowed by 50%: full left->right->center
+      const start = performance.now();
+
+      const step = (now) => {
+        if (!isDemoRunning || hasInteracted) { cancelDemoIfAny(); return; }
+        const t = Math.min(1, (now - start) / duration);
+        let dx = 0;
+        if (t < 0.3) {
+          const tt = t / 0.3;               // 0..1
+          dx = -autoThreshold * 0.5 * tt;   // 0 -> -90
+        } else if (t < 0.7) {
+          const tt = (t - 0.3) / 0.4;       // 0..1
+          dx = -autoThreshold * 0.5 + (autoThreshold * 1.5) * tt; // -90 -> +180
+        } else {
+          const tt = (t - 0.7) / 0.3;       // 0..1
+          dx = autoThreshold * (1 - tt);    // +180 -> 0
+        }
+
+        const rot = dx * 0.06;
+        card.style.setProperty('--drag-x', dx + 'px');
+        card.style.setProperty('--drag-y', '0px');
+        card.style.setProperty('--drag-r', rot + 'deg');
+        const intensity = Math.min(1, Math.abs(dx) / 120);
+        if (dx >= 0) {
+          if (likeLabel) likeLabel.style.opacity = String(intensity);
+          if (nopeLabel) nopeLabel.style.opacity = '0';
+        } else {
+          if (nopeLabel) nopeLabel.style.opacity = String(intensity);
+          if (likeLabel) likeLabel.style.opacity = '0';
+        }
+
+        if (t >= 1) {
+          // Cleanup
+          card.style.removeProperty('--drag-x');
+          card.style.removeProperty('--drag-y');
+          card.style.removeProperty('--drag-r');
+          if (likeLabel) likeLabel.style.opacity = '0';
+          if (nopeLabel) nopeLabel.style.opacity = '0';
+          isDemoRunning = false;
+          demoRAF = null;
+          return;
+        }
+        demoRAF = requestAnimationFrame(step);
+      };
+      demoRAF = requestAnimationFrame(step);
+    };
+
     // Repeat every 10s until first interaction
     wiggleInterval = setInterval(() => {
       if (!hasInteracted) {
         triggerWiggle();
+        // Nudge the top card strongly, but avoid overlapping demos
+        setTimeout(() => demoTopCardDrag(), 300);
       } else {
         clearInterval(wiggleInterval);
       }
     }, 10000);
+
+    // Kick the first top-card demo shortly after the initial wiggle
+    setTimeout(() => demoTopCardDrag(), 1300);
     const getTopCard = () => stack.lastElementChild;
 
     const randTilt = () => (Math.random() * 16 - 8); // -8..8 deg
@@ -351,6 +434,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const onPointerDown = (e) => {
         // Only allow drag on the top card
         if (card !== getTopCard()) return;
+        // Stop any running demo so user takes over cleanly
+        cancelDemoIfAny();
         pointerId = e.pointerId;
         card.setPointerCapture(pointerId);
         dragging = true;
