@@ -57,6 +57,9 @@ body {
   margin-inline: auto;
 }
 
+/* Utility */
+.hidden { display: none !important; }
+
 /* (Header removed to restore original layout) */
 
 /* Hero */
@@ -315,6 +318,36 @@ body {
 @keyframes skeleton-shimmer {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
+}
+
+/* Drag hint below card stack */
+.drag-hint {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 14px;
+  user-select: none;
+}
+.drag-hint__text { font-weight: 600; }
+.drag-hint__arrow { opacity: 0.9; }
+@media (hover: hover) and (pointer: fine) {
+  .drag-hint__arrow--left { animation: arrow-left-pulse 1.6s ease-in-out infinite; }
+  .drag-hint__arrow--right { animation: arrow-right-pulse 1.6s ease-in-out infinite; }
+}
+@keyframes arrow-left-pulse {
+  0%, 100% { transform: translateX(0); opacity: .9; }
+  50% { transform: translateX(-6px); opacity: 1; }
+}
+@keyframes arrow-right-pulse {
+  0%, 100% { transform: translateX(0); opacity: .9; }
+  50% { transform: translateX(6px); opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .drag-hint__arrow--left,
+  .drag-hint__arrow--right { animation: none; }
 }
 
 

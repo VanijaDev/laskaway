@@ -114,10 +114,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const MAX_SELECTIONS = 5;
     const giftBox = document.getElementById('giftBox');
     const selectedCardsContainer = document.getElementById('selectedCards');
+    const dragHint = document.getElementById('dragHint');
 
     const showGiftBox = () => {
       stack.style.display = 'none';
       giftBox.classList.remove('hidden');
+      dragHint?.classList.add('hidden');
       
       // Populate mini cards
       likedExperiences.forEach(exp => {
@@ -510,6 +512,7 @@ document.addEventListener('DOMContentLoaded', () => {
           hasInteracted = true;
           if (wiggleInterval) clearInterval(wiggleInterval);
           stopAllWiggles();
+          dragHint?.classList.add('hidden');
         }
       };
 
