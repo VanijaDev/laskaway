@@ -145,37 +145,35 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 10000);
     const getTopCard = () => stack.lastElementChild;
 
-    const POSITIONS = [
-      { x: -12, y: 10, r: -5 }, // bottom
-      { x: 16,  y: -6, r: 4  }, // middle
-      { x: 2,   y: 8,  r: -1 }, // top
-    ];
+    const randTilt = () => (Math.random() * 16 - 8); // -8..8 deg
+    const randX = () => (Math.random() * 36 - 18);   // -18..18 px
+    const randY = () => (Math.random() * 28 - 14);   // -14..14 px
 
-    const setBase = (el, pos, overrideR, overrideX, overrideY) => {
-      const p = POSITIONS[pos] || POSITIONS[0];
-      el.style.setProperty('--base-x', (typeof overrideX === 'number' ? overrideX : p.x) + 'px');
-      el.style.setProperty('--base-y', (typeof overrideY === 'number' ? overrideY : p.y) + 'px');
-      const r = typeof overrideR === 'number' ? overrideR : p.r;
+    const setRandomBase = (el) => {
+      const x = randX();
+      const y = randY();
+      const r = randTilt();
+      el.style.setProperty('--base-x', x + 'px');
+      el.style.setProperty('--base-y', y + 'px');
       el.style.setProperty('--base-r', r + 'deg');
     };
 
-    const randTilt = () => (Math.random() * 14 - 7); // -7..7 deg
-    const randX = () => (Math.random() * 16 - 8);    // -8..8 px
-    const randY = () => (Math.random() * 14 - 7);    // -7..7 px
-
-    const updateStackBases = (randomizeBottom = false) => {
-      const children = Array.from(stack.children); // 0: bottom ... last: top
-      children.forEach((el, i) => {
-        if (i === 0 && randomizeBottom) {
-          setBase(el, 0, randTilt(), randX(), randY());
-        } else {
-          setBase(el, Math.min(i, 2));
-        }
-      });
+    const initializeBases = () => {
+      const children = Array.from(stack.children);
+      children.forEach((el) => setRandomBase(el));
+      // Show only last 3 cards initially; hide the rest
+      const toHide = children.slice(0, Math.max(0, children.length - 3));
+      toHide.forEach((el) => el.classList.add('card--hidden'));
     };
 
-    // Initialize base transforms
-    updateStackBases(true);
+    const updateStackBases = (randomizeBottom = false) => {
+      if (!randomizeBottom) return;
+      const children = Array.from(stack.children);
+      if (children[0]) setRandomBase(children[0]); // randomize new bottom after a swipe
+    };
+
+    // Initialize base transforms randomly for all cards
+    initializeBases();
 
     const attachDrag = (card) => {
       let startX = 0, startY = 0, dx = 0, dy = 0, dragging = false;
@@ -198,27 +196,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const intensity = Math.min(1, Math.abs(dx) / 120);
         // Auto-advance at 60% threshold with haptic
         const autoThreshold = 180;
-        
+
         if (dx > 0) {
           if (likeLabel) likeLabel.style.opacity = String(intensity);
           if (nopeLabel) nopeLabel.style.opacity = '0';
-          // Show count overlay on right swipe at auto-threshold
-          if (countOverlay) {
-            const nextCount = likedExperiences.length + 1;
-            countOverlay.textContent = nextCount;
-            if (Math.abs(dx) >= autoThreshold) {
-              countOverlay.classList.add('visible');
-            } else {
-              countOverlay.classList.remove('visible');
-            }
-          }
         } else {
           if (nopeLabel) nopeLabel.style.opacity = String(intensity);
           if (likeLabel) likeLabel.style.opacity = '0';
-          // Hide count on left swipe
-          if (countOverlay) {
-            countOverlay.classList.remove('visible');
-          }
         }
 
         
@@ -302,22 +286,33 @@ document.addEventListener('DOMContentLoaded', () => {
               return;
             }
 
-            // Move to bottom (firstChild) so another card becomes top
+            // Move to bottom (firstChild), then hide it to keep only 3 visible
             stack.insertBefore(card, stack.firstElementChild);
-            // Smoothly promote remaining cards and randomize new bottom tilt
-            const others = Array.from(stack.children).slice(1);
-            others.forEach((c) => c.classList.add('base-animate'));
+            card.classList.add('card--hidden');
+
+            // Reveal a random hidden card and make it the new top
+            const hiddenPool = Array.from(stack.children).filter(c => c.classList.contains('card--hidden') && c !== card);
+            if (hiddenPool.length > 0) {
+              const nextCard = hiddenPool[(Math.random() * hiddenPool.length) | 0];
+              nextCard.classList.remove('card--hidden');
+              setRandomBase(nextCard);
+              stack.appendChild(nextCard); // becomes top
+            }
+
+            // Smoothly promote remaining visible cards and randomize new bottom tilt
+            const visibleCards = Array.from(stack.children).filter(c => !c.classList.contains('card--hidden'));
+            visibleCards.forEach((c) => c.classList.add('base-animate'));
             updateStackBases(true);
             // remove animation class after transition
             setTimeout(() => {
-              others.forEach((c) => c.classList.remove('base-animate'));
+              visibleCards.forEach((c) => c.classList.remove('base-animate'));
             }, 240);
             
             // Add dribbling effect to remaining cards after like only
             if (dirRight) {
               setTimeout(() => {
-                if (others.length > 0) {
-                  others.forEach((c, idx) => {
+                if (visibleCards.length > 0) {
+                  visibleCards.forEach((c, idx) => {
                     const randomDelay = Math.random() * 80;
                     setTimeout(() => {
                       c.classList.add('dribble');
