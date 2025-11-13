@@ -138,11 +138,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // Top-card deep wiggle to auto-threshold with label visibility
     let isDemoRunning = false;
     let demoRAF = null;
+    let tailTimers = [];
     const cancelDemoIfAny = () => {
       if (!isDemoRunning) return;
       isDemoRunning = false;
       if (demoRAF) cancelAnimationFrame(demoRAF);
       demoRAF = null;
+      tailTimers.forEach((id) => clearTimeout(id));
+      tailTimers = [];
       const topCard = getTopCard();
       if (!topCard) return;
       // Cleanup drag vars and labels
@@ -181,7 +184,9 @@ document.addEventListener('DOMContentLoaded', () => {
           dx = -autoThreshold * 0.5 + (autoThreshold * 1.5) * tt; // -90 -> +180
         } else {
           const tt = (t - 0.7) / 0.3;       // 0..1
-          dx = autoThreshold * (1 - tt);    // +180 -> 0
+          // ease-out cubic for smoother finish
+          const ease = 1 - Math.pow(1 - tt, 3);
+          dx = autoThreshold * (1 - ease);  // +180 -> 0 with easing
         }
 
         const rot = dx * 0.06;
@@ -198,14 +203,36 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (t >= 1) {
-          // Cleanup
-          card.style.removeProperty('--drag-x');
-          card.style.removeProperty('--drag-y');
-          card.style.removeProperty('--drag-r');
+          // Gentle settle tail using small damped steps, leveraging CSS transform transition
+          const tail = [
+            { dx: -16, dt: 140 },
+            { dx: 8,   dt: 120 },
+            { dx: -4,  dt: 100 },
+            { dx: 0,   dt: 180 },
+          ];
+          let acc = 0;
+          // fade labels out over the tail
           if (likeLabel) likeLabel.style.opacity = '0';
           if (nopeLabel) nopeLabel.style.opacity = '0';
-          isDemoRunning = false;
-          demoRAF = null;
+          tail.forEach(seg => {
+            const id = setTimeout(() => {
+              const r = seg.dx * 0.06;
+              card.style.setProperty('--drag-x', seg.dx + 'px');
+              card.style.setProperty('--drag-r', r + 'deg');
+            }, acc);
+            tailTimers.push(id);
+            acc += seg.dt;
+          });
+          const finalId = setTimeout(() => {
+            // Cleanup
+            card.style.removeProperty('--drag-x');
+            card.style.removeProperty('--drag-y');
+            card.style.removeProperty('--drag-r');
+            isDemoRunning = false;
+            demoRAF = null;
+            tailTimers = [];
+          }, acc + 20);
+          tailTimers.push(finalId);
           return;
         }
         demoRAF = requestAnimationFrame(step);
