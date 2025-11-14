@@ -895,4 +895,61 @@ document.addEventListener('DOMContentLoaded', () => {
       setTimeout(emit, b * 100);
     }
   }
+
+  // Easter egg: Random effect on brand logo click
+  const brandLogo = document.getElementById('brandLogo');
+  if (brandLogo) {
+    const triggerRainbowWave = () => {
+      const page = document.querySelector('.page');
+      if (!page) return;
+      
+      page.classList.add('rainbow-wave-active');
+      setTimeout(() => {
+        page.classList.remove('rainbow-wave-active');
+      }, 4000);
+    };
+
+    const triggerDancingCards = () => {
+      const stackCards = document.querySelectorAll('.card-stack .card');
+      const carouselCards = document.querySelectorAll('.xp-card');
+      
+      // Dance the swipeable stack cards
+      stackCards.forEach((card, idx) => {
+        setTimeout(() => {
+          card.classList.add('card--dancing');
+          setTimeout(() => card.classList.remove('card--dancing'), 2400);
+        }, idx * 80);
+      });
+      
+      // Dance the carousel cards
+      carouselCards.forEach((card, idx) => {
+        setTimeout(() => {
+          const origTransform = card.style.transform;
+          card.style.animation = 'none';
+          card.offsetHeight; // force reflow
+          card.style.animation = 'card-dance 2.4s cubic-bezier(0.4, 0.0, 0.2, 1) forwards';
+          setTimeout(() => {
+            card.style.animation = '';
+          }, 2400);
+        }, idx * 100);
+      });
+    };
+
+    const triggerRandomEasterEgg = () => {
+      // 50/50 chance between rainbow wave and dancing cards
+      if (Math.random() < 0.5) {
+        triggerRainbowWave();
+      } else {
+        triggerDancingCards();
+      }
+    };
+
+    brandLogo.addEventListener('click', triggerRandomEasterEgg);
+    brandLogo.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        triggerRandomEasterEgg();
+      }
+    });
+  }
 });

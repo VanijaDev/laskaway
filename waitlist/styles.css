@@ -568,7 +568,8 @@ body {
 /* Footer */
 .footer { border-top: 1px solid rgba(0,0,0,0.08); padding: 22px 0 40px; margin-top: 12px; backdrop-filter: blur(2px); }
 .footer__grid { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
-.brand { font-weight: 700; color: #374151; }
+.brand { font-weight: 700; color: #374151; transition: transform 0.2s ease; }
+.brand:hover { transform: scale(1.05); }
 .footer__links { list-style: none; display: flex; gap: 14px; padding: 0; margin: 0; }
 .footer__links a { color: #374151; text-decoration: none; border: 1px solid var(--border); padding: 8px 12px; border-radius: 999px; }
 .footer__links a[aria-disabled="true"] { opacity: .8; cursor: not-allowed; }
@@ -583,4 +584,49 @@ body {
   .waitlist__controls { grid-template-columns: 1fr; }
   .btn { height: 52px; }
   .xp-card { flex-basis: 280px; height: 190px; }
+}
+
+/* Easter egg animations */
+/* Rainbow wave */
+@keyframes rainbow-wave {
+  0% { filter: hue-rotate(0deg) saturate(1); }
+  25% { filter: hue-rotate(90deg) saturate(1.5); }
+  50% { filter: hue-rotate(180deg) saturate(1.8); }
+  75% { filter: hue-rotate(270deg) saturate(1.5); }
+  100% { filter: hue-rotate(360deg) saturate(1); }
+}
+
+.rainbow-wave-active {
+  animation: rainbow-wave 4s ease-in-out;
+}
+
+/* Dancing cards */
+@keyframes card-dance {
+  0%, 100% { transform: translate(calc(var(--base-x, 0px)), calc(var(--base-y, 0px))) rotate(var(--base-r, 0deg)) scale(1); }
+  10% { transform: translate(calc(var(--base-x, 0px) - 8px), calc(var(--base-y, 0px) - 12px)) rotate(calc(var(--base-r, 0deg) - 5deg)) scale(1.05); }
+  25% { transform: translate(calc(var(--base-x, 0px) + 8px), calc(var(--base-y, 0px) - 18px)) rotate(calc(var(--base-r, 0deg) + 5deg)) scale(1.08); }
+  40% { transform: translate(calc(var(--base-x, 0px) - 6px), calc(var(--base-y, 0px) - 14px)) rotate(calc(var(--base-r, 0deg) - 4deg)) scale(1.06); }
+  55% { transform: translate(calc(var(--base-x, 0px) + 6px), calc(var(--base-y, 0px) - 10px)) rotate(calc(var(--base-r, 0deg) + 4deg)) scale(1.04); }
+  70% { transform: translate(calc(var(--base-x, 0px) - 4px), calc(var(--base-y, 0px) - 6px)) rotate(calc(var(--base-r, 0deg) - 2deg)) scale(1.02); }
+  85% { transform: translate(calc(var(--base-x, 0px) + 2px), calc(var(--base-y, 0px) - 3px)) rotate(calc(var(--base-r, 0deg) + 1deg)) scale(1.01); }
+}
+
+.card--dancing {
+  animation: card-dance 2.4s cubic-bezier(0.4, 0.0, 0.2, 1) forwards;
+}
+
+
+/* Dancing cards Easter egg */
+@keyframes card-dance {
+  0%, 100% { transform: translate(calc(var(--base-x, 0px)), calc(var(--base-y, 0px))) rotate(var(--base-r, 0deg)) scale(1); }
+  10% { transform: translate(calc(var(--base-x, 0px) - 8px), calc(var(--base-y, 0px) - 12px)) rotate(calc(var(--base-r, 0deg) - 5deg)) scale(1.05); }
+  25% { transform: translate(calc(var(--base-x, 0px) + 8px), calc(var(--base-y, 0px) - 18px)) rotate(calc(var(--base-r, 0deg) + 5deg)) scale(1.08); }
+  40% { transform: translate(calc(var(--base-x, 0px) - 6px), calc(var(--base-y, 0px) - 14px)) rotate(calc(var(--base-r, 0deg) - 4deg)) scale(1.06); }
+  55% { transform: translate(calc(var(--base-x, 0px) + 6px), calc(var(--base-y, 0px) - 10px)) rotate(calc(var(--base-r, 0deg) + 4deg)) scale(1.04); }
+  70% { transform: translate(calc(var(--base-x, 0px) - 4px), calc(var(--base-y, 0px) - 6px)) rotate(calc(var(--base-r, 0deg) - 2deg)) scale(1.02); }
+  85% { transform: translate(calc(var(--base-x, 0px) + 2px), calc(var(--base-y, 0px) - 3px)) rotate(calc(var(--base-r, 0deg) + 1deg)) scale(1.01); }
+}
+
+.card--dancing {
+  animation: card-dance 1.2s cubic-bezier(0.4, 0.0, 0.2, 1) forwards;
 }
