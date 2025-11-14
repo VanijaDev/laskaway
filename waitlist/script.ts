@@ -1,6 +1,27 @@
 /* Live the Gift — Waitlist interactions (TypeScript) */
 
-document.addEventListener('DOMContentLoaded', () => {
+// Load HTML component
+async function loadComponent(elementId: string, componentPath: string): Promise<void> {
+  const container = document.getElementById(elementId);
+  if (!container) return;
+  
+  try {
+    const response = await fetch(componentPath);
+    if (!response.ok) throw new Error(`Failed to load ${componentPath}`);
+    const html = await response.text();
+    container.innerHTML = html;
+  } catch (error) {
+    console.error('Component loading error:', error);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+  // Load components first
+  await Promise.all([
+    loadComponent('heroVisual', './html_components/hero-visual.html'),
+    loadComponent('experiencesCarousel', './html_components/experiences-carousel.html')
+  ]);
+  
   // Constants and helpers
   const COLORS: string[] = ['#7c5cff', '#ec4899', '#f59e0b', '#60a5fa', '#10b981', '#f43f5e'];
   const LIKE_EMOJIS: string[] = ['✨','🎉','💖','🥳','💯','🤪','😍','🙌','🥰','🤩','👌'];
