@@ -6,7 +6,6 @@ interface Experience {
   title: string;
   image: string;
   alt: string;
-  colors: string;
   tags: string[];
 }
 
@@ -40,7 +39,7 @@ async function loadExperiences(): Promise<Experience[]> {
 // Generate card stack HTML
 function generateCardStack(experiences: Experience[]): string {
   return experiences.map(exp => `
-    <figure class="card card--hint-wiggle" data-colors="${exp.colors}" data-title="${exp.title}">
+    <figure class="card card--hint-wiggle" data-title="${exp.title}">
       <img src="${exp.image}" alt="${exp.alt}" loading="lazy" />
       <div class="swipe-label swipe-label--like" aria-hidden="true">Gift this!</div>
       <div class="swipe-label swipe-label--nope" aria-hidden="true">Not today</div>
