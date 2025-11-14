@@ -84,6 +84,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     emailInput.classList.remove('invalid', 'valid');
     setAriaInvalid(emailInput, false);
+    // Disable input while submitting to prevent changes and duplicate actions
+    emailInput.disabled = true;
     joinBtn.disabled = true;
     joinBtn.classList.add('submitting');
     joinBtn.textContent = 'Joining…';
