@@ -1,0 +1,82 @@
+[
+  {
+    "id": "spa-day",
+    "title": "Spa Day",
+    "image": "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&w=1200&q=60",
+    "alt": "Relaxing spa massage with warm lighting",
+    "colors": "#ec4899,#f59e0b,#7c5cff,#60a5fa",
+    "tags": ["relax", "wellness"]
+  },
+  {
+    "id": "skydiving",
+    "title": "Skydiving",
+    "image": "https://images.unsplash.com/photo-1504215680853-026ed2a45def?auto=format&fit=crop&w=1200&q=60",
+    "alt": "Skydivers freefalling with blue sky",
+    "colors": "#60a5fa,#10b981,#7c5cff,#ec4899",
+    "tags": ["thrill", "adventure"]
+  },
+  {
+    "id": "cooking-class",
+    "title": "Cooking Class",
+    "image": "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=1200&q=60",
+    "alt": "Hands making fresh pasta in a cooking class",
+    "colors": "#f59e0b,#f43f5e,#ec4899,#7c5cff",
+    "tags": ["food"]
+  },
+  {
+    "id": "wine-tasting",
+    "title": "Wine Tasting",
+    "image": "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=1200&q=60",
+    "alt": "Glasses of wine at a tasting",
+    "colors": "#10b981,#60a5fa,#7c5cff,#ec4899",
+    "tags": ["relax", "food"]
+  },
+  {
+    "id": "hot-air-balloon",
+    "title": "Hot Air Balloon",
+    "image": "https://images.unsplash.com/photo-1520975916090-3105956dac38?auto=format&fit=crop&w=1200&q=60",
+    "alt": "Calm hot air balloons at sunrise",
+    "colors": "#f43f5e,#ec4899,#7c5cff,#f59e0b",
+    "tags": ["adventure", "wellness"]
+  },
+  {
+    "id": "bungee-jump",
+    "title": "Bungee Jump",
+    "image": "https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=1200&q=60",
+    "alt": "Person bungee jumping off a bridge",
+    "colors": "#ec4899,#7c5cff,#60a5fa,#10b981",
+    "tags": ["thrill", "adventure"]
+  },
+  {
+    "id": "race-car-drive",
+    "title": "Race Car Drive",
+    "image": "https://images.unsplash.com/photo-1502877338535-766e1452684a?auto=format&fit=crop&w=1200&q=60",
+    "alt": "Race car speeding on a track",
+    "colors": "#7c5cff,#ec4899,#f59e0b,#60a5fa",
+    "tags": ["thrill", "adventure"]
+  },
+  {
+    "id": "food-tour",
+    "title": "Food Tour",
+    "image": "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1200&q=60",
+    "alt": "Food tour with street market dishes",
+    "colors": "#60a5fa,#10b981,#ec4899,#f43f5e",
+    "tags": ["food", "adventure"]
+  },
+  {
+    "id": "surprise-date",
+    "title": "Surprise Date",
+    "image": "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1200&q=60",
+    "alt": "Couple laughing outdoors enjoying the moment",
+    "colors": "#7c5cff,#ec4899,#f59e0b,#10b981",
+    "tags": ["wellness"]
+  },
+  {
+    "id": "scenic-getaway",
+    "title": "Scenic Getaway",
+    "image": "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=60",
+    "alt": "Scenic sunset view at the beach",
+    "colors": "#60a5fa,#f59e0b,#10b981,#7c5cff",
+    "tags": ["relax", "adventure"]
+  }
+]

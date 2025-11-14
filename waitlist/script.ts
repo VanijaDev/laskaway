@@ -1,5 +1,15 @@
 /* Live the Gift — Waitlist interactions (TypeScript) */
 
+// Experience data type
+interface Experience {
+  id: string;
+  title: string;
+  image: string;
+  alt: string;
+  colors: string;
+  tags: string[];
+}
+
 // Load HTML component
 async function loadComponent(elementId: string, componentPath: string): Promise<void> {
   const container = document.getElementById(elementId);
@@ -15,7 +25,47 @@ async function loadComponent(elementId: string, componentPath: string): Promise<
   }
 }
 
+// Load experiences data
+async function loadExperiences(): Promise<Experience[]> {
+  try {
+    const response = await fetch('./data/experiences.json');
+    if (!response.ok) throw new Error('Failed to load experiences data');
+    return await response.json();
+  } catch (error) {
+    console.error('Experiences data loading error:', error);
+    return [];
+  }
+}
+
+// Generate card stack HTML
+function generateCardStack(experiences: Experience[]): string {
+  return experiences.map(exp => `
+    <figure class="card card--hint-wiggle" data-colors="${exp.colors}" data-title="${exp.title}">
+      <img src="${exp.image}" alt="${exp.alt}" loading="lazy" />
+      <div class="swipe-label swipe-label--like" aria-hidden="true">Gift this!</div>
+      <div class="swipe-label swipe-label--nope" aria-hidden="true">Not today</div>
+      <figcaption>${exp.title}</figcaption>
+    </figure>
+  `).join('');
+}
+
+// Generate carousel HTML
+function generateCarousel(experiences: Experience[]): string {
+  return experiences.map(exp => {
+    const primaryTag = exp.tags[0] || 'adventure';
+    return `
+      <article class="xp-card" data-tag="${primaryTag}">
+        <img src="${exp.image}" alt="${exp.alt}" />
+        <div class="xp-card__label">${exp.title}</div>
+      </article>
+    `;
+  }).join('');
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
+  // Load experiences data first
+  const experiences = await loadExperiences();
+  
   // Load all components in parallel
   await Promise.all([
     loadComponent('heroContent', './html_components/hero-waitinglist-subscription.html'),
@@ -25,6 +75,31 @@ document.addEventListener('DOMContentLoaded', async () => {
   
   // After hero content loads, load the nested hero visual component
   await loadComponent('heroVisual', './html_components/hero-card-stack.html');
+  
+  // Populate card stack and carousel with experience data
+  const cardStack = document.getElementById('cardStack');
+  const scrollerTrack = document.querySelector('.scroller__track') as HTMLElement | null;
+  
+  if (cardStack && experiences.length > 0) {
+    cardStack.innerHTML = generateCardStack(experiences);
+  }
+  
+  if (scrollerTrack && experiences.length > 0) {
+    // Clear existing content but preserve the data attribute
+    const isDuplicate = scrollerTrack.dataset.duplicate === 'true';
+    scrollerTrack.innerHTML = generateCarousel(experiences);
+    
+    // Re-apply duplication logic if needed
+    if (isDuplicate) {
+      const originalChildren = Array.from(scrollerTrack.children) as HTMLElement[];
+      originalChildren.forEach((el) => { el.dataset.original = 'true'; });
+      originalChildren.forEach((node) => {
+        const clone = node.cloneNode(true) as HTMLElement;
+        delete clone.dataset.original;
+        scrollerTrack.appendChild(clone);
+      });
+    }
+  }
   
   // Constants and helpers
   const COLORS: string[] = ['#7c5cff', '#ec4899', '#f59e0b', '#60a5fa', '#10b981', '#f43f5e'];
