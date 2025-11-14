@@ -1,0 +1,19 @@
+{
+  "name": "laskaway",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "build:watch": "tsc -w --preserveWatchOutput",
+    "clean": "rm -rf waitlist/build",
+    "serve": "npm run build && serve -l 5173 waitlist",
+    "serve:static": "live-server waitlist --port=5173 --open=index.html --watch=build,index.html,styles.css",
+    "dev": "concurrently -k \"npm:build:watch\" \"npm:serve:static\""
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3",
+    "serve": "^14.2.3",
+    "concurrently": "^9.0.1",
+    "live-server": "^1.2.2"
+  }
+}

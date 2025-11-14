@@ -1,30 +1,30 @@
-/* Live the Gift — Waitlist interactions */
+/* Live the Gift — Waitlist interactions (TypeScript) */
 
 document.addEventListener('DOMContentLoaded', () => {
   // Constants and helpers
-  const COLORS = ['#7c5cff', '#ec4899', '#f59e0b', '#60a5fa', '#10b981', '#f43f5e'];
-  const LIKE_EMOJIS = ['✨','🎉','💖','🥳','💯','🤪','😍','🙌','🥰','🤩','👌'];
+  const COLORS: string[] = ['#7c5cff', '#ec4899', '#f59e0b', '#60a5fa', '#10b981', '#f43f5e'];
+  const LIKE_EMOJIS: string[] = ['✨','🎉','💖','🥳','💯','🤪','😍','🙌','🥰','🤩','👌'];
   const MAX_SELECTIONS = 5;
   const AUTO_DEMO_THRESHOLD = 180; // px, demo drag sweep
   const SWIPE_THRESHOLD = 200; // px, commit swipe
   const CLICK_TOLERANCE = 5; // px, distinguish drag vs click
   const FIFTH_CARD_FADE_MULTIPLIER = 0.5; // Half card width added to auto threshold for full fade
   const TEST_URL = 'https://www.google.com';
-  const SUCCESS_CONFETTI_RADIUS = { min: 128, max: 480 };
+  const SUCCESS_CONFETTI_RADIUS = { min: 128, max: 480 } as const;
   const SUCCESS_CONFETTI_PARTICLES_PER_BURST = 20;
   const SUCCESS_CONFETTI_BURSTS = 4;
-  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const prefersReducedMotion: boolean = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  const openInNewTab = (url) => window.open(url, '_blank', 'noopener');
-  const setAriaInvalid = (el, isInvalid) => {
+  const openInNewTab = (url: string): void => { window.open(url, '_blank', 'noopener'); };
+  const setAriaInvalid = (el: HTMLElement | null, isInvalid: boolean): void => {
     if (!el) return;
     if (isInvalid) el.setAttribute('aria-invalid', 'true');
     else el.removeAttribute('aria-invalid');
   };
 
   // Shared confetti particle builder
-  const createConfettiParticle = (x, y, dx, dy) => {
-    const shapes = ['square', 'circle', 'triangle', 'ribbon'];
+  const createConfettiParticle = (x: number, y: number, dx: number, dy: number): HTMLDivElement => {
+    const shapes = ['square', 'circle', 'triangle', 'ribbon'] as const;
     const piece = document.createElement('div');
     piece.className = 'confetti-piece';
     const rot = Math.floor(Math.random() * 720 - 360);
@@ -34,7 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
     piece.style.setProperty('--dy', dy + 'px');
     piece.style.setProperty('--rot', rot + 'deg');
     piece.style.setProperty('--dur', (1400 + Math.random() * 1000) + 'ms');
-    piece.style.setProperty('--delay', (Math.random() * 120 | 0) + 'ms');
+    piece.style.setProperty('--delay', ((Math.random() * 120) | 0) + 'ms');
     piece.style.setProperty('--scale', (0.9 + Math.random() * 0.6).toFixed(2));
     
     const shape = shapes[(Math.random() * shapes.length) | 0];
@@ -60,29 +60,30 @@ document.addEventListener('DOMContentLoaded', () => {
     return piece;
   };
 
-  const createConfettiEmoji = (x, y, dx, dy, emojiSet) => {
+  const createConfettiEmoji = (x: number, y: number, dx: number, dy: number, emojiSet: string[]): HTMLDivElement => {
     const em = document.createElement('div');
     em.className = 'confetti-emoji';
-    em.textContent = emojiSet[(Math.random() * emojiSet.length) | 0];
+    em.textContent = emojiSet[(Math.random() * emojiSet.length) | 0] ?? '';
     em.style.left = x + 'px';
     em.style.top = y + 'px';
     em.style.setProperty('--dx', dx + 'px');
     em.style.setProperty('--dy', dy + 'px');
     em.style.setProperty('--dur', (1800 + Math.random() * 800) + 'ms');
-    em.style.setProperty('--delay', (Math.random() * 120 | 0) + 'ms');
+    em.style.setProperty('--delay', ((Math.random() * 120) | 0) + 'ms');
     em.style.setProperty('--emojiSize', (18 + Math.random() * 8) + 'px');
     return em;
   };
 
-  const form = document.getElementById('waitlist-form');
-  const emailInput = document.getElementById('email');
-  const waitlistJoinSuccess = document.getElementById('successState');
-  const joinBtn = document.getElementById('joinBtn');
+  const form = document.getElementById('waitlist-form') as HTMLFormElement | null;
+  const emailInput = document.getElementById('email') as HTMLInputElement | null;
+  const waitlistJoinSuccess = document.getElementById('successState') as HTMLElement | null;
+  const joinBtn = document.getElementById('joinBtn') as HTMLButtonElement | null;
 
-  const isValidEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value).toLowerCase());
+  const isValidEmail = (value: string): boolean => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value).toLowerCase());
 
   // Real-time email validation: persistent states
   emailInput?.addEventListener('input', () => {
+    if (!emailInput) return;
     const value = emailInput.value.trim();
     if (value.length === 0) {
       emailInput.classList.remove('valid', 'invalid');
@@ -97,11 +98,12 @@ document.addEventListener('DOMContentLoaded', () => {
       setAriaInvalid(emailInput, true);
     }
     // Update hover-disabled visual state when the user types
-    refreshJoinHoverState && refreshJoinHoverState();
+    if (typeof refreshJoinHoverState === 'function') refreshJoinHoverState();
   });
 
-  form?.addEventListener('submit', async (e) => {
+  form?.addEventListener('submit', async (e: Event) => {
     e.preventDefault();
+    if (!emailInput || !joinBtn || !waitlistJoinSuccess || !form) return;
 
     const email = emailInput.value.trim();
     if (!isValidEmail(email)) {
@@ -135,18 +137,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Make the submit button appear disabled on hover when email is invalid
   let isHoveringJoin = false;
-  function refreshJoinHoverState() {
+  function refreshJoinHoverState(): void {
     if (!joinBtn) return;
     if (joinBtn.classList.contains('submitting')) return; // keep disabled during submit
     if (emailInput?.disabled) return; // skip when input is disabled during submit
     const valid = isValidEmail(emailInput?.value.trim() || '');
     if (isHoveringJoin && !valid) {
       joinBtn.disabled = true;
-      joinBtn.dataset.hoverDisabled = '1';
-    } else if (joinBtn.dataset.hoverDisabled === '1') {
+      (joinBtn as HTMLButtonElement).dataset.hoverDisabled = '1';
+    } else if ((joinBtn as HTMLButtonElement).dataset.hoverDisabled === '1') {
       // Re-enable only if we disabled due to hover
       joinBtn.disabled = false;
-      delete joinBtn.dataset.hoverDisabled;
+      delete (joinBtn as HTMLButtonElement).dataset.hoverDisabled;
     }
   }
 
@@ -160,15 +162,15 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Experiences scroller: duplicate content for seamless loop and set animation duration
-  const track = document.querySelector('.scroller__track');
-  const scroller = document.querySelector('.scroller');
+  const track = document.querySelector('.scroller__track') as HTMLElement | null;
+  const scroller = document.querySelector('.scroller') as HTMLElement | null;
   if (track && scroller) {
-    const originalChildren = Array.from(track.children);
+    const originalChildren = Array.from(track.children) as HTMLElement[];
     // Store originals with data attribute to distinguish from duplicates
-    originalChildren.forEach(el => el.dataset.original = 'true');
+    originalChildren.forEach((el) => { el.dataset.original = 'true'; });
     // Duplicate once for 50% translateX end
     originalChildren.forEach((node) => {
-      const clone = node.cloneNode(true);
+      const clone = node.cloneNode(true) as HTMLElement;
       delete clone.dataset.original;
       track.appendChild(clone);
     });
@@ -176,35 +178,36 @@ document.addEventListener('DOMContentLoaded', () => {
     const recalculateDuration = () => {
       requestAnimationFrame(() => {
         const GAP = 32; // match CSS scroller__track gap
-        const visibleCards = Array.from(track.children).filter(el => !el.classList.contains('hidden'));
-        const originalVisible = visibleCards.filter(el => el.dataset.original === 'true');
-        const totalWidth = originalVisible
-          .reduce((acc, el) => acc + el.getBoundingClientRect().width + GAP, 0);
+        const visibleCards = Array.from(track.children).filter((el) => !(el as HTMLElement).classList.contains('hidden')) as HTMLElement[];
+        const originalVisible = visibleCards.filter((el) => el.dataset.original === 'true');
+        const totalWidth = originalVisible.reduce((acc, el) => acc + el.getBoundingClientRect().width + GAP, 0);
         const pixelsPerSecond = 140; // tweak for speed
         const duration = Math.max(28, Math.min(60, totalWidth / pixelsPerSecond));
-        track.style.setProperty('--duration', `${duration}s`);
+        (track as HTMLElement).style.setProperty('--duration', `${duration}s`);
       });
     };
 
     recalculateDuration();
 
     // Tag filtering
-    const tagFilters = document.getElementById('tagFilters');
+    const tagFilters = document.getElementById('tagFilters') as HTMLElement | null;
     if (tagFilters) {
-      tagFilters.addEventListener('click', (e) => {
-        const chip = e.target.closest('.chip');
+      tagFilters.addEventListener('click', (e: MouseEvent) => {
+        const target = e.target as HTMLElement | null;
+        const chip = target?.closest('.chip') as HTMLElement | null;
         if (!chip) return;
 
-        const selectedTag = chip.dataset.tag;
+        const selectedTag = chip.dataset.tag || 'all';
         
         // Update active state
-        tagFilters.querySelectorAll('.chip').forEach(c => c.classList.remove('chip--active'));
+        tagFilters.querySelectorAll('.chip').forEach((c) => c.classList.remove('chip--active'));
         chip.classList.add('chip--active');
 
         // Filter cards
-        const allCards = Array.from(track.children);
-        allCards.forEach(card => {
-          if (selectedTag === 'all' || card.dataset.tag === selectedTag) {
+        const allCards = Array.from(track.children) as HTMLElement[];
+        allCards.forEach((card) => {
+          const cardTag = (card.dataset.tag || '').toLowerCase();
+          if (selectedTag === 'all' || cardTag === selectedTag) {
             card.classList.remove('hidden');
           } else {
             card.classList.add('hidden');
@@ -218,8 +221,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Disable native image dragging on stack and carousel images
-  const disableNativeImageDrag = () => {
-    document.querySelectorAll('.card img, .xp-card img').forEach((img) => {
+  const disableNativeImageDrag = (): void => {
+    document.querySelectorAll<HTMLImageElement>('.card img, .xp-card img').forEach((img) => {
       img.setAttribute('draggable', 'false');
       img.addEventListener('dragstart', (e) => e.preventDefault());
     });
@@ -228,11 +231,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Make experience cards clickable (open testing URL)
   // Experience card interactions
-  document.querySelectorAll('.xp-card').forEach((card) => {
+  document.querySelectorAll<HTMLElement>('.xp-card').forEach((card) => {
     card.setAttribute('role', 'link');
     card.setAttribute('tabindex', '0');
     card.addEventListener('click', () => openInNewTab(TEST_URL));
-    card.addEventListener('keydown', (e) => {
+    card.addEventListener('keydown', (e: KeyboardEvent) => {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
         openInNewTab(TEST_URL);
@@ -241,65 +244,65 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Swipeable card stack (Tinder-like)
-  const stack = document.querySelector('.card-stack');
+  const stack = document.querySelector('.card-stack') as HTMLElement | null;
   if (stack) {
     let hasInteracted = false;
-    let wiggleInterval = null;
-    let likedExperiences = [];
-    const giftBox = document.getElementById('giftBox');
-    const selectedCardsContainer = document.getElementById('selectedCards');
-    const dragHint = document.getElementById('dragHint');
+    let wiggleInterval: number | null = null;
+    let likedExperiences: Array<{ title: string; image: string }> = [];
+    const giftBox = document.getElementById('giftBox') as HTMLElement | null;
+    const selectedCardsContainer = document.getElementById('selectedCards') as HTMLElement | null;
+    const dragHint = document.getElementById('dragHint') as HTMLElement | null;
     let hintDismissed = false;
 
     // Helper: Get all stack cards except the specified one
-    const getStackCardsExcept = (excludeCard) => {
-      return Array.from(stack.children).filter(c => c !== excludeCard);
+    const getStackCardsExcept = (excludeCard: HTMLElement) => {
+      return Array.from(stack.children).filter((c) => c !== excludeCard) as HTMLElement[];
     };
 
     // Helper: Update stack card opacity based on fade progress (0 = opaque, 1 = transparent)
-    const updateStackOpacity = (excludeCard, fadeProgress) => {
+    const updateStackOpacity = (excludeCard: HTMLElement, fadeProgress: number) => {
       const stackCards = getStackCardsExcept(excludeCard);
-      stackCards.forEach(c => {
+      stackCards.forEach((c) => {
         c.style.opacity = String(1 - fadeProgress);
       });
     };
 
     // Helper: Reset stack card opacity to default
-    const resetStackOpacity = (excludeCard) => {
+    const resetStackOpacity = (excludeCard: HTMLElement) => {
       const stackCards = getStackCardsExcept(excludeCard);
-      stackCards.forEach(c => {
+      stackCards.forEach((c) => {
         c.style.opacity = '';
       });
     };
 
     // Helper: Clear drag transform properties from card
-    const clearDragTransform = (card) => {
+    const clearDragTransform = (card: HTMLElement) => {
       card.style.removeProperty('--drag-x');
       card.style.removeProperty('--drag-y');
       card.style.removeProperty('--drag-r');
     };
 
     // Helper: Reset swipe label opacity
-    const resetSwipeLabels = (card) => {
-      const likeLabel = card.querySelector('.swipe-label--like');
-      const nopeLabel = card.querySelector('.swipe-label--nope');
+    const resetSwipeLabels = (card: HTMLElement) => {
+      const likeLabel = card.querySelector('.swipe-label--like') as HTMLElement | null;
+      const nopeLabel = card.querySelector('.swipe-label--nope') as HTMLElement | null;
       if (likeLabel) likeLabel.style.opacity = '0';
       if (nopeLabel) nopeLabel.style.opacity = '0';
     };
 
     // Helper: Trigger haptic feedback if available
-    const triggerHaptic = (pattern) => {
+    const triggerHaptic = (pattern: number | number[]) => {
       if (navigator.vibrate) {
         navigator.vibrate(pattern);
       }
     };
 
     // Helper: Apply fade effect to stack when dragging the fifth (final) card
-    const applyFifthCardFade = (card, dx) => {
+    const applyFifthCardFade = (card: HTMLElement, dx: number) => {
       if (likedExperiences.length === 4 && dx > 0) {
         const cardRect = card.getBoundingClientRect();
         const cardWidth = cardRect.width;
-        const fadeThreshold = AUTO_DEMO_THRESHOLD + (cardWidth * FIFTH_CARD_FADE_MULTIPLIER);
+        const fadeThreshold = AUTO_DEMO_THRESHOLD + cardWidth * FIFTH_CARD_FADE_MULTIPLIER;
         const fadeProgress = Math.min(1, Math.max(0, dx / fadeThreshold));
         updateStackOpacity(card, fadeProgress);
       }
@@ -308,36 +311,40 @@ document.addEventListener('DOMContentLoaded', () => {
     const showGiftBox = () => {
       cancelDemoIfAny();
       if (wiggleInterval) clearInterval(wiggleInterval);
-      stack.style.display = 'none';
-      giftBox.classList.remove('hidden');
+      (stack as HTMLElement).style.display = 'none';
+      giftBox?.classList.remove('hidden');
       // Fade the hint (keep DOM to avoid layout jump)
       dragHint?.classList.add('drag-hint--fade');
       
       // Fire confetti celebration when gift box is shown
-      if (!prefersReducedMotion) {
+      if (!prefersReducedMotion && giftBox) {
         fireConfetti(giftBox);
       }
       
       // Populate mini cards
-      likedExperiences.forEach(exp => {
-        const mini = document.createElement('div');
-        mini.className = 'gift-box__card-mini';
-        mini.innerHTML = `<img src="${exp.image}" alt="${exp.title}" />`;
-        mini.title = exp.title;
-        mini.style.cursor = 'pointer';
-        mini.addEventListener('click', () => openInNewTab(TEST_URL));
-        selectedCardsContainer.appendChild(mini);
-      });
+      if (selectedCardsContainer) {
+        likedExperiences.forEach((exp) => {
+          const mini = document.createElement('div');
+          mini.className = 'gift-box__card-mini';
+          mini.innerHTML = `<img src="${exp.image}" alt="${exp.title}" />`;
+          mini.title = exp.title;
+          (mini as HTMLElement).style.cursor = 'pointer';
+          mini.addEventListener('click', () => openInNewTab(TEST_URL));
+          selectedCardsContainer.appendChild(mini);
+        });
+      }
       // Move focus for accessibility
-      giftBox.setAttribute('tabindex', '-1');
-      giftBox.focus();
+      if (giftBox) {
+        giftBox.setAttribute('tabindex', '-1');
+        giftBox.focus();
+      }
     };
 
     const triggerWiggle = () => {
       if (hasInteracted) return;
-      const cards = Array.from(stack.children);
+      const cards = Array.from(stack.children) as HTMLElement[];
       cards.forEach((card, i) => {
-        card.style.setProperty('--wiggle-delay', (1 + i * 0.3) + 's');
+        card.style.setProperty('--wiggle-delay', 1 + i * 0.3 + 's');
         card.classList.remove('card--hint-wiggle');
         void card.offsetWidth; // force reflow
         card.classList.add('card--hint-wiggle');
@@ -345,10 +352,10 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const stopAllWiggles = () => {
-      const cards = Array.from(stack.children);
-      cards.forEach(card => {
+      const cards = Array.from(stack.children) as HTMLElement[];
+      cards.forEach((card) => {
         card.classList.remove('card--hint-wiggle');
-        card.style.animation = 'none';
+        (card as HTMLElement).style.animation = 'none';
       });
     };
 
@@ -357,8 +364,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Top-card deep wiggle to auto-threshold with label visibility
     let isDemoRunning = false;
-    let demoRAF = null;
-    let tailTimers = [];
+    let demoRAF: number | null = null;
+    let tailTimers: number[] = [];
     const cancelDemoIfAny = () => {
       if (!isDemoRunning) return;
       isDemoRunning = false;
@@ -382,13 +389,13 @@ document.addEventListener('DOMContentLoaded', () => {
       // Ensure CSS animation on top card doesn't conflict
       card.classList.remove('card--hint-wiggle');
       void card.offsetWidth;
-      const likeLabel = card.querySelector('.swipe-label--like');
-      const nopeLabel = card.querySelector('.swipe-label--nope');
+      const likeLabel = card.querySelector('.swipe-label--like') as HTMLElement | null;
+      const nopeLabel = card.querySelector('.swipe-label--nope') as HTMLElement | null;
       const autoThreshold = AUTO_DEMO_THRESHOLD;
       const duration = 2400; // slowed by 50%: full left->right->center
       const start = performance.now();
 
-      const step = (now) => {
+      const step = (now: number) => {
         if (!isDemoRunning || hasInteracted) { cancelDemoIfAny(); return; }
         const t = Math.min(1, (now - start) / duration);
         let dx = 0;
@@ -397,7 +404,7 @@ document.addEventListener('DOMContentLoaded', () => {
           dx = -autoThreshold * 0.5 * tt;   // 0 -> -90
         } else if (t < 0.7) {
           const tt = (t - 0.3) / 0.4;       // 0..1
-          dx = -autoThreshold * 0.5 + (autoThreshold * 1.5) * tt; // -90 -> +180
+          dx = -autoThreshold * 0.5 + autoThreshold * 1.5 * tt; // -90 -> +180
         } else {
           const tt = (t - 0.7) / 0.3;       // 0..1
           // ease-out cubic for smoother finish
@@ -430,8 +437,8 @@ document.addEventListener('DOMContentLoaded', () => {
           // fade labels out over the tail
           if (likeLabel) likeLabel.style.opacity = '0';
           if (nopeLabel) nopeLabel.style.opacity = '0';
-          tail.forEach(seg => {
-            const id = setTimeout(() => {
+          tail.forEach((seg) => {
+            const id = window.setTimeout(() => {
               const r = seg.dx * 0.06;
               card.style.setProperty('--drag-x', seg.dx + 'px');
               card.style.setProperty('--drag-r', r + 'deg');
@@ -439,7 +446,7 @@ document.addEventListener('DOMContentLoaded', () => {
             tailTimers.push(id);
             acc += seg.dt;
           });
-          const finalId = setTimeout(() => {
+          const finalId = window.setTimeout(() => {
             // Cleanup
             clearDragTransform(card);
             isDemoRunning = false;
@@ -455,25 +462,25 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // Repeat every 10s until first interaction
-    wiggleInterval = setInterval(() => {
+    wiggleInterval = window.setInterval(() => {
       if (!hasInteracted) {
         triggerWiggle();
         // Nudge the top card strongly, but avoid overlapping demos
         setTimeout(() => demoTopCardDrag(), 300);
-      } else {
+      } else if (wiggleInterval) {
         clearInterval(wiggleInterval);
       }
     }, 10000);
 
     // Kick the first top-card demo shortly after the initial wiggle
     setTimeout(() => demoTopCardDrag(), 1300);
-    const getTopCard = () => stack.lastElementChild;
+    const getTopCard = () => stack.lastElementChild as HTMLElement | null;
 
-    const randTilt = () => (Math.random() * 16 - 8); // -8..8 deg
-    const randX = () => (Math.random() * 36 - 18);   // -18..18 px
-    const randY = () => (Math.random() * 28 - 14);   // -14..14 px
+    const randTilt = () => Math.random() * 16 - 8; // -8..8 deg
+    const randX = () => Math.random() * 36 - 18;   // -18..18 px
+    const randY = () => Math.random() * 28 - 14;   // -14..14 px
 
-    const setRandomBase = (el) => {
+    const setRandomBase = (el: HTMLElement) => {
       const x = randX();
       const y = randY();
       const r = randTilt();
@@ -483,13 +490,13 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const initializeBases = () => {
-      const children = Array.from(stack.children);
+      const children = Array.from(stack.children) as HTMLElement[];
       children.forEach((el) => setRandomBase(el));
     };
 
     // Keep only the top 3 cards visible; others hidden
     const applyVisibility = () => {
-      const children = Array.from(stack.children);
+      const children = Array.from(stack.children) as HTMLElement[];
       const toHide = children.slice(0, Math.max(0, children.length - 3));
       const toShow = children.slice(-3);
       toHide.forEach((el) => el.classList.add('card--invisible'));
@@ -498,7 +505,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const updateStackBases = (randomizeBottom = false) => {
       if (!randomizeBottom) return;
-      const children = Array.from(stack.children);
+      const children = Array.from(stack.children) as HTMLElement[];
       if (children[0]) setRandomBase(children[0]); // randomize new bottom after a swipe
     };
 
@@ -507,17 +514,16 @@ document.addEventListener('DOMContentLoaded', () => {
     // Ensure only 3 cards are visible initially
     applyVisibility();
 
-    const attachDrag = (card) => {
+    const attachDrag = (card: HTMLElement) => {
       let startX = 0, startY = 0, dx = 0, dy = 0, dragging = false;
-      let dragStartTime = 0;
       const clickTolerance = CLICK_TOLERANCE;
       let moved = false; // exceeded click tolerance
       let blockClickUntil = 0; // suppress click shortly after drag
 
-      const likeLabel = card.querySelector('.swipe-label--like');
-      const nopeLabel = card.querySelector('.swipe-label--nope');
+      const likeLabel = card.querySelector('.swipe-label--like') as HTMLElement | null;
+      const nopeLabel = card.querySelector('.swipe-label--nope') as HTMLElement | null;
 
-      const onPointerMove = (e) => {
+      const onPointerMove = (e: PointerEvent) => {
         if (!dragging) return;
         dx = e.clientX - startX;
         dy = e.clientY - startY;
@@ -528,7 +534,6 @@ document.addEventListener('DOMContentLoaded', () => {
         card.style.setProperty('--drag-x', dx + 'px');
         card.style.setProperty('--drag-y', dy + 'px');
         card.style.setProperty('--drag-r', rot + 'deg');
-        
         
         // Feedback labels
         const intensity = Math.min(1, Math.abs(dx) / 120);
@@ -561,7 +566,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const onPointerUp = () => {
         if (!dragging) return;
-        card.releasePointerCapture(pointerId);
+        card.releasePointerCapture(pointerId!);
         dragging = false;
         card.classList.remove('is-dragging');
         // Ensure CSS transitions can run after we disabled them on pointerdown
@@ -585,15 +590,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const threshold = SWIPE_THRESHOLD;
         if (Math.abs(dx) > threshold) {
           const dirRight = dx > 0;
-          const now = performance.now();
-          const elapsed = Math.max(16, now - dragStartTime);
-          
-          
+          // keep placeholder in case we reintroduce velocity-based easing
           
           // Track liked experiences
           if (dirRight && likedExperiences.length < MAX_SELECTIONS) {
             const cardTitle = card.dataset.title || card.querySelector('figcaption')?.textContent || 'Experience';
-            const cardImage = card.querySelector('img')?.src || '';
+            const cardImage = (card.querySelector('img') as HTMLImageElement | null)?.src || '';
             likedExperiences.push({ title: cardTitle, image: cardImage });
             
             // Haptic feedback on like
@@ -638,7 +640,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Re-apply visibility so only 3 cards are shown
             applyVisibility();
             // Smoothly promote visible cards and randomize new bottom tilt
-            const visibleChildren = Array.from(stack.children).filter(c => !c.classList.contains('card--invisible'));
+            const visibleChildren = Array.from(stack.children).filter((c) => !(c as HTMLElement).classList.contains('card--invisible')) as HTMLElement[];
             const others = visibleChildren.slice(0, -1); // all visible except the top
             others.forEach((c) => c.classList.add('base-animate'));
             updateStackBases(true);
@@ -686,8 +688,8 @@ document.addEventListener('DOMContentLoaded', () => {
         dx = dy = 0;
       };
 
-      let pointerId = null;
-      const onPointerDown = (e) => {
+      let pointerId: number | null = null;
+      const onPointerDown = (e: PointerEvent) => {
         // Only allow drag on the top card
         if (card !== getTopCard()) return;
         // Prevent default image/text dragging behavior when starting a swipe
@@ -700,7 +702,6 @@ document.addEventListener('DOMContentLoaded', () => {
         moved = false;
         startX = e.clientX;
         startY = e.clientY;
-        dragStartTime = performance.now();
         card.classList.add('is-dragging');
         card.style.transition = 'none';
         card.style.zIndex = '10';
@@ -730,11 +731,11 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     };
 
-    Array.from(stack.children).forEach(attachDrag);
+    Array.from(stack.children).forEach((el) => attachDrag(el as HTMLElement));
 
-    function showCountNumber(countNumber) {
+    function showCountNumber(countNumber: number) {
       // Show just the count number flying up from the card
-      const stackRect = stack.getBoundingClientRect();
+      const stackRect = (stack as HTMLElement).getBoundingClientRect();
       const stackCenterX = stackRect.left + stackRect.width / 2;
       const stackCenterY = stackRect.top + stackRect.height / 2;
       
@@ -749,7 +750,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const centerY = (bandY1 + bandY2) / 2;
       const num = document.createElement('div');
       num.className = 'confetti-number';
-      num.textContent = countNumber;
+      num.textContent = String(countNumber);
       // Move right and up with the card
       const dx = 140 + Math.random() * 100;
       const dy = -(60 + Math.random() * 80);
@@ -767,7 +768,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   
   // Success confetti: center-screen burst after join
-  function fireConfetti(targetElement) {
+  function fireConfetti(targetElement: HTMLElement) {
     const rect = targetElement.getBoundingClientRect();
     const centerX = rect.left + rect.width / 2;
     const centerY = rect.top + rect.height / 2;
@@ -799,35 +800,41 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Easter egg: Random effect on brand logo click
-  const brandLogo = document.getElementById('brandLogo');
+  const brandLogo = document.getElementById('brandLogo') as HTMLElement | null;
   if (brandLogo) {
     // Easter egg constants
     const EASTER_EGG_DURATIONS = {
       RAINBOW_WAVE: 4000,
       CARD_ANIMATION: 2400,
       GENTLE_SWAY: 3000,
-      WIND_GUST: 2400
-    };
+      WIND_GUST: 2400,
+    } as const;
     
     const EASTER_EGG_DELAYS = {
       STACK_CARD_STAGGER: 80,
       CAROUSEL_CARD_STAGGER_DANCE: 100,
-      CAROUSEL_CARD_STAGGER_TUMBLE: 120
-    };
+      CAROUSEL_CARD_STAGGER_TUMBLE: 120,
+    } as const;
 
     // Shared helper: Toggle page-level class with auto-cleanup
-    const togglePageClass = (className, duration) => {
-      const page = document.querySelector('.page');
+    const togglePageClass = (className: string, duration: number) => {
+      const page = document.querySelector('.page') as HTMLElement | null;
       if (!page) return;
       page.classList.add(className);
       setTimeout(() => page.classList.remove(className), duration);
     };
 
     // Shared helper: Animate cards with a specific class and animation
-    const animateCards = (animationClass, animationDuration, animationName, stackDelay, carouselDelay) => {
-      const stackCards = document.querySelectorAll('.card-stack .card');
-      const carouselCards = document.querySelectorAll('.xp-card');
-      const giftMinis = document.querySelectorAll('.gift-box__card-mini');
+    const animateCards = (
+      animationClass: string,
+      animationDuration: number,
+      animationName: string,
+      stackDelay: number,
+      carouselDelay: number
+    ) => {
+      const stackCards = document.querySelectorAll<HTMLElement>('.card-stack .card');
+      const carouselCards = document.querySelectorAll<HTMLElement>('.xp-card');
+      const giftMinis = document.querySelectorAll<HTMLElement>('.gift-box__card-mini');
       
       // Animate swipeable stack cards
       stackCards.forEach((card, idx) => {
@@ -845,11 +852,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }, idx * stackDelay);
       });
       
-      // Animate carousel cards
+      // Animate carousel cards via keyframes
       carouselCards.forEach((card, idx) => {
         setTimeout(() => {
           card.style.animation = 'none';
-          card.offsetHeight; // Force reflow
+          // Force reflow
+          void card.offsetHeight;
           card.style.animation = `${animationName} ${animationDuration}ms cubic-bezier(0.4, 0.0, 0.2, 1) forwards`;
           setTimeout(() => {
             card.style.animation = '';
@@ -895,7 +903,7 @@ document.addEventListener('DOMContentLoaded', () => {
       triggerDancingCards,
       triggerGentleSway,
       triggerTumblingCards,
-      triggerWindGust
+      triggerWindGust,
     ];
 
     const triggerRandomEasterEgg = () => {
@@ -904,7 +912,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     brandLogo.addEventListener('click', triggerRandomEasterEgg);
-    brandLogo.addEventListener('keydown', (e) => {
+    brandLogo.addEventListener('keydown', (e: KeyboardEvent) => {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
         triggerRandomEasterEgg();
