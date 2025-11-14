@@ -33,7 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
     piece.style.setProperty('--dx', dx + 'px');
     piece.style.setProperty('--dy', dy + 'px');
     piece.style.setProperty('--rot', rot + 'deg');
-    piece.style.setProperty('--dur', (700 + Math.random() * 500) + 'ms');
+    piece.style.setProperty('--dur', (1400 + Math.random() * 1000) + 'ms');
     piece.style.setProperty('--delay', (Math.random() * 120 | 0) + 'ms');
     piece.style.setProperty('--scale', (0.9 + Math.random() * 0.6).toFixed(2));
     
@@ -68,7 +68,7 @@ document.addEventListener('DOMContentLoaded', () => {
     em.style.top = y + 'px';
     em.style.setProperty('--dx', dx + 'px');
     em.style.setProperty('--dy', dy + 'px');
-    em.style.setProperty('--dur', (900 + Math.random() * 400) + 'ms');
+    em.style.setProperty('--dur', (1800 + Math.random() * 800) + 'ms');
     em.style.setProperty('--delay', (Math.random() * 120 | 0) + 'ms');
     em.style.setProperty('--emojiSize', (18 + Math.random() * 8) + 'px');
     return em;
@@ -248,6 +248,11 @@ document.addEventListener('DOMContentLoaded', () => {
       giftBox.classList.remove('hidden');
       // Fade the hint (keep DOM to avoid layout jump)
       dragHint?.classList.add('drag-hint--fade');
+      
+      // Fire confetti celebration when gift box is shown
+      if (!prefersReducedMotion) {
+        fireSuccessConfetti(giftBox);
+      }
       
       // Populate mini cards
       likedExperiences.forEach(exp => {
@@ -544,19 +549,15 @@ document.addEventListener('DOMContentLoaded', () => {
             }
           }
 
-          // Effects: confetti on like, shake on nope
+          // Effects: show count number on like, shake on nope
           if (dirRight) {
-            if (!prefersReducedMotion) {
-              const countNumber = likedExperiences.length;
-              fireConfetti(card, { speed, colors, countNumber });
-            }
+            // Show count number without confetti
+            const countNumber = likedExperiences.length;
+            showCountNumber(card, countNumber);
           } else if (nopeLabel) {
             nopeLabel.style.opacity = '1';
             nopeLabel.classList.add('shake-left');
             setTimeout(() => nopeLabel.classList.remove('shake-left'), 220);
-            if (!prefersReducedMotion) {
-              fireVacuum(card, { speed, colors });
-            }
           }
           // Fade out the drag hint on first actual selection
           if (!hintDismissed) {
@@ -685,6 +686,39 @@ document.addEventListener('DOMContentLoaded', () => {
     Array.from(stack.children).forEach(attachDrag);
 
     const maxEmojiPercent = 0.1; // 10% chance to use emojis
+
+    function showCountNumber(sourceEl, countNumber) {
+      // Show just the count number flying up from the card
+      const stackRect = stack.getBoundingClientRect();
+      const stackCenterX = stackRect.left + stackRect.width / 2;
+      const stackCenterY = stackRect.top + stackRect.height / 2;
+      
+      const bandWidth = stackRect.width * 0.35;
+      const bandHeight = stackRect.height * 0.55;
+      const bandX1 = stackCenterX + stackRect.width * 0.05;
+      const bandX2 = stackCenterX + bandWidth;
+      const bandY1 = stackCenterY - bandHeight / 2;
+      const bandY2 = stackCenterY + bandHeight / 2;
+      
+      const centerX = (bandX1 + bandX2) / 2;
+      const centerY = (bandY1 + bandY2) / 2;
+      const num = document.createElement('div');
+      num.className = 'confetti-number';
+      num.textContent = countNumber;
+      // Move right and up with the card
+      const dx = 140 + Math.random() * 100;
+      const dy = -(60 + Math.random() * 80);
+      const rot = Math.floor(Math.random() * 40 - 20);
+      num.style.left = centerX + 'px';
+      num.style.top = centerY + 'px';
+      num.style.setProperty('--dx', dx + 'px');
+      num.style.setProperty('--dy', dy + 'px');
+      num.style.setProperty('--rot', rot + 'deg');
+      num.style.setProperty('--dur', '1400ms');
+      num.style.setProperty('--delay', '0ms');
+      document.body.appendChild(num);
+      num.addEventListener('animationend', () => num.remove());
+    }
 
     function fireConfetti(sourceEl, opts = {}) {
       // Use the card stack container as reference instead of the card's absolute position
@@ -864,8 +898,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   
   // Success confetti: center-screen burst after join
-  function fireSuccessConfetti() {
-    const successBox = document.getElementById('successState');
+  function fireSuccessConfetti(targetElement) {
+    const successBox = targetElement || document.getElementById('successState');
     const rect = successBox.getBoundingClientRect();
     const centerX = rect.left + rect.width / 2;
     const centerY = rect.top + rect.height / 2;
