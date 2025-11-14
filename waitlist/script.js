@@ -10,6 +10,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const SWIPE_THRESHOLD = 200; // px, commit swipe
   const CLICK_TOLERANCE = 5; // px, distinguish drag vs click
   const TEST_URL = 'https://www.google.com';
+  const SUCCESS_CONFETTI_RADIUS = { min: 128, max: 480 };
+  const SUCCESS_CONFETTI_PARTICLES_PER_BURST = 40;
+  const SUCCESS_CONFETTI_BURSTS = 4;
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   const openInNewTab = (url) => window.open(url, '_blank', 'noopener');
@@ -18,6 +21,59 @@ document.addEventListener('DOMContentLoaded', () => {
     if (isInvalid) el.setAttribute('aria-invalid', 'true');
     else el.removeAttribute('aria-invalid');
   };
+
+  // Shared confetti particle builder
+  const createConfettiParticle = (x, y, dx, dy) => {
+    const shapes = ['square', 'circle', 'triangle', 'ribbon'];
+    const piece = document.createElement('div');
+    piece.className = 'confetti-piece';
+    const rot = Math.floor(Math.random() * 720 - 360);
+    piece.style.left = x + 'px';
+    piece.style.top = y + 'px';
+    piece.style.setProperty('--dx', dx + 'px');
+    piece.style.setProperty('--dy', dy + 'px');
+    piece.style.setProperty('--rot', rot + 'deg');
+    piece.style.setProperty('--dur', (700 + Math.random() * 500) + 'ms');
+    piece.style.setProperty('--delay', (Math.random() * 120 | 0) + 'ms');
+    piece.style.setProperty('--scale', (0.9 + Math.random() * 0.6).toFixed(2));
+    
+    const shape = shapes[(Math.random() * shapes.length) | 0];
+    const color = COLORS[(Math.random() * COLORS.length) | 0];
+    if (shape === 'circle') {
+      piece.style.borderRadius = '50%';
+    } else if (shape === 'triangle') {
+      piece.style.width = '0';
+      piece.style.height = '0';
+      piece.style.borderLeft = '8px solid transparent';
+      piece.style.borderRight = '8px solid transparent';
+      piece.style.borderBottom = '14px solid ' + color;
+    } else if (shape === 'ribbon') {
+      piece.style.width = '6px';
+      piece.style.height = '18px';
+      piece.style.borderRadius = '3px';
+      piece.style.background = `linear-gradient(180deg, ${color}, rgba(255,255,255,.9))`;
+    }
+    if (shape !== 'triangle' && shape !== 'ribbon') {
+      piece.style.background = color;
+      if (Math.random() > 0.6) piece.style.width = piece.style.height = '10px';
+    }
+    return piece;
+  };
+
+  const createConfettiEmoji = (x, y, dx, dy, emojiSet) => {
+    const em = document.createElement('div');
+    em.className = 'confetti-emoji';
+    em.textContent = emojiSet[(Math.random() * emojiSet.length) | 0];
+    em.style.left = x + 'px';
+    em.style.top = y + 'px';
+    em.style.setProperty('--dx', dx + 'px');
+    em.style.setProperty('--dy', dy + 'px');
+    em.style.setProperty('--dur', (900 + Math.random() * 400) + 'ms');
+    em.style.setProperty('--delay', (Math.random() * 120 | 0) + 'ms');
+    em.style.setProperty('--emojiSize', (18 + Math.random() * 8) + 'px');
+    return em;
+  };
+
   const form = document.getElementById('waitlist-form');
   const emailInput = document.getElementById('email');
   const message = document.getElementById('formMessage');
@@ -813,75 +869,29 @@ document.addEventListener('DOMContentLoaded', () => {
     const rect = successBox.getBoundingClientRect();
     const centerX = rect.left + rect.width / 2;
     const centerY = rect.top + rect.height / 2;
-    const bursts = 4;
-    const perBurst = 40; // doubled from 20
     
     const emit = () => {
-      for (let i = 0; i < perBurst; i++) {
+      for (let i = 0; i < SUCCESS_CONFETTI_PARTICLES_PER_BURST; i++) {
         const isEmoji = Math.random() < 0.15;
+        const angle = Math.random() * Math.PI * 2;
+        const distance = SUCCESS_CONFETTI_RADIUS.min + Math.random() * (SUCCESS_CONFETTI_RADIUS.max - SUCCESS_CONFETTI_RADIUS.min);
+        const dx = Math.cos(angle) * distance;
+        const dy = Math.sin(angle) * distance;
+        
         if (isEmoji) {
-          const em = document.createElement('div');
-          em.className = 'confetti-emoji';
-          em.textContent = LIKE_EMOJIS[(Math.random() * LIKE_EMOJIS.length) | 0];
-          const angle = Math.random() * Math.PI * 2;
-          const distance = 128 + Math.random() * 352; // 128-480px radius
-          const dx = Math.cos(angle) * distance;
-          const dy = Math.sin(angle) * distance;
-          em.style.left = centerX + 'px';
-          em.style.top = centerY + 'px';
-          em.style.setProperty('--dx', dx + 'px');
-          em.style.setProperty('--dy', dy + 'px');
-          em.style.setProperty('--dur', (900 + Math.random() * 400) + 'ms');
-          em.style.setProperty('--delay', (Math.random() * 120 | 0) + 'ms');
+          const em = createConfettiEmoji(centerX, centerY, dx, dy, LIKE_EMOJIS);
           em.style.setProperty('--emojiSize', (20 + Math.random() * 10) + 'px');
           document.body.appendChild(em);
           em.addEventListener('animationend', () => em.remove());
-          continue;
+        } else {
+          const piece = createConfettiParticle(centerX, centerY, dx, dy);
+          document.body.appendChild(piece);
+          piece.addEventListener('animationend', () => piece.remove());
         }
-        
-        const piece = document.createElement('div');
-        piece.className = 'confetti-piece';
-        const angle = Math.random() * Math.PI * 2;
-        const distance = 128 + Math.random() * 352; // 128-480px radius
-        const dx = Math.cos(angle) * distance;
-        const dy = Math.sin(angle) * distance;
-        const rot = Math.floor(Math.random() * 720 - 360);
-        piece.style.left = centerX + 'px';
-        piece.style.top = centerY + 'px';
-        piece.style.setProperty('--dx', dx + 'px');
-        piece.style.setProperty('--dy', dy + 'px');
-        piece.style.setProperty('--rot', rot + 'deg');
-        piece.style.setProperty('--dur', (700 + Math.random() * 500) + 'ms');
-        piece.style.setProperty('--delay', (Math.random() * 120 | 0) + 'ms');
-        piece.style.setProperty('--scale', (0.9 + Math.random() * 0.6).toFixed(2));
-        
-        const shapes = ['square', 'circle', 'triangle', 'ribbon'];
-        const shape = shapes[(Math.random() * shapes.length) | 0];
-        const color = COLORS[(Math.random() * COLORS.length) | 0];
-        if (shape === 'circle') {
-          piece.style.borderRadius = '50%';
-        } else if (shape === 'triangle') {
-          piece.style.width = '0';
-          piece.style.height = '0';
-          piece.style.borderLeft = '8px solid transparent';
-          piece.style.borderRight = '8px solid transparent';
-          piece.style.borderBottom = '14px solid ' + color;
-        } else if (shape === 'ribbon') {
-          piece.style.width = '6px';
-          piece.style.height = '18px';
-          piece.style.borderRadius = '3px';
-          piece.style.background = `linear-gradient(180deg, ${color}, rgba(255,255,255,.9))`;
-        }
-        if (shape !== 'triangle' && shape !== 'ribbon') {
-          piece.style.background = color;
-          if (Math.random() > 0.6) piece.style.width = piece.style.height = '10px';
-        }
-        document.body.appendChild(piece);
-        piece.addEventListener('animationend', () => piece.remove());
       }
     };
     
-    for (let b = 0; b < bursts; b++) {
+    for (let b = 0; b < SUCCESS_CONFETTI_BURSTS; b++) {
       setTimeout(emit, b * 100);
     }
   }
