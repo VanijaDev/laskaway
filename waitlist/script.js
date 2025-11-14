@@ -789,12 +789,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const animateCards = (animationClass, animationDuration, animationName, stackDelay, carouselDelay) => {
       const stackCards = document.querySelectorAll('.card-stack .card');
       const carouselCards = document.querySelectorAll('.xp-card');
+      const giftMinis = document.querySelectorAll('.gift-box__card-mini');
       
       // Animate swipeable stack cards
       stackCards.forEach((card, idx) => {
         setTimeout(() => {
           card.classList.add(animationClass);
           setTimeout(() => card.classList.remove(animationClass), animationDuration);
+        }, idx * stackDelay);
+      });
+      
+      // Animate gift box mini-cards the same way as stack cards
+      giftMinis.forEach((mini, idx) => {
+        setTimeout(() => {
+          mini.classList.add(animationClass);
+          setTimeout(() => mini.classList.remove(animationClass), animationDuration);
         }, idx * stackDelay);
       });
       
