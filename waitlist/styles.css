@@ -98,22 +98,118 @@ body {
 
 /* Waitlist form */
 .waitlist { background: var(--surface); border: 1px solid var(--border); padding: 14px; border-radius: var(--radius-lg); box-shadow: var(--shadow-2); }
-.waitlist__controls { display: grid; grid-template-columns: 1fr auto; gap: 10px; }
+
+/* Input wrapper with floating label */
+.input-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.floating-label {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9aa0a6;
+  font-size: 16px;
+  pointer-events: none;
+  transition: all 0.2s ease;
+  background: #ffffff;
+  padding: 0 4px;
+  z-index: 1;
+}
+
+.waitlist__controls { display: grid; grid-template-columns: 1fr auto; align-items: start; gap: 10px; }
+.waitlist__controls button { height: 54px; }
+
 .waitlist input[type="email"] {
   width: 100%;
   height: 54px;
   border-radius: var(--radius-md);
-  border: 1px solid #e7e1d7;
+  border: 2px solid #e7e1d7;
   background: #ffffff;
   color: var(--text);
-  padding: 0 16px;
+  padding: 0 44px 0 16px;
   font-size: 16px;
   outline: none;
-  transition: border-color .2s, box-shadow .2s;
+  transition: all .25s cubic-bezier(0.4, 0, 0.2, 1);
 }
-.waitlist input[type="email"]::placeholder { color: #9aa0a6; }
-.waitlist input[type="email"]:focus { border-color: rgba(255,159,67,0.7); box-shadow: 0 0 0 6px rgba(255,159,67,0.18); }
+
+/* Floating label active state (input precedes label) */
+.input-wrapper input[type="email"]:focus + .floating-label,
+.input-wrapper input[type="email"]:not(:placeholder-shown) + .floating-label {
+  top: -1px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--primary);
+}
+
+.waitlist input[type="email"]::placeholder { 
+  color: transparent;
+  opacity: 0;
+}
+
+.waitlist input[type="email"]:focus:not(.valid):not(.invalid) { 
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px rgba(124, 92, 255, 0.12), 0 0 16px rgba(124, 92, 255, 0.08);
+  transform: translateY(-1px);
+}
+
+/* Validation states */
+.waitlist input[type="email"].invalid { 
+  border-color: #ef4444;
+}
+
+.input-wrapper input[type="email"].invalid + .floating-label { color: #ef4444; }
+
+.waitlist input[type="email"].valid {
+  border-color: #10b981;
+  padding-right: 44px;
+}
+
+.input-wrapper input[type="email"].valid + .floating-label { color: #10b981; }
+
+/* Validation icons */
+.input-icons {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.validation-icon {
+  display: none;
+  color: #10b981;
+  animation: scaleIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.validation-icon--valid {
+  display: none;
+}
+
+.input-wrapper input[type="email"].valid ~ .input-icons .validation-icon--valid { display: block; }
+
+/* Shake animation */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+  20%, 40%, 60%, 80% { transform: translateX(4px); }
+}
+
+/* Scale in animation */
+@keyframes scaleIn {
+  0% { transform: scale(0) rotate(-45deg); opacity: 0; }
+  50% { transform: scale(1.1) rotate(5deg); }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+.waitlist input[type="email"]:focus:not(.valid):not(.invalid) { border-color: rgba(255,159,67,0.7); box-shadow: 0 0 0 6px rgba(255,159,67,0.18); }
 .waitlist input[type="email"].invalid { border-color: #ef4444; box-shadow: 0 0 0 6px rgba(239, 68, 68, 0.16); }
+
+/* Ensure green when valid, including on focus */
+.waitlist input[type="email"].valid { border-color: #10b981; }
+.waitlist input[type="email"].valid:focus { border-color: #10b981; box-shadow: 0 0 0 6px rgba(16,185,129,0.16); }
 
 .help { margin-top: 10px; color: #6b7280; font-size: 13px; }
 .form-msg { margin: 10px 4px 0; font-size: 14px; color: var(--muted); min-height: 20px; }

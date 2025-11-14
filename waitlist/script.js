@@ -40,6 +40,28 @@ document.addEventListener('DOMContentLoaded', () => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value).toLowerCase());
   };
 
+  // Real-time email validation: persistent states
+  emailInput?.addEventListener('input', () => {
+    const value = emailInput.value.trim();
+    if (value.length === 0) {
+      emailInput.classList.remove('valid', 'invalid');
+      clearMsg();
+    } else if (isValidEmail(value)) {
+      emailInput.classList.add('valid');
+      emailInput.classList.remove('invalid');
+    } else {
+      emailInput.classList.add('invalid');
+      emailInput.classList.remove('valid');
+    }
+    // Update hover-disabled visual state when the user types
+    refreshJoinHoverState && refreshJoinHoverState();
+  });
+
+  // Enhanced focus state: keep invalid border if present, just clear message
+  emailInput?.addEventListener('focus', () => {
+    clearMsg();
+  });
+
   form?.addEventListener('submit', async (e) => {
     e.preventDefault();
     clearMsg();
@@ -47,13 +69,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const email = emailInput.value.trim();
     if (!isValidEmail(email)) {
       emailInput.classList.add('invalid');
+      emailInput.classList.remove('valid');
       setError('Please enter a valid email address.');
       emailInput.focus();
       return;
     }
 
-    emailInput.classList.remove('invalid');
+    emailInput.classList.remove('invalid', 'valid');
     joinBtn.disabled = true;
+    joinBtn.classList.add('submitting');
     joinBtn.textContent = 'Joining…';
 
     // Simulate async submit; replace with your backend later
@@ -68,11 +92,29 @@ document.addEventListener('DOMContentLoaded', () => {
     success.classList.remove('hidden');
   });
 
-  emailInput?.addEventListener('input', () => {
-    if (emailInput.classList.contains('invalid')) {
-      emailInput.classList.remove('invalid');
-      clearMsg();
+  // Make the submit button appear disabled on hover when email is invalid
+  let isHoveringJoin = false;
+  function refreshJoinHoverState() {
+    if (!joinBtn) return;
+    if (joinBtn.classList.contains('submitting')) return; // keep disabled during submit
+    const valid = isValidEmail(emailInput?.value.trim() || '');
+    if (isHoveringJoin && !valid) {
+      joinBtn.disabled = true;
+      joinBtn.dataset.hoverDisabled = '1';
+    } else if (joinBtn.dataset.hoverDisabled === '1') {
+      // Re-enable only if we disabled due to hover
+      joinBtn.disabled = false;
+      delete joinBtn.dataset.hoverDisabled;
     }
+  }
+
+  joinBtn?.addEventListener('mouseenter', () => {
+    isHoveringJoin = true;
+    refreshJoinHoverState();
+  });
+  joinBtn?.addEventListener('mouseleave', () => {
+    isHoveringJoin = false;
+    refreshJoinHoverState();
   });
 
   // Experiences scroller: duplicate content for seamless loop and set animation duration

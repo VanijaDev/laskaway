@@ -32,9 +32,19 @@
             </p>
 
             <form id="waitlist-form" class="waitlist" novalidate>
-              <label for="email" class="vh">Email address</label>
               <div class="waitlist__controls">
-                <input id="email" name="email" type="email" inputmode="email" autocomplete="email" placeholder="you@email.com" required aria-describedby="emailHelp" />
+                <div class="input-wrapper">
+                  <input id="email" name="email" type="email" inputmode="email" autocomplete="email" placeholder=" " required aria-describedby="emailHelp" />
+                  <label for="email" class="floating-label">Email address</label>
+                  <div class="input-icons">
+                    <span class="validation-icon validation-icon--valid" aria-hidden="true">
+                      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="2"/>
+                        <path d="M6 10l3 3 5-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    </span>
+                  </div>
+                </div>
                 <button id="joinBtn" type="submit" class="btn btn--primary">Join Waitlist</button>
               </div>
               <div id="emailHelp" class="help">No spam — just a friendly launch note.</div>
