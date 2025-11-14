@@ -98,6 +98,11 @@ document.addEventListener('DOMContentLoaded', () => {
     setSuccess("You're on the waitlist — thank you!");
     form.classList.add('hidden');
     success.classList.remove('hidden');
+    
+    // Celebration confetti on successful join
+    if (!prefersReducedMotion) {
+      fireSuccessConfetti();
+    }
   });
 
   // Make the submit button appear disabled on hover when email is invalid
@@ -799,6 +804,85 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.appendChild(suck);
         suck.addEventListener('animationend', () => suck.remove());
       }
+    }
+  }
+  
+  // Success confetti: center-screen burst after join
+  function fireSuccessConfetti() {
+    const successBox = document.getElementById('successState');
+    const rect = successBox.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    const bursts = 4;
+    const perBurst = 40; // doubled from 20
+    
+    const emit = () => {
+      for (let i = 0; i < perBurst; i++) {
+        const isEmoji = Math.random() < 0.15;
+        if (isEmoji) {
+          const em = document.createElement('div');
+          em.className = 'confetti-emoji';
+          em.textContent = LIKE_EMOJIS[(Math.random() * LIKE_EMOJIS.length) | 0];
+          const angle = Math.random() * Math.PI * 2;
+          const distance = 128 + Math.random() * 352; // 128-480px radius
+          const dx = Math.cos(angle) * distance;
+          const dy = Math.sin(angle) * distance;
+          em.style.left = centerX + 'px';
+          em.style.top = centerY + 'px';
+          em.style.setProperty('--dx', dx + 'px');
+          em.style.setProperty('--dy', dy + 'px');
+          em.style.setProperty('--dur', (900 + Math.random() * 400) + 'ms');
+          em.style.setProperty('--delay', (Math.random() * 120 | 0) + 'ms');
+          em.style.setProperty('--emojiSize', (20 + Math.random() * 10) + 'px');
+          document.body.appendChild(em);
+          em.addEventListener('animationend', () => em.remove());
+          continue;
+        }
+        
+        const piece = document.createElement('div');
+        piece.className = 'confetti-piece';
+        const angle = Math.random() * Math.PI * 2;
+        const distance = 160 + Math.random() * 440; // doubled radius
+        const dx = Math.cos(angle) * distance;
+        const dy = Math.sin(angle) * distance;
+        const rot = Math.floor(Math.random() * 720 - 360);
+        piece.style.left = centerX + 'px';
+        piece.style.top = centerY + 'px';
+        piece.style.setProperty('--dx', dx + 'px');
+        piece.style.setProperty('--dy', dy + 'px');
+        piece.style.setProperty('--rot', rot + 'deg');
+        piece.style.setProperty('--dur', (700 + Math.random() * 500) + 'ms');
+        piece.style.setProperty('--delay', (Math.random() * 120 | 0) + 'ms');
+        piece.style.setProperty('--scale', (0.9 + Math.random() * 0.6).toFixed(2));
+        
+        const shapes = ['square', 'circle', 'triangle', 'ribbon'];
+        const shape = shapes[(Math.random() * shapes.length) | 0];
+        const color = COLORS[(Math.random() * COLORS.length) | 0];
+        if (shape === 'circle') {
+          piece.style.borderRadius = '50%';
+        } else if (shape === 'triangle') {
+          piece.style.width = '0';
+          piece.style.height = '0';
+          piece.style.borderLeft = '8px solid transparent';
+          piece.style.borderRight = '8px solid transparent';
+          piece.style.borderBottom = '14px solid ' + color;
+        } else if (shape === 'ribbon') {
+          piece.style.width = '6px';
+          piece.style.height = '18px';
+          piece.style.borderRadius = '3px';
+          piece.style.background = `linear-gradient(180deg, ${color}, rgba(255,255,255,.9))`;
+        }
+        if (shape !== 'triangle' && shape !== 'ribbon') {
+          piece.style.background = color;
+          if (Math.random() > 0.6) piece.style.width = piece.style.height = '10px';
+        }
+        document.body.appendChild(piece);
+        piece.addEventListener('animationend', () => piece.remove());
+      }
+    };
+    
+    for (let b = 0; b < bursts; b++) {
+      setTimeout(emit, b * 100);
     }
   }
 });
