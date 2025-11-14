@@ -7,6 +7,7 @@ interface Experience {
   image: string;
   alt: string;
   tags: string[];
+  url: string;
 }
 
 // Load HTML component
@@ -39,7 +40,7 @@ async function loadExperiences(): Promise<Experience[]> {
 // Generate card stack HTML
 function generateCardStack(experiences: Experience[]): string {
   return experiences.map(exp => `
-    <figure class="card card--hint-wiggle" data-title="${exp.title}">
+    <figure class="card card--hint-wiggle" data-title="${exp.title}" data-url="${exp.url}">
       <img src="${exp.image}" alt="${exp.alt}" loading="lazy" />
       <div class="swipe-label swipe-label--like" aria-hidden="true">Gift this!</div>
       <div class="swipe-label swipe-label--nope" aria-hidden="true">Not today</div>
@@ -53,7 +54,7 @@ function generateCarousel(experiences: Experience[]): string {
   return experiences.map(exp => {
     const primaryTag = exp.tags[0] || 'adventure';
     return `
-      <article class="xp-card" data-tag="${primaryTag}">
+      <article class="xp-card" data-tag="${primaryTag}" data-url="${exp.url}">
         <img src="${exp.image}" alt="${exp.alt}" />
         <div class="xp-card__label">${exp.title}</div>
       </article>
@@ -108,7 +109,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   const SWIPE_THRESHOLD = 200; // px, commit swipe
   const CLICK_TOLERANCE = 5; // px, distinguish drag vs click
   const FIFTH_CARD_FADE_MULTIPLIER = 0.5; // Half card width added to auto threshold for full fade
-  const TEST_URL = 'https://www.google.com';
   const SUCCESS_CONFETTI_RADIUS = { min: 128, max: 480 } as const;
   const SUCCESS_CONFETTI_PARTICLES_PER_BURST = 20;
   const SUCCESS_CONFETTI_BURSTS = 4;
@@ -333,11 +333,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.querySelectorAll<HTMLElement>('.xp-card').forEach((card) => {
     card.setAttribute('role', 'link');
     card.setAttribute('tabindex', '0');
-    card.addEventListener('click', () => openInNewTab(TEST_URL));
+    const url = card.dataset.url || 'https://www.google.com';
+    card.addEventListener('click', () => openInNewTab(url));
     card.addEventListener('keydown', (e: KeyboardEvent) => {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
-        openInNewTab(TEST_URL);
+        openInNewTab(url);
       }
     });
   });
@@ -347,7 +348,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (stack) {
     let hasInteracted = false;
     let wiggleInterval: number | null = null;
-    let likedExperiences: Array<{ title: string; image: string }> = [];
+    let likedExperiences: Array<{ title: string; image: string; url: string }> = [];
     const giftBox = document.getElementById('giftBox') as HTMLElement | null;
     const selectedCardsContainer = document.getElementById('selectedCards') as HTMLElement | null;
     const dragHint = document.getElementById('dragHint') as HTMLElement | null;
@@ -428,7 +429,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           mini.innerHTML = `<img src="${exp.image}" alt="${exp.title}" />`;
           mini.title = exp.title;
           (mini as HTMLElement).style.cursor = 'pointer';
-          mini.addEventListener('click', () => openInNewTab(TEST_URL));
+          mini.addEventListener('click', () => openInNewTab(exp.url));
           selectedCardsContainer.appendChild(mini);
         });
       }
@@ -695,7 +696,8 @@ document.addEventListener('DOMContentLoaded', async () => {
           if (dirRight && likedExperiences.length < MAX_SELECTIONS) {
             const cardTitle = card.dataset.title || card.querySelector('figcaption')?.textContent || 'Experience';
             const cardImage = (card.querySelector('img') as HTMLImageElement | null)?.src || '';
-            likedExperiences.push({ title: cardTitle, image: cardImage });
+            const cardUrl = card.dataset.url || 'https://www.google.com';
+            likedExperiences.push({ title: cardTitle, image: cardImage, url: cardUrl });
             
             // Haptic feedback on like
             triggerHaptic([30, 50, 30]);
@@ -819,14 +821,15 @@ document.addEventListener('DOMContentLoaded', async () => {
       card.addEventListener('pointercancel', onPointerUp);
       card.addEventListener('lostpointercapture', onPointerUp);
 
-      // Click to open testing URL when not dragging or after a drag
+      // Click to open experience URL when not dragging or after a drag
       card.addEventListener('click', (evt) => {
         if (dragging || moved || Date.now() < blockClickUntil) {
           evt.preventDefault();
           evt.stopPropagation();
           return;
         }
-        openInNewTab(TEST_URL);
+        const url = card.dataset.url || 'https://www.google.com';
+        openInNewTab(url);
       });
     };
 
