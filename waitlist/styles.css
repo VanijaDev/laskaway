@@ -161,6 +161,12 @@ body {
 .input-wrapper input[type="email"].invalid + .floating-label { color: #ef4444; }
 
 .waitlist input[type="email"].valid { padding-right: 44px; }
+/* Disabled state for email input during submit */
+.waitlist input[type="email"][disabled] {
+  background: #f9fafb;
+  color: #6b7280;
+  cursor: not-allowed;
+}
 
 .input-wrapper input[type="email"].valid + .floating-label { color: #10b981; }
 

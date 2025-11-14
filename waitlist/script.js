@@ -105,6 +105,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function refreshJoinHoverState() {
     if (!joinBtn) return;
     if (joinBtn.classList.contains('submitting')) return; // keep disabled during submit
+    if (emailInput?.disabled) return; // skip when input is disabled during submit
     const valid = isValidEmail(emailInput?.value.trim() || '');
     if (isHoveringJoin && !valid) {
       joinBtn.disabled = true;
