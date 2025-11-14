@@ -18,13 +18,13 @@ async function loadComponent(elementId: string, componentPath: string): Promise<
 document.addEventListener('DOMContentLoaded', async () => {
   // Load all components in parallel
   await Promise.all([
-    loadComponent('heroContent', './html_components/hero-content.html'),
+    loadComponent('heroContent', './html_components/hero-waitinglist-subscription.html'),
     loadComponent('experiencesCarousel', './html_components/experiences-carousel.html'),
     loadComponent('footerContent', './html_components/footer.html')
   ]);
   
   // After hero content loads, load the nested hero visual component
-  await loadComponent('heroVisual', './html_components/hero-visual.html');
+  await loadComponent('heroVisual', './html_components/hero-card-stack.html');
   
   // Constants and helpers
   const COLORS: string[] = ['#7c5cff', '#ec4899', '#f59e0b', '#60a5fa', '#10b981', '#f43f5e'];
