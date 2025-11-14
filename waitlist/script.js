@@ -260,6 +260,8 @@ document.addEventListener('DOMContentLoaded', () => {
         mini.className = 'gift-box__card-mini';
         mini.innerHTML = `<img src="${exp.image}" alt="${exp.title}" />`;
         mini.title = exp.title;
+        mini.style.cursor = 'pointer';
+        mini.addEventListener('click', () => openInNewTab(TEST_URL));
         selectedCardsContainer.appendChild(mini);
       });
       // Move focus for accessibility
