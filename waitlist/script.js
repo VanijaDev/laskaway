@@ -7,19 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const success = document.getElementById('successState');
   const joinBtn = document.getElementById('joinBtn');
 
-  // If previously joined, show success state
-  try {
-    const joined = JSON.parse(localStorage.getItem('waitlistJoined') || 'null');
-    if (joined && joined.email) {
-    const loop = (now) => {
-      const dt = now - last;
-      last = now;
-      avgFrameMs = avgFrameMs * 0.9 + dt * 0.1;
-      requestAnimationFrame(loop);
-    };
-      success?.classList.remove('hidden');
-    }
-  } catch (_) { /* ignore */ }
+  // Do not persist success state across refresh — show form by default
 
   const setError = (text) => {
     message.textContent = text;
@@ -83,9 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Simulate async submit; replace with your backend later
     await new Promise((r) => setTimeout(r, 900));
 
-    try {
-      localStorage.setItem('waitlistJoined', JSON.stringify({ email, at: Date.now() }));
-    } catch (_) { /* ignore storage errors */ }
+    // No persistence: do not write to localStorage
 
     setSuccess("You're on the waitlist — thank you!");
     form.classList.add('hidden');
