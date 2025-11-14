@@ -903,7 +903,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const EASTER_EGG_DURATIONS = {
       RAINBOW_WAVE: 4000,
       CARD_ANIMATION: 2400,
-      GENTLE_SWAY: 3000
+      GENTLE_SWAY: 3000,
+      WIND_GUST: 2400
     };
     
     const EASTER_EGG_DELAYS = {
@@ -974,11 +975,16 @@ document.addEventListener('DOMContentLoaded', () => {
       );
     };
 
+    const triggerWindGust = () => {
+      togglePageClass('wind-gust-active', EASTER_EGG_DURATIONS.WIND_GUST);
+    };
+
     const easterEggEffects = [
       triggerRainbowWave,
       triggerDancingCards,
       triggerGentleSway,
-      triggerTumblingCards
+      triggerTumblingCards,
+      triggerWindGust
     ];
 
     const triggerRandomEasterEgg = () => {
