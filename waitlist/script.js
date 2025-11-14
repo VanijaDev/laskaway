@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const CLICK_TOLERANCE = 5; // px, distinguish drag vs click
   const TEST_URL = 'https://www.google.com';
   const SUCCESS_CONFETTI_RADIUS = { min: 128, max: 480 };
-  const SUCCESS_CONFETTI_PARTICLES_PER_BURST = 40;
+  const SUCCESS_CONFETTI_PARTICLES_PER_BURST = 20;
   const SUCCESS_CONFETTI_BURSTS = 4;
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
