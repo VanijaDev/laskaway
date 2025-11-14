@@ -1,6 +1,23 @@
 /* Live the Gift — Waitlist interactions */
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Constants and helpers
+  const COLORS = ['#7c5cff', '#ec4899', '#f59e0b', '#60a5fa', '#10b981', '#f43f5e'];
+  const LIKE_EMOJIS = ['✨','🎉','💖','🥳','💯','🤪','😍','🙌','🥰','🤩','👌'];
+  const NOPE_EMOJIS = ['🥱','😴','💩','👾','👎','😴','🥱','🙈','🙉','🙊','🚫','⛔️'];
+  const MAX_SELECTIONS = 5;
+  const AUTO_DEMO_THRESHOLD = 180; // px, demo drag sweep
+  const SWIPE_THRESHOLD = 200; // px, commit swipe
+  const CLICK_TOLERANCE = 5; // px, distinguish drag vs click
+  const TEST_URL = 'https://www.google.com';
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const openInNewTab = (url) => window.open(url, '_blank', 'noopener');
+  const setAriaInvalid = (el, isInvalid) => {
+    if (!el) return;
+    if (isInvalid) el.setAttribute('aria-invalid', 'true');
+    else el.removeAttribute('aria-invalid');
+  };
   const form = document.getElementById('waitlist-form');
   const emailInput = document.getElementById('email');
   const message = document.getElementById('formMessage');
@@ -24,22 +41,23 @@ document.addEventListener('DOMContentLoaded', () => {
     message.classList.remove('error', 'success');
   };
 
-  const isValidEmail = (value) => {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value).toLowerCase());
-  };
+  const isValidEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value).toLowerCase());
 
   // Real-time email validation: persistent states
   emailInput?.addEventListener('input', () => {
     const value = emailInput.value.trim();
     if (value.length === 0) {
       emailInput.classList.remove('valid', 'invalid');
+      setAriaInvalid(emailInput, false);
       clearMsg();
     } else if (isValidEmail(value)) {
       emailInput.classList.add('valid');
       emailInput.classList.remove('invalid');
+      setAriaInvalid(emailInput, false);
     } else {
       emailInput.classList.add('invalid');
       emailInput.classList.remove('valid');
+      setAriaInvalid(emailInput, true);
     }
     // Update hover-disabled visual state when the user types
     refreshJoinHoverState && refreshJoinHoverState();
@@ -59,11 +77,13 @@ document.addEventListener('DOMContentLoaded', () => {
       emailInput.classList.add('invalid');
       emailInput.classList.remove('valid');
       setError('Please enter a valid email address.');
+      setAriaInvalid(emailInput, true);
       emailInput.focus();
       return;
     }
 
     emailInput.classList.remove('invalid', 'valid');
+    setAriaInvalid(emailInput, false);
     joinBtn.disabled = true;
     joinBtn.classList.add('submitting');
     joinBtn.textContent = 'Joining…';
@@ -132,17 +152,15 @@ document.addEventListener('DOMContentLoaded', () => {
   disableNativeImageDrag();
 
   // Make experience cards clickable (open testing URL)
-  const TEST_URL = 'https://www.google.com';
+  // Experience card interactions
   document.querySelectorAll('.xp-card').forEach((card) => {
     card.setAttribute('role', 'link');
     card.setAttribute('tabindex', '0');
-    card.addEventListener('click', () => {
-      window.open(TEST_URL, '_blank', 'noopener');
-    });
+    card.addEventListener('click', () => openInNewTab(TEST_URL));
     card.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
-        window.open(TEST_URL, '_blank', 'noopener');
+        openInNewTab(TEST_URL);
       }
     });
   });
@@ -153,13 +171,14 @@ document.addEventListener('DOMContentLoaded', () => {
     let hasInteracted = false;
     let wiggleInterval = null;
     let likedExperiences = [];
-    const MAX_SELECTIONS = 5;
     const giftBox = document.getElementById('giftBox');
     const selectedCardsContainer = document.getElementById('selectedCards');
     const dragHint = document.getElementById('dragHint');
     let hintDismissed = false;
 
     const showGiftBox = () => {
+      cancelDemoIfAny();
+      if (wiggleInterval) clearInterval(wiggleInterval);
       stack.style.display = 'none';
       giftBox.classList.remove('hidden');
       // Fade the hint (keep DOM to avoid layout jump)
@@ -173,6 +192,9 @@ document.addEventListener('DOMContentLoaded', () => {
         mini.title = exp.title;
         selectedCardsContainer.appendChild(mini);
       });
+      // Move focus for accessibility
+      giftBox.setAttribute('tabindex', '-1');
+      giftBox.focus();
     };
 
     const triggerWiggle = () => {
@@ -224,13 +246,14 @@ document.addEventListener('DOMContentLoaded', () => {
       if (hasInteracted || isDemoRunning) return;
       const card = getTopCard();
       if (!card) return;
-        requestAnimationFrame(() => cap.removeAttribute('tabindex'));
+      // Start demo animation for the current top card
+      isDemoRunning = true;
       // Ensure CSS animation on top card doesn't conflict
       card.classList.remove('card--hint-wiggle');
       void card.offsetWidth;
       const likeLabel = card.querySelector('.swipe-label--like');
       const nopeLabel = card.querySelector('.swipe-label--nope');
-      const autoThreshold = 180;
+      const autoThreshold = AUTO_DEMO_THRESHOLD;
       const duration = 2400; // slowed by 50%: full left->right->center
       const start = performance.now();
 
@@ -358,7 +381,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const attachDrag = (card) => {
       let startX = 0, startY = 0, dx = 0, dy = 0, dragging = false;
       let dragStartTime = 0, lastMoveTime = 0, lastX = 0;
-      const clickTolerance = 5; // px
+      const clickTolerance = CLICK_TOLERANCE;
       let moved = false; // exceeded click tolerance
       let blockClickUntil = 0; // suppress click shortly after drag
 
@@ -381,7 +404,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Feedback labels
         const intensity = Math.min(1, Math.abs(dx) / 120);
         // Auto-advance at 60% threshold with haptic
-        const autoThreshold = 180;
+        const autoThreshold = AUTO_DEMO_THRESHOLD;
 
         if (dx > 0) {
           if (likeLabel) likeLabel.style.opacity = String(intensity);
@@ -434,7 +457,7 @@ document.addEventListener('DOMContentLoaded', () => {
         blockClickUntil = Date.now() + 800;
 
         // Lower threshold for auto-advance (was 140, now 200)
-        const threshold = 200;
+        const threshold = SWIPE_THRESHOLD;
         if (Math.abs(dx) > threshold) {
           const dirRight = dx > 0;
           const now = performance.now();
@@ -442,7 +465,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const speed = Math.abs(dx) / elapsed; // px per ms
           // Palette from card data, else fallback
           const palette = (card.dataset.colors || '').split(',').map(s => s.trim()).filter(Boolean);
-          const colors = palette.length ? palette : ['#7c5cff', '#ec4899', '#f59e0b', '#60a5fa', '#10b981', '#f43f5e'];
+          const colors = palette.length ? palette : COLORS;
           
           // Track liked experiences
           if (dirRight && likedExperiences.length < MAX_SELECTIONS) {
@@ -458,7 +481,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
           // Effects: confetti on like, shake on nope
           if (dirRight) {
-            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            if (!prefersReducedMotion) {
               const countNumber = likedExperiences.length;
               fireConfetti(card, { speed, colors, countNumber });
             }
@@ -466,7 +489,7 @@ document.addEventListener('DOMContentLoaded', () => {
             nopeLabel.style.opacity = '1';
             nopeLabel.classList.add('shake-left');
             setTimeout(() => nopeLabel.classList.remove('shake-left'), 220);
-            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            if (!prefersReducedMotion) {
               fireVacuum(card, { speed, colors });
             }
           }
@@ -590,7 +613,7 @@ document.addEventListener('DOMContentLoaded', () => {
           evt.stopPropagation();
           return;
         }
-        window.open(TEST_URL, '_blank', 'noopener');
+        openInNewTab(TEST_URL);
       });
     };
 
@@ -612,8 +635,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const bandX2 = stackCenterX + bandWidth;
       const bandY1 = stackCenterY - bandHeight / 2;
       const bandY2 = stackCenterY + bandHeight / 2;
-      const baseColors = ['#7c5cff', '#ec4899', '#f59e0b', '#60a5fa', '#10b981', '#f43f5e'];
-      const colors = Array.isArray(opts.colors) && opts.colors.length ? opts.colors : baseColors;
+      const colors = Array.isArray(opts.colors) && opts.colors.length ? opts.colors : COLORS;
       const shapes = ['square', 'circle', 'triangle', 'ribbon'];
       const speed = Math.max(0.3, Math.min(2.5, Number(opts.speed) || 1)); // px/ms clamped
       const intensity = 0.8 + (speed / 2.5) * 1.4; // 0.8..2.2
@@ -654,7 +676,7 @@ document.addEventListener('DOMContentLoaded', () => {
           if (isEmoji) {
             const em = document.createElement('div');
             em.className = 'confetti-emoji';
-            em.textContent = ['✨','🎉','💖', '🥳','💯','🤪','😍','🙌', '🥰','🤩','👌'][Math.floor(Math.random()*11)];
+            em.textContent = LIKE_EMOJIS[(Math.random()*LIKE_EMOJIS.length)|0];
             const spawnX = bandX1 + Math.random() * (bandX2 - bandX1);
             const spawnY = bandY1 + Math.random() * (bandY2 - bandY1);
             // Move right and up/down with the card
@@ -726,8 +748,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const stackCenterY = stackRect.top + stackRect.height / 2;
       const originX = stackCenterX - stackRect.width * 0.22; // toward left side
       const originY = stackCenterY;
-      const baseColors = ['#7c5cff', '#ec4899', '#f59e0b', '#60a5fa', '#10b981', '#f43f5e'];
-      const colors = Array.isArray(opts.colors) && opts.colors.length ? opts.colors : baseColors;
+      const colors = Array.isArray(opts.colors) && opts.colors.length ? opts.colors : COLORS;
       const speed = Math.max(0.3, Math.min(2.5, Number(opts.speed) || 1));
       const intensity = 0.8 + (speed / 2.5) * 1.4; // match confetti intensity
       const pieces = Math.max(8, Math.min(24, Math.round(10 * intensity))); // match confetti piece count
@@ -743,7 +764,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (isEmoji) {
           const em = document.createElement('div');
           em.className = 'confetti-emoji';
-          em.textContent = ['🥱','😴','💩','👾','👎','😴','🥱','🙈','🙉','🙊','🚫','⛔️'][Math.floor(Math.random()*12)];
+          em.textContent = NOPE_EMOJIS[(Math.random()*NOPE_EMOJIS.length)|0];
           em.style.left = startX + 'px';
           em.style.top = startY + 'px';
           // Move left with the card
