@@ -136,9 +136,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Calculate duration relative to total width for consistent speed
     requestAnimationFrame(() => {
+      const GAP = 32; // match CSS scroller__track gap
       const totalWidth = Array.from(track.children)
         .slice(0, children.length)
-        .reduce((acc, el) => acc + el.getBoundingClientRect().width + 16 /* gap */, 0);
+        .reduce((acc, el) => acc + el.getBoundingClientRect().width + GAP /* gap */, 0);
       const pixelsPerSecond = 140; // tweak for speed
       const duration = Math.max(28, Math.min(60, totalWidth / pixelsPerSecond));
       track.style.setProperty('--duration', `${duration}s`);
