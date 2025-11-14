@@ -66,6 +66,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Load experiences data first
   const experiences = await loadExperiences();
   
+  // Randomize experience order on each page load
+  const shuffledExperiences = experiences.sort(() => Math.random() - 0.5);
+  
   // Load all components in parallel
   await Promise.all([
     loadComponent('heroContent', './html_components/hero-waitinglist-subscription.html'),
@@ -80,14 +83,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   const cardStack = document.getElementById('cardStack');
   const scrollerTrack = document.querySelector('.scroller__track') as HTMLElement | null;
   
-  if (cardStack && experiences.length > 0) {
-    cardStack.innerHTML = generateCardStack(experiences);
+  if (cardStack && shuffledExperiences.length > 0) {
+    cardStack.innerHTML = generateCardStack(shuffledExperiences);
   }
   
-  if (scrollerTrack && experiences.length > 0) {
+  if (scrollerTrack && shuffledExperiences.length > 0) {
     // Clear existing content but preserve the data attribute
     const isDuplicate = scrollerTrack.dataset.duplicate === 'true';
-    scrollerTrack.innerHTML = generateCarousel(experiences);
+    scrollerTrack.innerHTML = generateCarousel(shuffledExperiences);
     
     // Re-apply duplication logic if needed
     if (isDuplicate) {

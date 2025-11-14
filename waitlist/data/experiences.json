@@ -1,5 +1,21 @@
 [
   {
+    "id": "your-startup-sucks",
+    "title": "Your Startup Sucks",
+    "image": "https://images.lumacdn.com/cdn-cgi/image/format=auto,fit=cover,dpr=1,background=white,quality=75,width=400,height=400/event-covers/zy/b4908ed6-5bd6-4991-bc11-332ce0896366.png",
+    "alt": "Your Startup Sucks | Live Pitch Comedy Show",
+    "tags": ["relax", "wellness"],
+    "url": "https://luma.com/qgn3c4em"
+  },
+  {
+    "id": "atx-ecosystem-resources",
+    "title": "ATX Ecosystem Resources",
+    "image": "https://secure.meetupstatic.com/photos/event/d/5/6/3/highres_531114627.webp?w=1080",
+    "alt": "ATX Ecosystem Resources, Updates, Networking, Lightning Pitches, Raffle & More",
+    "tags": ["relax", "wellness"],
+    "url": "https://www.meetup.com/austin-startup-meetup/events/304997249/"
+  },
+  {
     "id": "spa-day",
     "title": "Spa Day",
     "image": "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&w=1200&q=60",
