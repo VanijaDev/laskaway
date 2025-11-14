@@ -163,20 +163,58 @@ document.addEventListener('DOMContentLoaded', () => {
   const track = document.querySelector('.scroller__track');
   const scroller = document.querySelector('.scroller');
   if (track && scroller) {
-    const children = Array.from(track.children);
+    const originalChildren = Array.from(track.children);
+    // Store originals with data attribute to distinguish from duplicates
+    originalChildren.forEach(el => el.dataset.original = 'true');
     // Duplicate once for 50% translateX end
-    children.forEach((node) => track.appendChild(node.cloneNode(true)));
-
-    // Calculate duration relative to total width for consistent speed
-    requestAnimationFrame(() => {
-      const GAP = 32; // match CSS scroller__track gap
-      const totalWidth = Array.from(track.children)
-        .slice(0, children.length)
-        .reduce((acc, el) => acc + el.getBoundingClientRect().width + GAP /* gap */, 0);
-      const pixelsPerSecond = 140; // tweak for speed
-      const duration = Math.max(28, Math.min(60, totalWidth / pixelsPerSecond));
-      track.style.setProperty('--duration', `${duration}s`);
+    originalChildren.forEach((node) => {
+      const clone = node.cloneNode(true);
+      delete clone.dataset.original;
+      track.appendChild(clone);
     });
+
+    const recalculateDuration = () => {
+      requestAnimationFrame(() => {
+        const GAP = 32; // match CSS scroller__track gap
+        const visibleCards = Array.from(track.children).filter(el => !el.classList.contains('hidden'));
+        const originalVisible = visibleCards.filter(el => el.dataset.original === 'true');
+        const totalWidth = originalVisible
+          .reduce((acc, el) => acc + el.getBoundingClientRect().width + GAP, 0);
+        const pixelsPerSecond = 140; // tweak for speed
+        const duration = Math.max(28, Math.min(60, totalWidth / pixelsPerSecond));
+        track.style.setProperty('--duration', `${duration}s`);
+      });
+    };
+
+    recalculateDuration();
+
+    // Tag filtering
+    const tagFilters = document.getElementById('tagFilters');
+    if (tagFilters) {
+      tagFilters.addEventListener('click', (e) => {
+        const chip = e.target.closest('.chip');
+        if (!chip) return;
+
+        const selectedTag = chip.dataset.tag;
+        
+        // Update active state
+        tagFilters.querySelectorAll('.chip').forEach(c => c.classList.remove('chip--active'));
+        chip.classList.add('chip--active');
+
+        // Filter cards
+        const allCards = Array.from(track.children);
+        allCards.forEach(card => {
+          if (selectedTag === 'all' || card.dataset.tag === selectedTag) {
+            card.classList.remove('hidden');
+          } else {
+            card.classList.add('hidden');
+          }
+        });
+
+        // Recalculate animation duration based on visible cards
+        recalculateDuration();
+      });
+    }
   }
 
   // Disable native image dragging on stack and carousel images

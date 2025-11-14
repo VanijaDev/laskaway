@@ -147,27 +147,27 @@
         </div>
         <div class="scroller" aria-label="Example experiences carousel">
           <div class="scroller__track" data-duplicate="true">
-            <article class="xp-card">
+            <article class="xp-card" data-tag="thrill">
               <img src="https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=1200&q=60" alt="Person bungee jumping off a bridge" />
               <div class="xp-card__label">Bungee Jump</div>
             </article>
-            <article class="xp-card">
+            <article class="xp-card" data-tag="thrill">
               <img src="https://images.unsplash.com/photo-1502877338535-766e1452684a?auto=format&fit=crop&w=1200&q=60" alt="Race car speeding on a track" />
               <div class="xp-card__label">Race Car Drive</div>
             </article>
-            <article class="xp-card">
+            <article class="xp-card" data-tag="relax">
               <img src="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=1200&q=60" alt="Glasses of wine at a tasting" />
               <div class="xp-card__label">Wine Tasting</div>
             </article>
-            <article class="xp-card">
+            <article class="xp-card" data-tag="food">
               <img src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1200&q=60" alt="Food tour with street market dishes" />
               <div class="xp-card__label">Food Tour</div>
             </article>
-            <article class="xp-card">
+            <article class="xp-card" data-tag="adventure">
               <img src="https://images.unsplash.com/photo-1520975916090-3105956dac38?auto=format&fit=crop&w=1200&q=60" alt="Calm hot air balloons at sunrise" />
               <div class="xp-card__label">Hot Air Balloon</div>
             </article>
-            <article class="xp-card">
+            <article class="xp-card" data-tag="wellness">
               <img src="https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1200&q=60" alt="Couple laughing outdoors enjoying the moment" />
               <div class="xp-card__label">Surprise Date</div>
             </article>
@@ -178,13 +178,13 @@
       <section class="social-proof">
         <div class="container">
           <!-- <p class="trust">Inspired by <strong>amazing experiences</strong> around us.</p> -->
-          <ul class="chips" aria-label="Example categories">
-            <li>Relax</li>
-            <li>Adventure</li>
-            <li>Food</li>
-            <li>Wellness</li>
-            <li>Thrill</li>
-            <li>Learn</li>
+          <ul class="chips" id="tagFilters" aria-label="Example categories">
+            <li class="chip chip--active" data-tag="all">All</li>
+            <li class="chip" data-tag="relax">Relax</li>
+            <li class="chip" data-tag="adventure">Adventure</li>
+            <li class="chip" data-tag="food">Food</li>
+            <li class="chip" data-tag="wellness">Wellness</li>
+            <li class="chip" data-tag="thrill">Thrill</li>
           </ul>
         </div>
       </section>
