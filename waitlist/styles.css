@@ -79,17 +79,19 @@ body {
   letter-spacing: -0.02em;
   line-height: 1.05;
   margin: 0 0 12px;
-  background: linear-gradient(135deg, #7c5cff 0%, #ec4899 50%, #f59e0b 100%);
+  background: linear-gradient(135deg, #ec4899 0%, #f59e0b 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
 
 .accent {
-  background: linear-gradient(90deg, var(--primary), var(--primary-2));
+  background: linear-gradient(135deg, #7c5cff 0%, #ec4899 50%, #f59e0b 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+  font-weight: 800;
+  text-shadow: 0 0 40px rgba(236, 72, 153, 0.3);
 }
 /* gradient-text not used in restored layout */
 
