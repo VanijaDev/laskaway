@@ -224,6 +224,26 @@ body {
 .btn--primary:hover { filter: brightness(1.04); }
 /* button icon not used in restored layout */
 
+/* Spinner while submitting */
+.btn--primary.submitting { position: relative; padding-left: 38px; }
+.btn--primary.submitting::before {
+  content: "";
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.6);
+  border-top-color: #fff;
+  transform: translateY(-50%);
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: translateY(-50%) rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .btn--primary.submitting::before { animation-duration: 1.5s; }
+}
+
 /* Success state */
 .success { margin-top: 20px; border-radius: var(--radius-lg); padding: 18px 18px 20px; background: #eaf8f1; border: 1px solid #b9e9d6; box-shadow: var(--shadow-2); }
 .success.hidden { display: none; }
