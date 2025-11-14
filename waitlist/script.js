@@ -471,7 +471,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const attachDrag = (card) => {
       let startX = 0, startY = 0, dx = 0, dy = 0, dragging = false;
-      let dragStartTime = 0, lastMoveTime = 0, lastX = 0;
+      let dragStartTime = 0;
       const clickTolerance = CLICK_TOLERANCE;
       let moved = false; // exceeded click tolerance
       let blockClickUntil = 0; // suppress click shortly after drag
@@ -490,8 +490,8 @@ document.addEventListener('DOMContentLoaded', () => {
         card.style.setProperty('--drag-x', dx + 'px');
         card.style.setProperty('--drag-y', dy + 'px');
         card.style.setProperty('--drag-r', rot + 'deg');
-        lastMoveTime = performance.now();
-        lastX = e.clientX;
+        
+        
         // Feedback labels
         const intensity = Math.min(1, Math.abs(dx) / 120);
         // Auto-advance at 60% threshold with haptic
@@ -549,10 +549,8 @@ document.addEventListener('DOMContentLoaded', () => {
           const dirRight = dx > 0;
           const now = performance.now();
           const elapsed = Math.max(16, now - dragStartTime);
-          const speed = Math.abs(dx) / elapsed; // px per ms
-          // Palette from card data, else fallback
-          const palette = (card.dataset.colors || '').split(',').map(s => s.trim()).filter(Boolean);
-          const colors = palette.length ? palette : COLORS;
+          
+          
           
           // Track liked experiences
           if (dirRight && likedExperiences.length < MAX_SELECTIONS) {
@@ -568,7 +566,7 @@ document.addEventListener('DOMContentLoaded', () => {
           if (dirRight) {
             // Show count number without confetti
             const countNumber = likedExperiences.length;
-            showCountNumber(card, countNumber);
+            showCountNumber(countNumber);
           } else if (nopeLabel) {
             nopeLabel.style.opacity = '1';
             nopeLabel.classList.add('shake-left');
@@ -665,8 +663,6 @@ document.addEventListener('DOMContentLoaded', () => {
         startX = e.clientX;
         startY = e.clientY;
         dragStartTime = performance.now();
-        lastMoveTime = dragStartTime;
-        lastX = startX;
         card.classList.add('is-dragging');
         card.style.transition = 'none';
         card.style.zIndex = '10';
@@ -698,7 +694,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     Array.from(stack.children).forEach(attachDrag);
 
-    function showCountNumber(sourceEl, countNumber) {
+    function showCountNumber(countNumber) {
       // Show just the count number flying up from the card
       const stackRect = stack.getBoundingClientRect();
       const stackCenterX = stackRect.left + stackRect.width / 2;
