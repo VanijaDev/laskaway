@@ -76,26 +76,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const form = document.getElementById('waitlist-form');
   const emailInput = document.getElementById('email');
-  const message = document.getElementById('formMessage');
   const waitlistJoinSuccess = document.getElementById('successState');
   const joinBtn = document.getElementById('joinBtn');
-
-  // Do not persist success state across refresh — show form by default
-
-  const setError = (text) => {
-    message.textContent = text;
-    message.classList.add('error');
-    message.classList.remove('success');
-  };
-  const setSuccess = (text) => {
-    message.textContent = text;
-    message.classList.remove('error');
-    message.classList.add('success');
-  };
-  const clearMsg = () => {
-    message.textContent = '';
-    message.classList.remove('error', 'success');
-  };
 
   const isValidEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value).toLowerCase());
 
@@ -105,7 +87,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (value.length === 0) {
       emailInput.classList.remove('valid', 'invalid');
       setAriaInvalid(emailInput, false);
-      clearMsg();
     } else if (isValidEmail(value)) {
       emailInput.classList.add('valid');
       emailInput.classList.remove('invalid');
@@ -119,20 +100,13 @@ document.addEventListener('DOMContentLoaded', () => {
     refreshJoinHoverState && refreshJoinHoverState();
   });
 
-  // Enhanced focus state: keep invalid border if present, just clear message
-  emailInput?.addEventListener('focus', () => {
-    clearMsg();
-  });
-
   form?.addEventListener('submit', async (e) => {
     e.preventDefault();
-    clearMsg();
 
     const email = emailInput.value.trim();
     if (!isValidEmail(email)) {
       emailInput.classList.add('invalid');
       emailInput.classList.remove('valid');
-      setError('Please enter a valid email address.');
       setAriaInvalid(emailInput, true);
       emailInput.focus();
       return;
@@ -150,8 +124,6 @@ document.addEventListener('DOMContentLoaded', () => {
     await new Promise((r) => setTimeout(r, 900));
 
     // No persistence: do not write to localStorage
-
-    setSuccess("You're on the waitlist — thank you!");
     form.classList.add('hidden');
     waitlistJoinSuccess.classList.remove('hidden');
     
