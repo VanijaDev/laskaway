@@ -899,49 +899,91 @@ document.addEventListener('DOMContentLoaded', () => {
   // Easter egg: Random effect on brand logo click
   const brandLogo = document.getElementById('brandLogo');
   if (brandLogo) {
-    const triggerRainbowWave = () => {
-      const page = document.querySelector('.page');
-      if (!page) return;
-      
-      page.classList.add('rainbow-wave-active');
-      setTimeout(() => {
-        page.classList.remove('rainbow-wave-active');
-      }, 4000);
+    // Easter egg constants
+    const EASTER_EGG_DURATIONS = {
+      RAINBOW_WAVE: 4000,
+      CARD_ANIMATION: 2400,
+      GENTLE_SWAY: 3000
+    };
+    
+    const EASTER_EGG_DELAYS = {
+      STACK_CARD_STAGGER: 80,
+      CAROUSEL_CARD_STAGGER_DANCE: 100,
+      CAROUSEL_CARD_STAGGER_TUMBLE: 120
     };
 
-    const triggerDancingCards = () => {
+    // Shared helper: Toggle page-level class with auto-cleanup
+    const togglePageClass = (className, duration) => {
+      const page = document.querySelector('.page');
+      if (!page) return;
+      page.classList.add(className);
+      setTimeout(() => page.classList.remove(className), duration);
+    };
+
+    // Shared helper: Animate cards with a specific class and animation
+    const animateCards = (animationClass, animationDuration, animationName, stackDelay, carouselDelay) => {
       const stackCards = document.querySelectorAll('.card-stack .card');
       const carouselCards = document.querySelectorAll('.xp-card');
       
-      // Dance the swipeable stack cards
+      // Animate swipeable stack cards
       stackCards.forEach((card, idx) => {
         setTimeout(() => {
-          card.classList.add('card--dancing');
-          setTimeout(() => card.classList.remove('card--dancing'), 2400);
-        }, idx * 80);
+          card.classList.add(animationClass);
+          setTimeout(() => card.classList.remove(animationClass), animationDuration);
+        }, idx * stackDelay);
       });
       
-      // Dance the carousel cards
+      // Animate carousel cards
       carouselCards.forEach((card, idx) => {
         setTimeout(() => {
-          const origTransform = card.style.transform;
           card.style.animation = 'none';
-          card.offsetHeight; // force reflow
-          card.style.animation = 'card-dance 2.4s cubic-bezier(0.4, 0.0, 0.2, 1) forwards';
+          card.offsetHeight; // Force reflow
+          card.style.animation = `${animationName} ${animationDuration}ms cubic-bezier(0.4, 0.0, 0.2, 1) forwards`;
           setTimeout(() => {
             card.style.animation = '';
-          }, 2400);
-        }, idx * 100);
+          }, animationDuration);
+        }, idx * carouselDelay);
       });
     };
 
+    const triggerRainbowWave = () => {
+      togglePageClass('rainbow-wave-active', EASTER_EGG_DURATIONS.RAINBOW_WAVE);
+    };
+
+    const triggerDancingCards = () => {
+      animateCards(
+        'card--dancing',
+        EASTER_EGG_DURATIONS.CARD_ANIMATION,
+        'card-dance',
+        EASTER_EGG_DELAYS.STACK_CARD_STAGGER,
+        EASTER_EGG_DELAYS.CAROUSEL_CARD_STAGGER_DANCE
+      );
+    };
+
+    const triggerGentleSway = () => {
+      togglePageClass('gentle-sway-active', EASTER_EGG_DURATIONS.GENTLE_SWAY);
+    };
+
+    const triggerTumblingCards = () => {
+      animateCards(
+        'card--tumbling',
+        EASTER_EGG_DURATIONS.CARD_ANIMATION,
+        'card-tumble',
+        EASTER_EGG_DELAYS.STACK_CARD_STAGGER,
+        EASTER_EGG_DELAYS.CAROUSEL_CARD_STAGGER_TUMBLE
+      );
+    };
+
+    const easterEggEffects = [
+      triggerRainbowWave,
+      triggerDancingCards,
+      triggerGentleSway,
+      triggerTumblingCards
+    ];
+
     const triggerRandomEasterEgg = () => {
-      // 50/50 chance between rainbow wave and dancing cards
-      if (Math.random() < 0.5) {
-        triggerRainbowWave();
-      } else {
-        triggerDancingCards();
-      }
+      const randomEffect = easterEggEffects[Math.floor(Math.random() * easterEggEffects.length)];
+      randomEffect();
     };
 
     brandLogo.addEventListener('click', triggerRandomEasterEgg);
