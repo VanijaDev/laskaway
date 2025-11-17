@@ -1,5 +1,37 @@
 [
   {
+    "id": "quark-expeditions",
+    "title": "Quark Expeditions",
+    "image": "https://res.cloudinary.com/enchanting/q_90,f_auto,c_lfill,w_1400,h_800/quark-web/2024/09/Hero_Sam-Crimmin-V3-3702.jpg",
+    "alt": "Quark Expeditions",
+    "tags": ["adventure"],
+    "url": "https://www.quarkexpeditions.com/"
+  },
+  {
+    "id": "texas-hill-country",
+    "title": "Texas Hill Country",
+    "image": "https://login.miravalresorts.com/austin/wp-content/uploads/sites/2/2022/09/Web-Arrival2-copy.jpeg",
+    "alt": "Texas Hill Country",
+    "tags": ["weekend getaway", "adventure"],
+    "url": "https://www.miravalresorts.com/"
+  },
+  {
+    "id": "mesa-rim-climbing-center",
+    "title": "Mesa Rim Climbing Center",
+    "image": "https://mesarim.com/austin/wp-content/uploads/sites/12/2023/02/Lead-Prow-scaled.jpg",
+    "alt": "Mesa Rim Climbing Center",
+    "tags": ["thrill", "adventure"],
+    "url": "https://mesarim.com/"
+  },
+  {
+    "id": "ifly-indoor-skydiving",
+    "title": "iFLY Indoor Skydiving",
+    "image": "https://assets.simpleviewinc.com/simpleview/image/fetch/c_limit,h_1200,q_75,w_1200/https://assets.simpleviewinc.com/simpleview/image/upload/crm/austin/Credit-iFLY-Indoor-Skydiving.-Exp-7-1-25-1-_8929B8AE-0839-1E0F-ED2A22821D432C84-8929ab95c71aaff_8929c06a-cd45-6434-742f498615b6de5d.png",
+    "alt": "iFLY Indoor Skydiving",
+    "tags": ["thrill", "adventure"],
+    "url": "https://www.iflyworld.com/"
+  },
+  {
     "id": "your-startup-sucks",
     "title": "Your Startup Sucks",
     "image": "https://images.lumacdn.com/cdn-cgi/image/format=auto,fit=cover,dpr=1,background=white,quality=75,width=400,height=400/event-covers/zy/b4908ed6-5bd6-4991-bc11-332ce0896366.png",
@@ -15,6 +47,8 @@
     "tags": ["relax", "wellness"],
     "url": "https://www.meetup.com/austin-startup-meetup/events/304997249/"
   },
+
+  
   {
     "id": "spa-day",
     "title": "Spa Day",
