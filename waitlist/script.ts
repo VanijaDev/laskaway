@@ -296,10 +296,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     let offsetX = 0;
     let lastTs = 0;
     let draggingScroller = false;
+    let maybeDrag = false;
     let dragStartX = 0;
     let dragStartOffset = 0;
     let loopWidth = 0;
     let justDraggedUntil = 0;
+    const DRAG_THRESHOLD = 6; // px
 
     const computeLoopWidth = () => {
       const GAP = 32; // match CSS scroller__track gap
@@ -338,25 +340,34 @@ document.addEventListener('DOMContentLoaded', async () => {
     requestAnimationFrame(tick);
 
     const onPointerDown = (e: PointerEvent) => {
-      draggingScroller = true;
+      maybeDrag = true;
+      draggingScroller = false;
       dragStartX = e.clientX;
       dragStartOffset = offsetX;
-      try { (track as HTMLElement).setPointerCapture?.(e.pointerId); } catch {}
-      e.preventDefault();
+      // Do not prevent default here to allow clicks
     };
 
     const onPointerMove = (e: PointerEvent) => {
-      if (!draggingScroller) return;
       const dx = e.clientX - dragStartX;
+      if (!draggingScroller) {
+        if (!maybeDrag) return;
+        if (Math.abs(dx) < DRAG_THRESHOLD) return; // not a drag yet
+        draggingScroller = true;
+        try { (track as HTMLElement).setPointerCapture?.((e as PointerEvent).pointerId); } catch {}
+      }
+      // While dragging, update position and prevent default scroll
       offsetX = dragStartOffset + dx;
       wrapOffset();
       applyTransform();
+      e.preventDefault();
     };
 
     const onPointerUp = () => {
-      if (!draggingScroller) return;
-      draggingScroller = false;
-      justDraggedUntil = Date.now() + 120;
+      if (draggingScroller) {
+        draggingScroller = false;
+        justDraggedUntil = Date.now() + 100;
+      }
+      maybeDrag = false;
     };
 
     (scroller as HTMLElement).addEventListener('pointerdown', onPointerDown);
