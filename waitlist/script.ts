@@ -277,14 +277,15 @@ document.addEventListener('DOMContentLoaded', async () => {
       track.appendChild(clone);
     });
 
+    const SCROLL_SPEED_PX_PER_SEC = 80; // matches duration calc baseline
+
     const recalculateDuration = () => {
       requestAnimationFrame(() => {
         const GAP = 32; // match CSS scroller__track gap
         const visibleCards = Array.from(track.children).filter((el) => !(el as HTMLElement).classList.contains('hidden')) as HTMLElement[];
         const originalVisible = visibleCards.filter((el) => el.dataset.original === 'true');
         const totalWidth = originalVisible.reduce((acc, el) => acc + el.getBoundingClientRect().width + GAP, 0);
-        const pixelsPerSecond = 100; // tweak for speed
-        const duration = Math.max(28, Math.min(60, totalWidth / pixelsPerSecond));
+        const duration = Math.max(28, Math.min(60, totalWidth / SCROLL_SPEED_PX_PER_SEC));
         (track as HTMLElement).style.setProperty('--duration', `${duration}s`);
       });
     };
@@ -299,7 +300,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     let dragStartOffset = 0;
     let loopWidth = 0;
     let justDraggedUntil = 0;
-    const SCROLL_SPEED_PX_PER_SEC = 100; // matches duration calc baseline
 
     const computeLoopWidth = () => {
       const GAP = 32; // match CSS scroller__track gap
