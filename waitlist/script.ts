@@ -1,5 +1,7 @@
 /* Live the Gift — Waitlist interactions (TypeScript) */
 
+import { experience_tags } from './data/experience_tags.js';
+
 // Experience data type
 interface Experience {
   id: string;
@@ -52,7 +54,7 @@ function generateCardStack(experiences: Experience[]): string {
 // Generate carousel HTML
 function generateCarousel(experiences: Experience[]): string {
   return experiences.map(exp => {
-    const primaryTag = exp.tags[0] || 'adventure';
+    const primaryTag = exp.tags[0] || experience_tags[0];
     return `
       <article class="xp-card" data-tag="${primaryTag}" data-url="${exp.url}">
         <img src="${exp.image}" alt="${exp.alt}" />
