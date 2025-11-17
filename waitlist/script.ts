@@ -283,13 +283,104 @@ document.addEventListener('DOMContentLoaded', async () => {
         const visibleCards = Array.from(track.children).filter((el) => !(el as HTMLElement).classList.contains('hidden')) as HTMLElement[];
         const originalVisible = visibleCards.filter((el) => el.dataset.original === 'true');
         const totalWidth = originalVisible.reduce((acc, el) => acc + el.getBoundingClientRect().width + GAP, 0);
-        const pixelsPerSecond = 140; // tweak for speed
+        const pixelsPerSecond = 100; // tweak for speed
         const duration = Math.max(28, Math.min(60, totalWidth / pixelsPerSecond));
         (track as HTMLElement).style.setProperty('--duration', `${duration}s`);
       });
     };
 
     recalculateDuration();
+
+    // JS-driven carousel scrolling with drag-to-pan support
+    let offsetX = 0;
+    let lastTs = 0;
+    let draggingScroller = false;
+    let dragStartX = 0;
+    let dragStartOffset = 0;
+    let loopWidth = 0;
+    let justDraggedUntil = 0;
+    const SCROLL_SPEED_PX_PER_SEC = 100; // matches duration calc baseline
+
+    const computeLoopWidth = () => {
+      const GAP = 32; // match CSS scroller__track gap
+      const visibleCards = Array.from(track.children).filter((el) => !(el as HTMLElement).classList.contains('hidden')) as HTMLElement[];
+      const originalVisible = visibleCards.filter((el) => el.dataset.original === 'true');
+      const total = originalVisible.reduce((acc, el) => acc + el.getBoundingClientRect().width + GAP, 0);
+      loopWidth = Math.max(1, total);
+    };
+
+    const applyTransform = () => {
+      (track as HTMLElement).style.transform = `translateX(${offsetX}px)`;
+    };
+
+    const wrapOffset = () => {
+      if (offsetX <= -loopWidth) offsetX += loopWidth;
+      if (offsetX > 0) offsetX -= loopWidth;
+    };
+
+    const tick = (ts: number) => {
+      if (!lastTs) lastTs = ts;
+      const dt = (ts - lastTs) / 1000;
+      lastTs = ts;
+      if (!draggingScroller) {
+        offsetX -= SCROLL_SPEED_PX_PER_SEC * dt;
+        wrapOffset();
+        applyTransform();
+      }
+      requestAnimationFrame(tick);
+    };
+
+    // Disable CSS animation to avoid conflicts; we drive transform via JS
+    (track as HTMLElement).style.animation = 'none';
+
+    computeLoopWidth();
+    applyTransform();
+    requestAnimationFrame(tick);
+
+    const onPointerDown = (e: PointerEvent) => {
+      draggingScroller = true;
+      dragStartX = e.clientX;
+      dragStartOffset = offsetX;
+      try { (track as HTMLElement).setPointerCapture?.(e.pointerId); } catch {}
+      e.preventDefault();
+    };
+
+    const onPointerMove = (e: PointerEvent) => {
+      if (!draggingScroller) return;
+      const dx = e.clientX - dragStartX;
+      offsetX = dragStartOffset + dx;
+      wrapOffset();
+      applyTransform();
+    };
+
+    const onPointerUp = () => {
+      if (!draggingScroller) return;
+      draggingScroller = false;
+      justDraggedUntil = Date.now() + 120;
+    };
+
+    (scroller as HTMLElement).addEventListener('pointerdown', onPointerDown);
+    (scroller as HTMLElement).addEventListener('pointermove', onPointerMove);
+    (scroller as HTMLElement).addEventListener('pointerup', onPointerUp);
+    (scroller as HTMLElement).addEventListener('pointercancel', onPointerUp);
+    (scroller as HTMLElement).addEventListener('lostpointercapture', onPointerUp);
+
+    // Suppress accidental clicks immediately after a drag ends
+    (scroller as HTMLElement).addEventListener('click', (ev) => {
+      if (Date.now() < justDraggedUntil) {
+        ev.preventDefault();
+        ev.stopPropagation();
+      }
+    }, true);
+
+    const onResize = () => {
+      // Preserve fractional progress through the loop when widths change
+      const progress = loopWidth ? ((-offsetX % loopWidth) + loopWidth) % loopWidth / loopWidth : 0;
+      computeLoopWidth();
+      offsetX = -progress * loopWidth;
+      applyTransform();
+    };
+    window.addEventListener('resize', onResize);
 
     // Tag filtering
     const tagFilters = document.getElementById('tagFilters') as HTMLElement | null;
@@ -318,6 +409,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // Recalculate animation duration based on visible cards
         recalculateDuration();
+        // Update loop width to reflect visible items and keep position stable
+        onResize();
       });
     }
   }
