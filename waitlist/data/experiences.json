@@ -108,7 +108,7 @@
     "title": "Lake Austin Spa Resort",
     "image": "https://assets.simpleviewinc.com/simpleview/image/upload/c_limit,q_75,w_1200/v1/crm/austin/Spa-Hero-Shot-600-x-400_2b882e9c-9a44-142e-3d2939673651024d.jpg",
     "alt": "Lake Austin Spa Resort",
-    "tags": ["relax", "wellness", "weekend getaway"],
+    "tags": ["relax", "weekend getaway"],
     "url": "https://www.lakeaustin.com/resort/"
   },
   {
@@ -140,7 +140,7 @@
     "title": "Massage Therapy",
     "image": "https://s3-media0.fl.yelpcdn.com/bphoto/O2mq0dkhbcSYr1KsNllHNg/348s.jpg",
     "alt": "Massage Therapy",
-    "tags": ["relax", "wellness"],
+    "tags": ["relax"],
     "url": "https://oakhavenmassage.com/"
   },
   {
@@ -156,7 +156,7 @@
     "title": "Bathe",
     "image": "https://www.austinfitmagazine.com/wp-content/uploads/2025/07/Bathe-Austin49.jpg",
     "alt": "Bathe",
-    "tags": ["relax", "wellness"],
+    "tags": ["relax"],
     "url": "https://www.batheaustin.com"
   },
   {
@@ -180,7 +180,7 @@
     "title": "Float Therapy",
     "image": "https://truerest.com/wp-content/themes/hello-elementor-child/images/true-rest-homepage-hero-holiday.jpg",
     "alt": "Float Therapy",
-    "tags": ["relax", "wellness"],
+    "tags": ["relax"],
     "url": "https://truerest.com/"
   },
   {

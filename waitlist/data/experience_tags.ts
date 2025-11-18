@@ -1,6 +1,5 @@
 export const experience_tags = [
   "relax",
-  "wellness",
   "thrill",
   "adventure",
   "food",
