@@ -6,5 +6,6 @@ export const experience_tags = [
   "food",
   "weekend getaway",
   "for him",
-  "for her"
+  "for her",
+  "fun time"
 ] as const;
