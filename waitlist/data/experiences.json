@@ -1,5 +1,13 @@
 [
   {
+    "id": "golf-classes",
+    "title": "Top Golf",
+    "image": "https://img1.wsimg.com/isteam/ip/42a320c1-b23b-4c04-ae89-365f57fb07ca/GCQuad_Range.jpg",
+    "alt": "Top Golf",
+    "tags": ["fun time"],
+    "url": "https://topgolf.com/us/austin/play/golf-lessons/"
+  },
+  {
     "id": "kayak-tours",
     "title": "Kayak Tours",
     "image": "https://media-cdn.tripadvisor.com/media/attractions-splice-spp-674x446/10/7b/b6/12.jpg",
