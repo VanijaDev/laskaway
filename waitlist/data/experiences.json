@@ -4,7 +4,7 @@
     "title": "Top Golf",
     "image": "https://img1.wsimg.com/isteam/ip/42a320c1-b23b-4c04-ae89-365f57fb07ca/GCQuad_Range.jpg",
     "alt": "Top Golf",
-    "tags": ["fun time"],
+    "tags": ["for him", "for her", "fun time"],
     "url": "https://topgolf.com/us/austin/play/golf-lessons/"
   },
   {
@@ -12,15 +12,15 @@
     "title": "Kayak Tours",
     "image": "https://media-cdn.tripadvisor.com/media/attractions-splice-spp-674x446/10/7b/b6/12.jpg",
     "alt": "Kayak Tours",
-    "tags": ["fun time"],
+    "tags": ["for him", "for her", "fun time"],
     "url": "https://getupandgokayaking.com/locations/texas/austin/"
   },
   {
-    "id": "e-bike-tour",
+    "id": "bat-watching",
     "title": "Austin Bat Watching Tours",
     "image": "https://capitalcruises.com/wp-content/uploads/2023/08/2022-Bats-with-Mega-and-PJ-M-Tuttle-pic-resize-scaled.jpg",
     "alt": "Austin Bat Watching Tours",
-    "tags": ["fun time"],
+    "tags": ["for him", "for her", "fun time"],
     "url": "https://www.livelovepaddle.com/austin-bat-watching-tours.html"
   },
   {
@@ -28,7 +28,7 @@
     "title": "E-bike Tours",
     "image": "https://cdn.prod.website-files.com/5e17b197b15aefd38114d120/605b938005c9256616bb2445_16F71472-D857-46B8-93AE-994B4CFAE0B1.JPEG",
     "alt": "E-bike Tours",
-    "tags": ["fun time"],
+    "tags": ["for him", "for her", "fun time"],
     "url": "https://www.yourbikergang.com"
   },
   {
@@ -36,7 +36,7 @@
     "title": "Cooking Classes",
     "image": "https://assets.simpleviewinc.com/simpleview/image/upload/c_limit,q_75,w_1200/v1/crm/austin/108446_5421D9DC-0CEA-26C2-65CA1EB04506C97B_542d6346-a468-8884-f82f11e96fae3388.jpg",
     "alt": "Cooking Classes",
-    "tags": ["food", "fun time"],
+    "tags": ["for her", "food", "fun time"],
     "url": "https://www.cozymeal.com/lp/cooking-classes-in-Austin"
   },
   {
@@ -44,7 +44,7 @@
     "title": "Secret Food Tours: Austin",
     "image": "https://lp-cms-production.imgix.net/2024-09/140686869largecs.jpg",
     "alt": "Secret Food Tours: Austin",
-    "tags": ["food"],
+    "tags": ["for him", "for her", "food"],
     "url": "https://www.secretfoodtours.com/austin/south-congress-food-tour/?variant=b"
   },
   {
@@ -52,7 +52,7 @@
     "title": "Wine Tasting",
     "image": "https://winecountrytable.com/wp-content/uploads/2017/06/2017-6-5-Hawkes-Alexander-Valley-Sonoma-Wineries-Cheese-Pairing-Wine-Tasting-BLOG-SIZE-2584-1600x950.jpg",
     "alt": "Wine Tasting",
-    "tags": ["food"],
+    "tags": ["for him", "for her", "food"],
     "url": "https://www.visitfredericksburgtx.com/things-to-do/wineries/"
   },
   {
@@ -60,7 +60,7 @@
     "title": "Hot Air Balloon Rides",
     "image": "https://images.squarespace-cdn.com/content/v1/674f5807cd4a1b3a64669a41/91daf3b6-dfa8-46da-a968-402b0e60b05d/20241109_171905.jpg",
     "alt": "Hot Air Balloon Rides",
-    "tags": ["thrill"],
+    "tags": ["for him", "for her", "thrill"],
     "url": "https://www.hotaireventsaustin.com"
   },
   {
@@ -68,7 +68,7 @@
     "title": "Skydive Experience",
     "image": "https://www.texasskydiving.com/wp-content/uploads/texas-skydiving-photo-38-640x427.jpg",
     "alt": "Skydive Experience",
-    "tags": ["thrill"],
+    "tags": ["for him", "for her", "thrill"],
     "url": "https://www.texasskydiving.com"
   },
   {
@@ -76,7 +76,7 @@
     "title": "Indoor Go-Kart Racing",
     "image": "https://www.k1speed.com/wp-content/uploads/2025/06/parties-for-adults-go-karts.jpg",
     "alt": "Indoor Go-Kart Racing",
-    "tags": ["fun time", "thrill"],
+    "tags": ["for him", "fun time", "thrill"],
     "url": "https://www.k1speed.com/austin-location.html"
   },
   {
@@ -84,7 +84,7 @@
     "title": "Drive Supercars",
     "image": "https://www.thextremexperience.com/wp-content/uploads/2023/09/COTA-Supercar-Experience-7.jpg",
     "alt": "Drive Supercars",
-    "tags": ["fun time", "thrill"],
+    "tags": ["for him", "fun time", "thrill"],
     "url": "https://www.thextremexperience.com/"
   },
   {
@@ -92,7 +92,7 @@
     "title": "Rock Climbing",
     "image": "https://lirp.cdn-website.com/4ed1f7b1/dms3rep/multi/opt/rock-about_open-graph-1920w.jpg",
     "alt": "Rock Climbing",
-    "tags": ["fun time", "thrill"],
+    "tags": ["for him", "for her", "fun time", "thrill"],
     "url": "https://www.rock-about.com/advanced-climbing"
   },
   {
@@ -100,7 +100,7 @@
     "title": "Lake Travis Zip Line",
     "image": "https://ziplaketravis.com/wp-content/uploads/2025/05/Map-Line-5.jpg",
     "alt": "Lake Travis Zip Line",
-    "tags": ["fun time"],
+    "tags": ["for him", "for her", "fun time"],
     "url": "https://ziplaketravis.com"
   },
   {
@@ -108,7 +108,7 @@
     "title": "Lake Austin Spa Resort",
     "image": "https://assets.simpleviewinc.com/simpleview/image/upload/c_limit,q_75,w_1200/v1/crm/austin/Spa-Hero-Shot-600-x-400_2b882e9c-9a44-142e-3d2939673651024d.jpg",
     "alt": "Lake Austin Spa Resort",
-    "tags": ["relax", "weekend getaway"],
+    "tags": ["for him", "for her", "relax", "weekend getaway"],
     "url": "https://www.lakeaustin.com/resort/"
   },
   {
@@ -116,7 +116,7 @@
     "title": "Oasis Spa",
     "image": "https://dhgf5mcbrms62.cloudfront.net/101482515/cover-fnPqCE/wnkDgJT-2000x2000.webp",
     "alt": "Oasis Spa",
-    "tags": ["relax"],
+    "tags": ["for him", "for her", "relax"],
     "url": "https://oasisspa.company.site/"
   },
   {
@@ -124,7 +124,7 @@
     "title": "Painting Classes",
     "image": "https://www.discoverlancaster.com/imager/assets_simpleviewinc_com/simpleview/image/upload/crm/discoverlancaster/PaintingwithaTwist_MainPhoto0-088035345056a36_0880362a-5056-a36a-09deb568fc683ff4_e45adf5f6bc0c5c2a30a39868f44eab6.jpg",
     "alt": "Painting Classes",
-    "tags": ["relax", "fun time"],
+    "tags": ["for him", "for her", "relax", "fun time"],
     "url": "https://www.paintingwithatwist.com"
   },
   {
@@ -132,7 +132,7 @@
     "title": "Gentleman's Club",
     "image": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSmUqJNYFsJ1y0Evq8gaJGlSfqvV2Bw_BuW_g&s",
     "alt": "Gentleman's Club",
-    "tags": ["relax", "fun time"],
+    "tags": ["for him", "relax", "fun time"],
     "url": "https://www.yellowrose.com/"
   },
   {
@@ -140,7 +140,7 @@
     "title": "Massage Therapy",
     "image": "https://s3-media0.fl.yelpcdn.com/bphoto/O2mq0dkhbcSYr1KsNllHNg/348s.jpg",
     "alt": "Massage Therapy",
-    "tags": ["relax"],
+    "tags": ["for him", "for her", "relax"],
     "url": "https://oakhavenmassage.com/"
   },
   {
@@ -148,15 +148,15 @@
     "title": "Axe Throwing",
     "image": "https://www.topnotchaxethrowing.com/wp-content/uploads/2018/04/hero-bgvid-poster.jpg",
     "alt": "Axe Throwing",
-    "tags": ["fun time"],
+    "tags": ["for him", "fun time"],
     "url": "https://www.topnotchaxethrowing.com"
   },
   {
-    "id": "dance-with-me",
+    "id": "bathe",
     "title": "Bathe",
     "image": "https://www.austinfitmagazine.com/wp-content/uploads/2025/07/Bathe-Austin49.jpg",
     "alt": "Bathe",
-    "tags": ["relax"],
+    "tags": ["for him", "for her", "relax"],
     "url": "https://www.batheaustin.com"
   },
   {
@@ -164,7 +164,7 @@
     "title": "Dance With Me",
     "image": "https://dancewithmeusa.com/wp-content/uploads/2025/05/Boca-Anniversary-166-of-173-1.jpg",
     "alt": "Dance With Me",
-    "tags": ["fun time"],
+    "tags": ["for him", "for her", "fun time"],
     "url": "https://dancewithmeusa.com/"
   },
   {
@@ -172,7 +172,7 @@
     "title": "Museum of Illusions Austin",
     "image": "https://austin.culturemap.com/media-library/museum-of-illusions.jpg?id=31476613",
     "alt": "Museum of Illusions Austin",
-    "tags": ["fun time"],
+    "tags": ["for him", "for her", "fun time"],
     "url": "https://moiaustin.com/"
   },
   {
@@ -180,7 +180,7 @@
     "title": "Float Therapy",
     "image": "https://truerest.com/wp-content/themes/hello-elementor-child/images/true-rest-homepage-hero-holiday.jpg",
     "alt": "Float Therapy",
-    "tags": ["relax"],
+    "tags": ["for him", "for her", "relax"],
     "url": "https://truerest.com/"
   },
   {
@@ -188,7 +188,7 @@
     "title": "Mr Olympia",
     "image": "https://i.namu.wiki/i/353Z3ZeLBXlwFw0n2vuUMVXuw2Ha4WHVs_0r37_BmxFPO6ZYdV8CChy_BLNxc3Qh9XDqqFv-pum0VZi3iTalLg.svg",
     "alt": "Mr Olympia",
-    "tags": ["fun time"],
+    "tags": ["for him", "fun time"],
     "url": "https://mrolympia.com/ticket-type"
   },
   {
@@ -196,7 +196,7 @@
     "title": "Sandbox VR",
     "image": "https://images.ctfassets.net/y6wgxqr5qe46/6IRWpNGd1SCXaM977WuHCI/50f15656f8c2458fe04d15bf0df5f87f/S1-Image.jpg",
     "alt": "Sandbox VR",
-    "tags": ["fun time"],
+    "tags": ["for him", "for her", "fun time"],
     "url": "https://sandboxvr.com/"
   },
   {
@@ -204,7 +204,7 @@
     "title": "The Escape Game",
     "image": "https://cdn.sanity.io/images/3bootchj/production/7e2e2ede88f91016f6b72c435788f9c451a71e0f-8256x5504.jpg",
     "alt": "The Escape Game",
-    "tags": ["fun time"],
+    "tags": ["for him", "for her", "fun time"],
     "url": "https://theescapegame.com/"
   },
   {
@@ -212,7 +212,7 @@
     "title": "Quark Expeditions",
     "image": "https://res.cloudinary.com/enchanting/q_90,f_auto,c_lfill,w_1400,h_800/quark-web/2024/09/Hero_Sam-Crimmin-V3-3702.jpg",
     "alt": "Quark Expeditions",
-    "tags": ["adventure"],
+    "tags": ["for him", "for her", "adventure"],
     "url": "https://www.quarkexpeditions.com/"
   },
   {
@@ -220,7 +220,7 @@
     "title": "Texas Hill Country",
     "image": "https://login.miravalresorts.com/austin/wp-content/uploads/sites/2/2022/09/Web-Arrival2-copy.jpeg",
     "alt": "Texas Hill Country",
-    "tags": ["weekend getaway", "adventure", "relax"],
+    "tags": ["for him", "for her", "weekend getaway", "adventure", "relax"],
     "url": "https://www.miravalresorts.com/"
   },
   {
@@ -228,7 +228,7 @@
     "title": "Mesa Rim Climbing Center",
     "image": "https://mesarim.com/austin/wp-content/uploads/sites/12/2023/02/Lead-Prow-scaled.jpg",
     "alt": "Mesa Rim Climbing Center",
-    "tags": ["thrill", "fun time"],
+    "tags": ["for him", "for her", "thrill", "fun time"],
     "url": "https://mesarim.com/"
   },
   {
@@ -236,7 +236,7 @@
     "title": "iFLY Indoor Skydiving",
     "image": "https://assets.simpleviewinc.com/simpleview/image/fetch/c_limit,h_1200,q_75,w_1200/https://assets.simpleviewinc.com/simpleview/image/upload/crm/austin/Credit-iFLY-Indoor-Skydiving.-Exp-7-1-25-1-_8929B8AE-0839-1E0F-ED2A22821D432C84-8929ab95c71aaff_8929c06a-cd45-6434-742f498615b6de5d.png",
     "alt": "iFLY Indoor Skydiving",
-    "tags": ["thrill", "fun time"],
+    "tags": ["for him", "for her", "thrill", "fun time"],
     "url": "https://www.iflyworld.com/"
   },
   {
@@ -244,7 +244,7 @@
     "title": "Your Startup Sucks",
     "image": "https://images.lumacdn.com/cdn-cgi/image/format=auto,fit=cover,dpr=1,background=white,quality=75,width=400,height=400/event-covers/zy/b4908ed6-5bd6-4991-bc11-332ce0896366.png",
     "alt": "Your Startup Sucks | Live Pitch Comedy Show",
-    "tags": ["fun time"],
+    "tags": ["for him", "for her", "fun time"],
     "url": "https://luma.com/qgn3c4em"
   },
   {
@@ -252,7 +252,7 @@
     "title": "ATX Ecosystem Resources",
     "image": "https://secure.meetupstatic.com/photos/event/d/5/6/3/highres_531114627.webp?w=1080",
     "alt": "ATX Ecosystem Resources, Updates, Networking, Lightning Pitches, Raffle & More",
-    "tags": ["fun time"],
+    "tags": ["for him", "for her", "fun time"],
     "url": "https://www.meetup.com/austin-startup-meetup/events/304997249/"
   }
 ]

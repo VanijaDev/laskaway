@@ -1,7 +1,5 @@
 /* Live the Gift — Waitlist interactions (TypeScript) */
 
-import { experience_tags } from './data/experience_tags.js';
-
 // Experience data type
 interface Experience {
   id: string;
@@ -54,9 +52,9 @@ function generateCardStack(experiences: Experience[]): string {
 // Generate carousel HTML
 function generateCarousel(experiences: Experience[]): string {
   return experiences.map(exp => {
-    const primaryTag = exp.tags[0] || experience_tags[0];
+    const tagsJson = JSON.stringify(exp.tags);
     return `
-      <article class="xp-card" data-tag="${primaryTag}" data-url="${exp.url}">
+      <article class="xp-card" data-tags='${tagsJson}' data-url="${exp.url}">
         <img src="${exp.image}" alt="${exp.alt}" />
         <div class="xp-card__label">${exp.title}</div>
       </article>
@@ -412,8 +410,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Filter cards
         const allCards = Array.from(track.children) as HTMLElement[];
         allCards.forEach((card) => {
-          const cardTag = (card.dataset.tag || '').toLowerCase();
-          if (selectedTag === 'all' || cardTag === selectedTag) {
+          const cardTags: string[] = card.dataset.tags ? JSON.parse(card.dataset.tags) : [];
+          const cardTagsLower = cardTags.map(t => t.toLowerCase());
+          if (selectedTag === 'all' || cardTagsLower.includes(selectedTag.toLowerCase())) {
             card.classList.remove('hidden');
           } else {
             card.classList.add('hidden');
