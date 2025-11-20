@@ -20,8 +20,8 @@
     "allowJs": false,
     "checkJs": false,
     "noEmit": false,
-    "rootDir": "waitlist",
-    "outDir": "waitlist/build"
+    "rootDir": ".",
+    "outDir": "build"
   },
-  "include": ["waitlist/**/*.ts"]
+  "include": ["*.ts", "data/**/*.ts"]
 }
