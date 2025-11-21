@@ -26,7 +26,7 @@ export function generateCardStack(experiences: Experience[]): string {
 }
 
 // Initialize card stack interactions
-export function initializeCardStack(_experiences: Experience[]): void {
+export function initializeCardStack(): void {
   const prefersReducedMotion: boolean = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const stack = document.querySelector('.card-stack') as HTMLElement | null;
   

@@ -79,7 +79,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   disableNativeImageDrag('.card img, .xp-card img');
 
   // Initialize modules
-  initializeCardStack(shuffledExperiences);
+  initializeCardStack();
   initializeCarousel();
   setupCarouselCardInteractions();
   initializeEasterEgg();

@@ -21,7 +21,7 @@ export function generateCardStack(experiences) {
   `).join('');
 }
 // Initialize card stack interactions
-export function initializeCardStack(_experiences) {
+export function initializeCardStack() {
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const stack = document.querySelector('.card-stack');
     if (!stack)
