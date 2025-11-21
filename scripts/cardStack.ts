@@ -105,10 +105,10 @@ export function initializeCardStack(experiences: Experience[]): void {
   // Top card is last in activeCards
   const getTopCard = (): HTMLElement | null => activeCards[activeCards.length - 1] || null;
 
-  // Random transform helpers (within -4 to +4 px, -3 to +3 deg)
+  // Random transform helpers (within -4 to +4 px, -6 to +6 deg)
   const randX = () => Math.floor(Math.random() * 9 - 4);
   const randY = () => Math.floor(Math.random() * 9 - 4);
-  const randTilt = () => Math.floor(Math.random() * 7 - 3);
+  const randTilt = () => Math.floor(Math.random() * 13 - 6);
 
   const setRandomBase = (el: HTMLElement) => {
     const x = randX();
@@ -240,15 +240,39 @@ export function initializeCardStack(experiences: Experience[]): void {
     const likeLabel = card.querySelector('.swipe-label--like') as HTMLElement | null;
     const nopeLabel = card.querySelector('.swipe-label--nope') as HTMLElement | null;
     const autoThreshold = AUTO_DEMO_THRESHOLD;
-    const duration = 2400; // slowed by 50%: full left->right->center
+    const duration = 3000; // Smooth animation: left->right->center
     const start = performance.now();
     
     const step = (now: number) => {
       const elapsed = now - start;
       const progress = Math.min(1, elapsed / duration);
-      const phase = progress < 0.5 ? progress * 2 : 2 - progress * 2;
-      const dx = (phase < 0.5 ? -1 : 1) * (phase < 0.5 ? phase * 2 : 2 - phase * 2) * autoThreshold;
-      const dy = -Math.abs(Math.sin(phase * Math.PI)) * 20;
+      
+      // Smooth easing function
+      const easeInOutCubic = (t: number): number => {
+        return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+      };
+      
+      let dx = 0;
+      let dy = 0;
+      
+      // Three phases: left (0-0.33), right (0.33-0.66), center (0.66-1)
+      if (progress < 0.33) {
+        // Move left
+        const phaseProgress = easeInOutCubic(progress / 0.33);
+        dx = -autoThreshold * phaseProgress;
+        dy = -Math.abs(Math.sin(phaseProgress * Math.PI)) * 15;
+      } else if (progress < 0.66) {
+        // Move from left to right
+        const phaseProgress = easeInOutCubic((progress - 0.33) / 0.33);
+        dx = -autoThreshold + (2 * autoThreshold * phaseProgress);
+        dy = -Math.abs(Math.sin(phaseProgress * Math.PI)) * 15;
+      } else {
+        // Move back to center
+        const phaseProgress = easeInOutCubic((progress - 0.66) / 0.34);
+        dx = autoThreshold * (1 - phaseProgress);
+        dy = -Math.abs(Math.sin(phaseProgress * Math.PI)) * 10;
+      }
+      
       const rot = dx * 0.06;
       card.style.setProperty('--drag-x', dx + 'px');
       card.style.setProperty('--drag-y', dy + 'px');
@@ -258,9 +282,12 @@ export function initializeCardStack(experiences: Experience[]): void {
       if (dx > 0) {
         if (likeLabel) likeLabel.style.opacity = String(intensity);
         if (nopeLabel) nopeLabel.style.opacity = '0';
-      } else {
+      } else if (dx < 0) {
         if (nopeLabel) nopeLabel.style.opacity = String(intensity);
         if (likeLabel) likeLabel.style.opacity = '0';
+      } else {
+        if (likeLabel) likeLabel.style.opacity = '0';
+        if (nopeLabel) nopeLabel.style.opacity = '0';
       }
       
       if (progress < 1) {
@@ -280,9 +307,11 @@ export function initializeCardStack(experiences: Experience[]): void {
   };
 
   // Schedule first demo after wiggle finishes
+  // Wiggle timing: 1000ms (initial delay) + 1600ms (top card delay) + 4400ms (animation) = 7000ms
+  // Start demo 1 second after wiggle completes
   setTimeout(() => {
     if (!hasInteracted) demoTopCardDrag();
-  }, 5400);
+  }, 8000);
 
   // Periodic wiggle every 12s if user hasn't interacted
   wiggleInterval = window.setInterval(() => {

@@ -334,10 +334,10 @@ body {
 }
 @keyframes hint-wiggle {
   0%, 100% { transform: translate(calc(var(--base-x, 0px)), calc(var(--base-y, 0px))) rotate(var(--base-r, 0deg)); }
-  15% { transform: translate(calc(var(--base-x, 0px) + 14px), calc(var(--base-y, 0px))) rotate(calc(var(--base-r, 0deg) + 2deg)); }
-  30% { transform: translate(calc(var(--base-x, 0px) - 14px), calc(var(--base-y, 0px))) rotate(calc(var(--base-r, 0deg) - 2deg)); }
-  45% { transform: translate(calc(var(--base-x, 0px) + 10px), calc(var(--base-y, 0px))) rotate(calc(var(--base-r, 0deg) + 1deg)); }
-  60% { transform: translate(calc(var(--base-x, 0px) - 10px), calc(var(--base-y, 0px))) rotate(calc(var(--base-r, 0deg) - 1deg)); }
+  15% { transform: translate(calc(var(--base-x, 0px) + 28px), calc(var(--base-y, 0px))) rotate(calc(var(--base-r, 0deg) + 4deg)); }
+  30% { transform: translate(calc(var(--base-x, 0px) - 28px), calc(var(--base-y, 0px))) rotate(calc(var(--base-r, 0deg) - 4deg)); }
+  45% { transform: translate(calc(var(--base-x, 0px) + 20px), calc(var(--base-y, 0px))) rotate(calc(var(--base-r, 0deg) + 2deg)); }
+  60% { transform: translate(calc(var(--base-x, 0px) - 20px), calc(var(--base-y, 0px))) rotate(calc(var(--base-r, 0deg) - 2deg)); }
   75% { transform: translate(calc(var(--base-x, 0px)), calc(var(--base-y, 0px))) rotate(var(--base-r, 0deg)); }
 }
 
