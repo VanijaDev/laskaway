@@ -128,6 +128,14 @@
     "url": "https://www.lakeaustin.com/resort/"
   },
   {
+    "id": "kuya",
+    "title": "KUYA",
+    "image": "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fcdn.happeningnext.com%2Fevents9%2Fbanners%2Fa08fcdb0-f5fb-11ef-9473-8bcdbc748ebf-rimg-w987-h740-dcf9c018-gmir.jpg",
+    "alt": "KUYA",
+    "tags": ["for him", "for her", "relax"],
+    "url": "https://kuyawellness.com/"
+  },
+  {
     "id": "oasis-spa",
     "title": "Oasis Spa",
     "image": "https://dhgf5mcbrms62.cloudfront.net/101482515/cover-fnPqCE/wnkDgJT-2000x2000.webp",
