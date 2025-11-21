@@ -15,15 +15,6 @@ export function initializeEmailValidation(): void {
 
   if (!form || !emailInput || !joinBtn) return;
 
-  // Check if previously joined
-  try {
-    const joined = JSON.parse(localStorage.getItem('waitlistJoined') || 'null');
-    if (joined && joined.email && successState) {
-      form.classList.add('hidden');
-      successState.classList.remove('hidden');
-    }
-  } catch (_) { /* ignore */ }
-
   const setError = (text: string) => {
     if (emailHelp) {
       emailHelp.textContent = text;
@@ -87,10 +78,6 @@ export function initializeEmailValidation(): void {
 
     // Simulate async submit; replace with backend call
     await new Promise((r) => setTimeout(r, 900));
-
-    try {
-      localStorage.setItem('waitlistJoined', JSON.stringify({ email, at: Date.now() }));
-    } catch (_) { /* ignore storage errors */ }
 
     form.classList.add('hidden');
     if (successState) {
