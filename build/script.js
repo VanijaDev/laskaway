@@ -1,7 +1,7 @@
 /* Main Application Entry Point */
 import { disableNativeImageDrag } from './utils.js';
 import { generateCardStack, initializeCardStack } from './cardStack.js';
-import { generateCarousel, initializeCarousel, setupCarouselCardInteractions } from './carousel.js';
+import { initializeCarousel, setupCarouselCardInteractions } from './carousel.js';
 import { initializeEasterEgg } from './easterEgg.js';
 // Load HTML component
 async function loadComponent(elementId, componentPath) {
@@ -47,30 +47,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     await loadComponent('heroVisual', './html_components/hero-card-stack.html');
     // Populate card stack and carousel with experience data
     const cardStack = document.getElementById('cardStack');
-    const scrollerTrack = document.querySelector('.scroller__track');
     if (cardStack && shuffledExperiences.length > 0) {
         cardStack.innerHTML = generateCardStack(shuffledExperiences);
-    }
-    if (scrollerTrack && shuffledExperiences.length > 0) {
-        // Clear existing content but preserve the data attribute
-        const isDuplicate = scrollerTrack.dataset.duplicate === 'true';
-        scrollerTrack.innerHTML = generateCarousel(shuffledExperiences);
-        // Re-apply duplication logic if needed
-        if (isDuplicate) {
-            const originalChildren = Array.from(scrollerTrack.children);
-            originalChildren.forEach((el) => { el.dataset.original = 'true'; });
-            originalChildren.forEach((node) => {
-                const clone = node.cloneNode(true);
-                delete clone.dataset.original;
-                scrollerTrack.appendChild(clone);
-            });
-        }
     }
     // Disable native image dragging on stack and carousel images
     disableNativeImageDrag('.card img, .xp-card img');
     // Initialize modules
     initializeCardStack();
-    initializeCarousel();
+    initializeCarousel(shuffledExperiences);
     setupCarouselCardInteractions();
     initializeEasterEgg();
 });

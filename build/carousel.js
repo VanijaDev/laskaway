@@ -1,101 +1,158 @@
-/* Carousel Module - Infinite scrolling experience carousel */
+/* Carousel Module - Virtual scrolling infinite carousel */
 import { openInNewTab } from './utils.js';
 // Track recent drag to prevent clicks
 let justDraggedUntil = 0;
-// Generate carousel HTML
-export function generateCarousel(experiences) {
-    return experiences.map(exp => {
-        const tagsJson = JSON.stringify(exp.tags);
-        return `
-      <article class="xp-card" data-tags='${tagsJson}' data-url="${exp.url}">
-        <img src="${exp.image}" alt="${exp.alt}" />
-        <div class="xp-card__label">${exp.title}</div>
-      </article>
-    `;
-    }).join('');
+// Store filtered experiences for virtual scrolling
+let filteredExperiences = [];
+// Generate empty carousel container (cards created dynamically)
+export function generateCarousel(_experiences) {
+    return ''; // Virtual scrolling will create cards dynamically
 }
-// Initialize carousel with infinite scrolling and drag support
-export function initializeCarousel() {
+// Initialize carousel with virtual scrolling and drag support
+export function initializeCarousel(experiences) {
+    filteredExperiences = [...experiences];
     const track = document.querySelector('.scroller__track');
     const scroller = document.querySelector('.scroller');
-    if (!track || !scroller)
+    if (!track || !scroller || filteredExperiences.length === 0)
         return;
-    const originalChildren = Array.from(track.children);
-    // Store originals with data attribute to distinguish from duplicates
-    originalChildren.forEach((el) => { el.dataset.original = 'true'; });
-    // Duplicate once for 50% translateX end
-    originalChildren.forEach((node) => {
-        const clone = node.cloneNode(true);
-        delete clone.dataset.original;
-        track.appendChild(clone);
-    });
-    const SCROLL_SPEED_PX_PER_SEC = 80; // matches duration calc baseline
-    const recalculateDuration = () => {
-        requestAnimationFrame(() => {
-            const GAP = 32; // match CSS scroller__track gap
-            const visibleCards = Array.from(track.children).filter((el) => !el.classList.contains('hidden'));
-            const originalVisible = visibleCards.filter((el) => el.dataset.original === 'true');
-            const totalWidth = originalVisible.reduce((acc, el) => acc + el.getBoundingClientRect().width + GAP, 0);
-            const duration = Math.max(28, Math.min(60, totalWidth / SCROLL_SPEED_PX_PER_SEC));
-            track.style.setProperty('--duration', `${duration}s`);
-        });
-    };
-    recalculateDuration();
-    // JS-driven carousel scrolling with drag-to-pan support
-    let offsetX = 0;
+    // Constants
+    const CARD_WIDTH = 340;
+    const GAP = 32;
+    const ITEM_WIDTH = CARD_WIDTH + GAP;
+    const SCROLL_SPEED_PX_PER_SEC = 80;
+    const VISIBLE_BUFFER = 2; // Extra cards on each side
+    const DRAG_THRESHOLD = 6;
+    const MAX_DELTA_TIME = 0.1;
+    // Virtual scrolling state
+    let scrollPosition = 0; // Virtual scroll position (continuously growing)
     let lastTs = 0;
     let draggingScroller = false;
     let maybeDrag = false;
     let dragStartX = 0;
-    let dragStartOffset = 0;
-    let loopWidth = 0;
-    const DRAG_THRESHOLD = 6; // px
-    const computeLoopWidth = () => {
-        const GAP = 32; // match CSS scroller__track gap
-        const visibleCards = Array.from(track.children).filter((el) => !el.classList.contains('hidden'));
-        const originalVisible = visibleCards.filter((el) => el.dataset.original === 'true');
-        const total = originalVisible.reduce((acc, el) => acc + el.getBoundingClientRect().width + GAP, 0);
-        loopWidth = Math.max(1, total);
+    let dragStartScroll = 0;
+    // Card pool for reuse
+    const cardPool = [];
+    const activeCards = new Map();
+    // Setup track for absolute positioning
+    track.style.position = 'relative';
+    track.style.height = '220px';
+    track.style.overflow = 'visible';
+    track.style.animation = 'none';
+    // Create or reuse a card element
+    const getOrCreateCard = () => {
+        let card = cardPool.pop();
+        if (!card) {
+            card = document.createElement('article');
+            card.className = 'xp-card';
+            card.style.position = 'absolute';
+            card.style.top = '0';
+            card.style.width = `${CARD_WIDTH}px`;
+            const img = document.createElement('img');
+            img.draggable = false;
+            card.appendChild(img);
+            const label = document.createElement('div');
+            label.className = 'xp-card__label';
+            card.appendChild(label);
+        }
+        return card;
     };
-    const applyTransform = () => {
-        track.style.transform = `translateX(${offsetX}px)`;
+    // Return card to pool
+    const recycleCard = (card) => {
+        card.remove();
+        cardPool.push(card);
     };
-    const wrapOffset = () => {
-        if (offsetX <= -loopWidth)
-            offsetX += loopWidth;
-        if (offsetX > 0)
-            offsetX -= loopWidth;
+    // Update card with experience data
+    const updateCard = (card, exp, virtualIndex) => {
+        const img = card.querySelector('img');
+        const label = card.querySelector('.xp-card__label');
+        img.src = exp.image;
+        img.alt = exp.alt;
+        label.textContent = exp.title;
+        card.dataset.tags = JSON.stringify(exp.tags);
+        card.dataset.url = exp.url;
+        card.dataset.virtualIndex = String(virtualIndex);
+        card.setAttribute('role', 'link');
+        card.setAttribute('tabindex', '0');
+        // Attach click handler if not already present
+        if (!card.dataset.hasClickHandler) {
+            card.addEventListener('click', () => {
+                if (Date.now() < justDraggedUntil)
+                    return;
+                openInNewTab(card.dataset.url || 'https://www.google.com');
+            });
+            card.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    openInNewTab(card.dataset.url || 'https://www.google.com');
+                }
+            });
+            card.dataset.hasClickHandler = 'true';
+        }
     };
+    // Update visible cards based on scroll position
+    const updateVisibleCards = () => {
+        if (filteredExperiences.length === 0) {
+            activeCards.forEach(card => recycleCard(card));
+            activeCards.clear();
+            return;
+        }
+        const viewportWidth = scroller.getBoundingClientRect().width;
+        // Calculate which virtual indices should be visible
+        const startIndex = Math.floor(scrollPosition / ITEM_WIDTH) - VISIBLE_BUFFER;
+        const endIndex = Math.ceil((scrollPosition + viewportWidth) / ITEM_WIDTH) + VISIBLE_BUFFER;
+        const neededIndices = new Set();
+        for (let i = startIndex; i <= endIndex; i++) {
+            neededIndices.add(i);
+        }
+        // Remove cards that are no longer visible
+        activeCards.forEach((card, idx) => {
+            if (!neededIndices.has(idx)) {
+                recycleCard(card);
+                activeCards.delete(idx);
+            }
+        });
+        // Update positions of all active cards
+        activeCards.forEach((card, idx) => {
+            card.style.left = `${idx * ITEM_WIDTH - scrollPosition}px`;
+        });
+        // Add newly visible cards
+        neededIndices.forEach(virtualIndex => {
+            if (activeCards.has(virtualIndex))
+                return;
+            // Get the experience for this index (wrap around)
+            const expIndex = ((virtualIndex % filteredExperiences.length) + filteredExperiences.length) % filteredExperiences.length;
+            const exp = filteredExperiences[expIndex];
+            // Get or create card element
+            const card = getOrCreateCard();
+            updateCard(card, exp, virtualIndex);
+            // Position card
+            card.style.left = `${virtualIndex * ITEM_WIDTH - scrollPosition}px`;
+            activeCards.set(virtualIndex, card);
+            track.appendChild(card);
+        });
+    };
+    // Animation loop
     const tick = (ts) => {
         if (!lastTs)
             lastTs = ts;
-        const dt = (ts - lastTs) / 1000;
+        let dt = (ts - lastTs) / 1000;
+        dt = Math.min(dt, MAX_DELTA_TIME);
         lastTs = ts;
-        if (!draggingScroller) {
-            offsetX -= SCROLL_SPEED_PX_PER_SEC * dt;
-            wrapOffset();
-            applyTransform();
+        if (!draggingScroller && dt > 0 && filteredExperiences.length > 0) {
+            scrollPosition += SCROLL_SPEED_PX_PER_SEC * dt;
+            updateVisibleCards();
         }
         requestAnimationFrame(tick);
     };
-    // Handle window resize
-    const onResize = () => {
-        computeLoopWidth();
-        wrapOffset();
-        applyTransform();
-    };
-    window.addEventListener('resize', onResize);
-    // Disable CSS animation to avoid conflicts; we drive transform via JS
-    track.style.animation = 'none';
-    computeLoopWidth();
-    applyTransform();
+    // Initialize
+    updateVisibleCards();
     requestAnimationFrame(tick);
+    // Drag handlers
     const onPointerDown = (e) => {
         maybeDrag = true;
         draggingScroller = false;
         dragStartX = e.clientX;
-        dragStartOffset = offsetX;
-        // Do not prevent default here to allow clicks
+        dragStartScroll = scrollPosition;
     };
     const onPointerMove = (e) => {
         const dx = e.clientX - dragStartX;
@@ -103,24 +160,22 @@ export function initializeCarousel() {
             if (!maybeDrag)
                 return;
             if (Math.abs(dx) < DRAG_THRESHOLD)
-                return; // not a drag yet
+                return;
             draggingScroller = true;
             try {
-                track.setPointerCapture?.(e.pointerId);
+                scroller.setPointerCapture?.(e.pointerId);
             }
             catch { }
         }
-        // While dragging, update position and prevent default scroll
-        offsetX = dragStartOffset + dx;
-        wrapOffset();
-        applyTransform();
+        scrollPosition = dragStartScroll - dx;
+        updateVisibleCards();
         e.preventDefault();
     };
     const onPointerUp = (e) => {
         if (draggingScroller) {
             justDraggedUntil = Date.now() + 100;
             try {
-                track.releasePointerCapture?.(e.pointerId);
+                scroller.releasePointerCapture?.(e.pointerId);
             }
             catch { }
         }
@@ -132,51 +187,30 @@ export function initializeCarousel() {
     scroller.addEventListener('pointerup', onPointerUp);
     scroller.addEventListener('pointercancel', onPointerUp);
     // Tag filtering
-    const setupTagFilters = () => {
-        const tagBtns = document.querySelectorAll('.tag-btn');
-        if (tagBtns.length === 0)
-            return;
-        tagBtns.forEach((btn) => {
-            btn.addEventListener('click', () => {
-                tagBtns.forEach((b) => b.classList.remove('active'));
-                btn.classList.add('active');
-                const selectedTag = btn.dataset.tag || 'all';
-                const allCards = document.querySelectorAll('.xp-card');
-                allCards.forEach((card) => {
-                    const cardTags = card.dataset.tags ? JSON.parse(card.dataset.tags) : [];
-                    const cardTagsLower = cardTags.map(t => t.toLowerCase());
-                    if (selectedTag === 'all' || cardTagsLower.includes(selectedTag.toLowerCase())) {
-                        card.classList.remove('hidden');
-                    }
-                    else {
-                        card.classList.add('hidden');
-                    }
-                });
-                // Recalculate animation duration based on visible cards
-                recalculateDuration();
-                // Update loop width to reflect visible items and keep position stable
-                onResize();
-            });
-        });
+    const applyFilter = (tag) => {
+        if (tag === 'all') {
+            filteredExperiences = [...experiences];
+        }
+        else {
+            filteredExperiences = experiences.filter(exp => exp.tags.some(t => t.toLowerCase() === tag.toLowerCase()));
+        }
+        // Clear and re-render
+        activeCards.forEach(card => recycleCard(card));
+        activeCards.clear();
+        scrollPosition = 0;
+        updateVisibleCards();
     };
-    setupTagFilters();
-}
-// Setup click handlers for carousel cards
-export function setupCarouselCardInteractions() {
-    document.querySelectorAll('.xp-card').forEach((card) => {
-        card.setAttribute('role', 'link');
-        card.setAttribute('tabindex', '0');
-        const url = card.dataset.url || 'https://www.google.com';
-        card.addEventListener('click', (e) => {
-            if (Date.now() > justDraggedUntil) {
-                openInNewTab(url);
-            }
-        });
-        card.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                openInNewTab(url);
-            }
+    const tagBtns = document.querySelectorAll('.tag-btn');
+    tagBtns.forEach((btn) => {
+        btn.addEventListener('click', () => {
+            tagBtns.forEach((b) => b.classList.remove('active'));
+            btn.classList.add('active');
+            const selectedTag = btn.dataset.tag || 'all';
+            applyFilter(selectedTag);
         });
     });
+}
+// Setup click handlers for carousel cards (no longer needed - handled inline)
+export function setupCarouselCardInteractions() {
+    // Click handlers are now attached during card creation in updateVisibleCards
 }
