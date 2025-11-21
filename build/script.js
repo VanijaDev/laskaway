@@ -1,9 +1,9 @@
 /* Main Application Entry Point */
 import { disableNativeImageDrag } from './utils.js';
-import { initializeCardStack } from './cardStack.js';
-import { initializeCarousel, setupCarouselCardInteractions } from './carousel.js';
-import { initializeEasterEgg } from './easterEgg.js';
-import { initializeEmailValidation } from './emailValidation.js';
+import { initializeCardStack } from './scripts/cardStack.js';
+import { initializeCarousel, setupCarouselCardInteractions } from './scripts/carousel.js';
+import { initializeEasterEgg } from './scripts/easterEgg.js';
+import { initializeEmailValidation } from './scripts/emailValidation.js';
 // Load HTML component
 async function loadComponent(elementId, componentPath) {
     const container = document.getElementById(elementId);

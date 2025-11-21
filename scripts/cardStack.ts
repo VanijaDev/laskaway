@@ -1,7 +1,7 @@
 /* Card Stack Module - Tinder-like swipeable card stack */
 
-import type { Experience } from './types';
-import { openInNewTab, triggerHaptic, LIKE_EMOJIS, createConfettiParticle, createConfettiEmoji } from './utils.js';
+import type { Experience } from '../types';
+import { openInNewTab, triggerHaptic, LIKE_EMOJIS, createConfettiParticle, createConfettiEmoji } from '../utils.js';
 
 // Constants
 const MAX_SELECTIONS = 5;

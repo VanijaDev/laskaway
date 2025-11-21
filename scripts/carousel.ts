@@ -1,7 +1,7 @@
 /* Carousel Module - Virtual scrolling infinite carousel */
 
-import type { Experience } from './types';
-import { openInNewTab } from './utils.js';
+import type { Experience } from '../types';
+import { openInNewTab } from '../utils.js';
 
 // Track recent drag to prevent clicks
 let justDraggedUntil = 0;

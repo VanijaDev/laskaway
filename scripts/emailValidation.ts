@@ -1,6 +1,6 @@
 /* Email Validation Module */
 
-import { setAriaInvalid } from './utils.js';
+import { setAriaInvalid } from '../utils.js';
 
 const isValidEmail = (value: string): boolean => {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value).toLowerCase());
