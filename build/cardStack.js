@@ -9,23 +9,18 @@ const FIFTH_CARD_FADE_MULTIPLIER = 0.5; // Half card width added to auto thresho
 const SUCCESS_CONFETTI_RADIUS = { min: 128, max: 480 };
 const SUCCESS_CONFETTI_PARTICLES_PER_BURST = 20;
 const SUCCESS_CONFETTI_BURSTS = 4;
-// Generate card stack HTML
-export function generateCardStack(experiences) {
-    return experiences.map(exp => `
-    <figure class="card card--hint-wiggle" data-title="${exp.title}" data-url="${exp.url}">
-      <img src="${exp.image}" alt="${exp.alt}" loading="lazy" />
-      <div class="swipe-label swipe-label--like" aria-hidden="true">Gift this!</div>
-      <div class="swipe-label swipe-label--nope" aria-hidden="true">Not today</div>
-      <figcaption>${exp.title}</figcaption>
-    </figure>
-  `).join('');
-}
-// Initialize card stack interactions
-export function initializeCardStack() {
+// Deprecated: previously rendered all cards. Now virtualization keeps only 3 cards.
+export function generateCardStack(_experiences) { return ''; }
+// Initialize card stack interactions with virtualized card reuse
+export function initializeCardStack(experiences) {
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const stack = document.querySelector('.card-stack');
     if (!stack)
         return;
+    // Virtualization state
+    const MAX_VISIBLE = 3;
+    let nextExpIndex = 0; // index of next experience not yet shown
+    const activeCards = []; // bottom -> top
     let hasInteracted = false;
     let wiggleInterval = null;
     let likedExperiences = [];
@@ -33,10 +28,39 @@ export function initializeCardStack() {
     const selectedCardsContainer = document.getElementById('selectedCards');
     const dragHint = document.getElementById('dragHint');
     let hintDismissed = false;
-    // Helper: Get all stack cards except the specified one
-    const getStackCardsExcept = (excludeCard) => {
-        return Array.from(stack.children).filter((c) => c !== excludeCard);
+    // Ensure initial visibility states
+    stack.classList.remove('is-hidden');
+    if (giftBox) {
+        giftBox.classList.remove('is-visible');
+        if (!giftBox.classList.contains('hidden')) {
+            giftBox.classList.add('hidden');
+        }
+    }
+    // Create card DOM element
+    const createCard = () => {
+        const card = document.createElement('figure');
+        card.className = 'card card--hint-wiggle';
+        card.innerHTML = `
+      <img src="" alt="" loading="lazy" />
+      <div class="swipe-label swipe-label--like" aria-hidden="true">Gift this!</div>
+      <div class="swipe-label swipe-label--nope" aria-hidden="true">Not today</div>
+      <figcaption></figcaption>
+    `;
+        const img = card.querySelector('img');
+        if (img)
+            img.draggable = false;
+        return card;
     };
+    const updateCardContent = (card, exp) => {
+        const img = card.querySelector('img');
+        const caption = card.querySelector('figcaption');
+        img.src = exp.image;
+        img.alt = exp.alt;
+        caption.textContent = exp.title;
+        card.dataset.title = exp.title;
+        card.dataset.url = exp.url;
+    };
+    const getStackCardsExcept = (excludeCard) => activeCards.filter(c => c !== excludeCard);
     // Helper: Update stack card opacity based on fade progress (0 = opaque, 1 = transparent)
     const updateStackOpacity = (excludeCard, fadeProgress) => {
         const stackCards = getStackCardsExcept(excludeCard);
@@ -66,12 +90,8 @@ export function initializeCardStack() {
         if (nopeLabel)
             nopeLabel.style.opacity = '0';
     };
-    // Helper: Get the top-most card in the stack
-    const getTopCard = () => {
-        const allCards = Array.from(stack.children);
-        const visible = allCards.filter((c) => !c.classList.contains('card--invisible'));
-        return visible[visible.length - 1] || null;
-    };
+    // Top card is last in activeCards
+    const getTopCard = () => activeCards[activeCards.length - 1] || null;
     // Random transform helpers (within -4 to +4 px, -3 to +3 deg)
     const randX = () => Math.floor(Math.random() * 9 - 4);
     const randY = () => Math.floor(Math.random() * 9 - 4);
@@ -84,29 +104,18 @@ export function initializeCardStack() {
         el.style.setProperty('--base-y', y + 'px');
         el.style.setProperty('--base-r', r + 'deg');
     };
-    const initializeBases = () => {
-        const children = Array.from(stack.children);
-        children.forEach((el) => setRandomBase(el));
+    // Initialize first visible cards (virtual rendering)
+    const initVirtualCards = () => {
+        for (let i = 0; i < Math.min(MAX_VISIBLE, experiences.length); i++) {
+            const exp = experiences[nextExpIndex++];
+            const card = createCard();
+            updateCardContent(card, exp);
+            setRandomBase(card);
+            stack.appendChild(card); // appended -> becomes higher visually; we'll reorder later if needed
+            activeCards.push(card);
+        }
     };
-    // Keep only the top 3 cards visible; others hidden
-    const applyVisibility = () => {
-        const children = Array.from(stack.children);
-        const toHide = children.slice(0, Math.max(0, children.length - 3));
-        const toShow = children.slice(-3);
-        toHide.forEach((el) => el.classList.add('card--invisible'));
-        toShow.forEach((el) => el.classList.remove('card--invisible'));
-    };
-    const updateStackBases = (randomizeBottom = false) => {
-        if (!randomizeBottom)
-            return;
-        const children = Array.from(stack.children);
-        if (children[0])
-            setRandomBase(children[0]); // randomize new bottom after a swipe
-    };
-    // Initialize base transforms randomly for all cards
-    initializeBases();
-    // Ensure only 3 cards are visible initially
-    applyVisibility();
+    initVirtualCards();
     // Helper: Apply fade effect to stack cards when swiping the fifth card right
     const applyFifthCardFade = (draggedCard, dx) => {
         if (likedExperiences.length !== 4)
@@ -121,9 +130,26 @@ export function initializeCardStack() {
         updateStackOpacity(draggedCard, fadeProgress);
     };
     const showGiftBox = () => {
-        giftBox?.classList.remove('hidden');
+        if (stack) {
+            stack.classList.add('is-hidden');
+            // Remove remaining cards after fade to avoid lingering DOM listeners
+            window.setTimeout(() => {
+                activeCards.splice(0).forEach(node => node.remove());
+            }, 400);
+        }
+        if (giftBox) {
+            giftBox.classList.remove('hidden');
+            giftBox.classList.add('is-visible');
+        }
         // Fade the hint (keep DOM to avoid layout jump)
         dragHint?.classList.add('drag-hint--fade');
+        // Stop ambient animations
+        stopAllWiggles();
+        cancelDemoIfAny();
+        if (wiggleInterval) {
+            clearInterval(wiggleInterval);
+            wiggleInterval = null;
+        }
         // Fire confetti celebration when gift box is shown
         if (!prefersReducedMotion && giftBox) {
             fireConfetti(giftBox);
@@ -149,8 +175,7 @@ export function initializeCardStack() {
     const triggerWiggle = () => {
         if (hasInteracted)
             return;
-        const cards = Array.from(stack.children);
-        cards.forEach((card, i) => {
+        activeCards.forEach((card, i) => {
             card.style.setProperty('--wiggle-delay', 1 + i * 0.3 + 's');
             card.classList.remove('card--hint-wiggle');
             void card.offsetWidth; // force reflow
@@ -158,8 +183,7 @@ export function initializeCardStack() {
         });
     };
     const stopAllWiggles = () => {
-        const cards = Array.from(stack.children);
-        cards.forEach((card) => {
+        activeCards.forEach((card) => {
             card.classList.remove('card--hint-wiggle');
             card.style.animation = 'none';
         });
@@ -394,15 +418,35 @@ export function initializeCardStack() {
                         showGiftBox();
                         return;
                     }
-                    // Move to bottom (firstChild) so another card becomes top (only if not at max)
-                    stack.insertBefore(card, stack.firstElementChild);
-                    // Re-apply visibility so only 3 cards are shown
-                    applyVisibility();
-                    // Smoothly promote visible cards and randomize new bottom tilt
-                    const visibleChildren = Array.from(stack.children).filter((c) => !c.classList.contains('card--invisible'));
-                    const others = visibleChildren.slice(0, -1); // all visible except the top
-                    others.forEach((c) => c.classList.add('base-animate'));
-                    updateStackBases(true);
+                    // Virtual reuse: recycle swiped top card
+                    const topIdx = activeCards.indexOf(card);
+                    if (topIdx > -1) {
+                        activeCards.splice(topIdx, 1); // remove from active list
+                    }
+                    // If more experiences remain AND not finished selections, repurpose card; else drop it.
+                    if (nextExpIndex < experiences.length && likedExperiences.length < MAX_SELECTIONS) {
+                        const nextExp = experiences[nextExpIndex++];
+                        updateCardContent(card, nextExp);
+                        clearDragTransform(card);
+                        resetSwipeLabels(card);
+                        card.classList.remove('fly-out-right', 'fly-out-left');
+                        card.style.transition = '';
+                        card.style.zIndex = '';
+                        setRandomBase(card);
+                        // Insert at bottom (front) so stacking order preserved (bottom first)
+                        stack.insertBefore(card, stack.firstChild);
+                        activeCards.unshift(card);
+                        // Animate remaining (excluding top) lightly
+                        const others = activeCards.slice(0, -1);
+                        others.forEach(c => c.classList.add('base-animate'));
+                        setRandomBase(activeCards[0]);
+                        setTimeout(() => others.forEach(c => c.classList.remove('base-animate')), 240);
+                    }
+                    else {
+                        // No more experiences or pack complete: remove the DOM node
+                        card.remove();
+                    }
+                    const others = activeCards.slice(0, -1);
                     // remove animation class after transition
                     setTimeout(() => {
                         others.forEach((c) => c.classList.remove('base-animate'));

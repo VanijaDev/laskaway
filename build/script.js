@@ -1,6 +1,6 @@
 /* Main Application Entry Point */
 import { disableNativeImageDrag } from './utils.js';
-import { generateCardStack, initializeCardStack } from './cardStack.js';
+import { initializeCardStack } from './cardStack.js';
 import { initializeCarousel, setupCarouselCardInteractions } from './carousel.js';
 import { initializeEasterEgg } from './easterEgg.js';
 // Load HTML component
@@ -45,16 +45,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     ]);
     // After hero content loads, load the nested hero visual component
     await loadComponent('heroVisual', './html_components/hero-card-stack.html');
-    // Populate card stack and carousel with experience data
-    const cardStack = document.getElementById('cardStack');
-    if (cardStack && shuffledExperiences.length > 0) {
-        cardStack.innerHTML = generateCardStack(shuffledExperiences);
-    }
-    // Disable native image dragging on stack and carousel images
-    disableNativeImageDrag('.card img, .xp-card img');
-    // Initialize modules
-    initializeCardStack();
+    // Initialize modules (card stack now virtualized)
+    initializeCardStack(shuffledExperiences);
     initializeCarousel(shuffledExperiences);
     setupCarouselCardInteractions();
     initializeEasterEgg();
+    // Disable native image dragging once DOM nodes exist
+    disableNativeImageDrag('.card img, .xp-card img');
 });
