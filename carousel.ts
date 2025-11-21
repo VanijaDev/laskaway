@@ -3,6 +3,9 @@
 import type { Experience } from './types';
 import { openInNewTab } from './utils.js';
 
+// Track recent drag to prevent clicks
+let justDraggedUntil = 0;
+
 // Generate carousel HTML
 export function generateCarousel(experiences: Experience[]): string {
   return experiences.map(exp => {
@@ -127,6 +130,7 @@ export function initializeCarousel(): void {
 
   const onPointerUp = (e: PointerEvent) => {
     if (draggingScroller) {
+      justDraggedUntil = Date.now() + 100;
       try { (track as HTMLElement).releasePointerCapture?.((e as PointerEvent).pointerId); } catch {}
     }
     maybeDrag = false;
@@ -177,7 +181,13 @@ export function setupCarouselCardInteractions(): void {
     card.setAttribute('role', 'link');
     card.setAttribute('tabindex', '0');
     const url = card.dataset.url || 'https://www.google.com';
-    card.addEventListener('click', () => openInNewTab(url));
+    card.addEventListener('click', (e) => {
+      if (Date.now() < justDraggedUntil) {
+        e.preventDefault();
+        return;
+      }
+      openInNewTab(url);
+    });
     card.addEventListener('keydown', (e: KeyboardEvent) => {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();

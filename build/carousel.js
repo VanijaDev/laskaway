@@ -1,5 +1,7 @@
 /* Carousel Module - Infinite scrolling experience carousel */
 import { openInNewTab } from './utils.js';
+// Track recent drag to prevent clicks
+let justDraggedUntil = 0;
 // Generate carousel HTML
 export function generateCarousel(experiences) {
     return experiences.map(exp => {
@@ -116,6 +118,7 @@ export function initializeCarousel() {
     };
     const onPointerUp = (e) => {
         if (draggingScroller) {
+            justDraggedUntil = Date.now() + 100;
             try {
                 track.releasePointerCapture?.(e.pointerId);
             }
@@ -164,7 +167,13 @@ export function setupCarouselCardInteractions() {
         card.setAttribute('role', 'link');
         card.setAttribute('tabindex', '0');
         const url = card.dataset.url || 'https://www.google.com';
-        card.addEventListener('click', () => openInNewTab(url));
+        card.addEventListener('click', (e) => {
+            if (Date.now() < justDraggedUntil) {
+                e.preventDefault();
+                return;
+            }
+            openInNewTab(url);
+        });
         card.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
