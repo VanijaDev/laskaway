@@ -168,11 +168,9 @@ export function setupCarouselCardInteractions() {
         card.setAttribute('tabindex', '0');
         const url = card.dataset.url || 'https://www.google.com';
         card.addEventListener('click', (e) => {
-            if (Date.now() < justDraggedUntil) {
-                e.preventDefault();
-                return;
+            if (Date.now() > justDraggedUntil) {
+                openInNewTab(url);
             }
-            openInNewTab(url);
         });
         card.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' || e.key === ' ') {
