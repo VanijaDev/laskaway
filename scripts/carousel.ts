@@ -230,11 +230,11 @@ export function initializeCarousel(experiences: Experience[]): void {
     updateVisibleCards();
   };
 
-  const tagBtns = document.querySelectorAll<HTMLElement>('.tag-btn');
+  const tagBtns = document.querySelectorAll<HTMLElement>('.chip');
   tagBtns.forEach((btn) => {
     btn.addEventListener('click', () => {
-      tagBtns.forEach((b) => b.classList.remove('active'));
-      btn.classList.add('active');
+      tagBtns.forEach((b) => b.classList.remove('chip--active'));
+      btn.classList.add('chip--active');
       const selectedTag = btn.dataset.tag || 'all';
       applyFilter(selectedTag);
     });
