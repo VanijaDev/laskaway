@@ -460,7 +460,10 @@ body {
 
 /* Drag hint below card stack */
 .drag-hint {
-  margin-top: 10px;
+  position: absolute;
+  bottom: -40px;
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
   align-items: center;
   justify-content: center;
