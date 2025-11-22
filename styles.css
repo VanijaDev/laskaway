@@ -206,7 +206,6 @@ body {
   100% { transform: scale(1) rotate(0deg); opacity: 1; }
 }
 
-.waitlist input[type="email"]:focus:not(.valid):not(.invalid) { /* keep earlier primary focus style; remove duplicate */ }
 .waitlist input[type="email"].invalid { border-color: #ef4444; box-shadow: 0 0 0 6px rgba(239, 68, 68, 0.16); }
 
 /* Ensure green when valid, including on focus */

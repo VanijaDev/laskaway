@@ -239,7 +239,9 @@ export function initializeCardStack(experiences: Experience[]): void {
     void card.offsetWidth;
     const likeLabel = card.querySelector('.swipe-label--like') as HTMLElement | null;
     const nopeLabel = card.querySelector('.swipe-label--nope') as HTMLElement | null;
-    const autoThreshold = AUTO_DEMO_THRESHOLD;
+    // Reduce threshold by half on mobile
+    const isMobile = window.matchMedia('(max-width: 960px)').matches;
+    const autoThreshold = isMobile ? AUTO_DEMO_THRESHOLD / 2 : AUTO_DEMO_THRESHOLD;
     const duration = 3000; // Smooth animation: left->right->center
     const start = performance.now();
     
