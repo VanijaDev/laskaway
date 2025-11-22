@@ -375,6 +375,9 @@ export function initializeCardStack(experiences: Experience[]): void {
       card.releasePointerCapture(pointerId!);
       dragging = false;
       card.classList.remove('is-dragging');
+      // Re-enable page scrolling
+      document.body.style.overflow = '';
+      document.body.style.touchAction = '';
       // Ensure CSS transitions can run after we disabled them on pointerdown
       card.style.transition = '';
       card.style.zIndex = '';
@@ -549,6 +552,9 @@ export function initializeCardStack(experiences: Experience[]): void {
       if (card !== getTopCard()) return;
       // Prevent default image/text dragging behavior when starting a swipe
       e.preventDefault();
+      // Prevent page scrolling during card drag
+      document.body.style.overflow = 'hidden';
+      document.body.style.touchAction = 'none';
       // Stop any running demo so user takes over cleanly
       cancelDemoIfAny();
       pointerId = e.pointerId;
