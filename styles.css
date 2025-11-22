@@ -600,6 +600,7 @@ body {
 /* Responsive */
 @media (max-width: 960px) {
   .hero__grid { grid-template-columns: 1fr; gap: 28px; }
+  .card-stack-stage { max-height: 350px; }
   .card-stack { height: 360px; transform: scale(0.8); }
 }
 
