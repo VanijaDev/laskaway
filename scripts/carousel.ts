@@ -192,6 +192,9 @@ export function initializeCarousel(experiences: Experience[]): void {
       if (!maybeDrag) return;
       if (Math.abs(dx) < DRAG_THRESHOLD) return;
       draggingScroller = true;
+      // Prevent page scrolling during carousel drag
+      document.body.style.overflow = 'hidden';
+      document.body.style.touchAction = 'none';
       try { scroller.setPointerCapture?.(e.pointerId); } catch {}
     }
     scrollPosition = dragStartScroll - dx;
@@ -202,6 +205,9 @@ export function initializeCarousel(experiences: Experience[]): void {
   const onPointerUp = (e: PointerEvent) => {
     if (draggingScroller) {
       justDraggedUntil = Date.now() + 100;
+      // Re-enable page scrolling
+      document.body.style.overflow = '';
+      document.body.style.touchAction = '';
       try { scroller.releasePointerCapture?.(e.pointerId); } catch {}
     }
     maybeDrag = false;
