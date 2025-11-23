@@ -12,6 +12,20 @@ const FIFTH_CARD_FADE_MULTIPLIER = 0.5; // Half card width added to auto thresho
 const SUCCESS_CONFETTI_RADIUS = { min: 128, max: 480 } as const;
 const SUCCESS_CONFETTI_PARTICLES_PER_BURST = 20;
 const SUCCESS_CONFETTI_BURSTS = 4;
+const ROTATION_FACTOR = 0.06; // Card rotation per pixel of drag
+const LABEL_INTENSITY_DIVISOR = 120; // Divisor for calculating label intensity
+const DEMO_ANIMATION_DURATION = 3000; // ms
+const WIGGLE_INITIAL_DELAY = 1000; // ms
+const DEMO_START_DELAY = 8000; // ms
+const WIGGLE_REPEAT_INTERVAL = 12000; // ms
+
+// Media query for mobile detection
+const isMobileQuery = window.matchMedia('(max-width: 960px)');
+
+// Easing function (reusable)
+const easeInOutCubic = (t: number): number => {
+  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+};
 
 // Deprecated: previously rendered all cards. Now virtualization keeps only 3 cards.
 export function generateCardStack(_experiences: Experience[]): string { return ''; }
@@ -87,6 +101,26 @@ export function initializeCardStack(experiences: Experience[]): void {
     });
   };
 
+  // Helper: Get card labels
+  const getCardLabels = (card: HTMLElement) => ({
+    like: card.querySelector('.swipe-label--like') as HTMLElement | null,
+    nope: card.querySelector('.swipe-label--nope') as HTMLElement | null
+  });
+
+  // Helper: Set label opacity based on drag direction and intensity
+  const updateLabelOpacity = (labels: ReturnType<typeof getCardLabels>, dx: number, intensity: number) => {
+    if (dx > 0) {
+      if (labels.like) labels.like.style.opacity = String(intensity);
+      if (labels.nope) labels.nope.style.opacity = '0';
+    } else if (dx < 0) {
+      if (labels.nope) labels.nope.style.opacity = String(intensity);
+      if (labels.like) labels.like.style.opacity = '0';
+    } else {
+      if (labels.like) labels.like.style.opacity = '0';
+      if (labels.nope) labels.nope.style.opacity = '0';
+    }
+  };
+
   // Helper: Clear drag transform properties from card
   const clearDragTransform = (card: HTMLElement) => {
     card.style.removeProperty('--drag-x');
@@ -96,10 +130,9 @@ export function initializeCardStack(experiences: Experience[]): void {
 
   // Helper: Reset swipe label opacity
   const resetSwipeLabels = (card: HTMLElement) => {
-    const likeLabel = card.querySelector('.swipe-label--like') as HTMLElement | null;
-    const nopeLabel = card.querySelector('.swipe-label--nope') as HTMLElement | null;
-    if (likeLabel) likeLabel.style.opacity = '0';
-    if (nopeLabel) nopeLabel.style.opacity = '0';
+    const labels = getCardLabels(card);
+    if (labels.like) labels.like.style.opacity = '0';
+    if (labels.nope) labels.nope.style.opacity = '0';
   };
 
   // Top card is last in activeCards
@@ -207,7 +240,7 @@ export function initializeCardStack(experiences: Experience[]): void {
   };
 
   // Initial wiggle after 1s
-  setTimeout(triggerWiggle, 1000);
+  setTimeout(triggerWiggle, WIGGLE_INITIAL_DELAY);
 
   // Top-card deep wiggle to auto-threshold with label visibility
   let isDemoRunning = false;
@@ -237,22 +270,14 @@ export function initializeCardStack(experiences: Experience[]): void {
     // Ensure CSS animation on top card doesn't conflict
     card.classList.remove('card--hint-wiggle');
     void card.offsetWidth;
-    const likeLabel = card.querySelector('.swipe-label--like') as HTMLElement | null;
-    const nopeLabel = card.querySelector('.swipe-label--nope') as HTMLElement | null;
+    const labels = getCardLabels(card);
     // Reduce threshold by half on mobile
-    const isMobile = window.matchMedia('(max-width: 960px)').matches;
-    const autoThreshold = isMobile ? AUTO_DEMO_THRESHOLD / 2 : AUTO_DEMO_THRESHOLD;
-    const duration = 3000; // Smooth animation: left->right->center
+    const autoThreshold = isMobileQuery.matches ? AUTO_DEMO_THRESHOLD / 2 : AUTO_DEMO_THRESHOLD;
     const start = performance.now();
     
     const step = (now: number) => {
       const elapsed = now - start;
-      const progress = Math.min(1, elapsed / duration);
-      
-      // Smooth easing function
-      const easeInOutCubic = (t: number): number => {
-        return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-      };
+      const progress = Math.min(1, elapsed / DEMO_ANIMATION_DURATION);
       
       let dx = 0;
       let dy = 0;
@@ -275,22 +300,13 @@ export function initializeCardStack(experiences: Experience[]): void {
         dy = -Math.abs(Math.sin(phaseProgress * Math.PI)) * 10;
       }
       
-      const rot = dx * 0.06;
+      const rot = dx * ROTATION_FACTOR;
       card.style.setProperty('--drag-x', dx + 'px');
       card.style.setProperty('--drag-y', dy + 'px');
       card.style.setProperty('--drag-r', rot + 'deg');
-      const intensity = Math.min(1, Math.abs(dx) / 120);
+      const intensity = Math.min(1, Math.abs(dx) / LABEL_INTENSITY_DIVISOR);
       
-      if (dx > 0) {
-        if (likeLabel) likeLabel.style.opacity = String(intensity);
-        if (nopeLabel) nopeLabel.style.opacity = '0';
-      } else if (dx < 0) {
-        if (nopeLabel) nopeLabel.style.opacity = String(intensity);
-        if (likeLabel) likeLabel.style.opacity = '0';
-      } else {
-        if (likeLabel) likeLabel.style.opacity = '0';
-        if (nopeLabel) nopeLabel.style.opacity = '0';
-      }
+      updateLabelOpacity(labels, dx, intensity);
       
       if (progress < 1) {
         demoRAF = requestAnimationFrame(step);
@@ -313,21 +329,19 @@ export function initializeCardStack(experiences: Experience[]): void {
   // Start demo 1 second after wiggle completes
   setTimeout(() => {
     if (!hasInteracted) demoTopCardDrag();
-  }, 8000);
+  }, DEMO_START_DELAY);
 
   // Periodic wiggle every 12s if user hasn't interacted
   wiggleInterval = window.setInterval(() => {
     if (!hasInteracted) triggerWiggle();
-  }, 12000);
+  }, WIGGLE_REPEAT_INTERVAL);
 
   const attachDrag = (card: HTMLElement) => {
     let startX = 0, startY = 0, dx = 0, dy = 0, dragging = false;
     const clickTolerance = CLICK_TOLERANCE;
     let moved = false; // exceeded click tolerance
     let blockClickUntil = 0; // suppress click shortly after drag
-
-    const likeLabel = card.querySelector('.swipe-label--like') as HTMLElement | null;
-    const nopeLabel = card.querySelector('.swipe-label--nope') as HTMLElement | null;
+    const labels = getCardLabels(card);
 
     const onPointerMove = (e: PointerEvent) => {
       if (!dragging) return;
@@ -336,23 +350,17 @@ export function initializeCardStack(experiences: Experience[]): void {
       if (!moved && (Math.abs(dx) > clickTolerance || Math.abs(dy) > clickTolerance)) {
         moved = true;
       }
-      const rot = dx * 0.06;
+      const rot = dx * ROTATION_FACTOR;
       card.style.setProperty('--drag-x', dx + 'px');
       card.style.setProperty('--drag-y', dy + 'px');
       card.style.setProperty('--drag-r', rot + 'deg');
       
       // Feedback labels
-      const intensity = Math.min(1, Math.abs(dx) / 120);
+      const intensity = Math.min(1, Math.abs(dx) / LABEL_INTENSITY_DIVISOR);
       // Auto-advance at 60% threshold with haptic
       const autoThreshold = AUTO_DEMO_THRESHOLD;
 
-      if (dx > 0) {
-        if (likeLabel) likeLabel.style.opacity = String(intensity);
-        if (nopeLabel) nopeLabel.style.opacity = '0';
-      } else {
-        if (nopeLabel) nopeLabel.style.opacity = String(intensity);
-        if (likeLabel) likeLabel.style.opacity = '0';
-      }
+      updateLabelOpacity(labels, dx, intensity);
 
       // Fade stack cards when dragging the fifth (final) card to the right
       applyFifthCardFade(card, dx);
@@ -366,8 +374,8 @@ export function initializeCardStack(experiences: Experience[]): void {
     };
 
     const resetLabels = () => {
-      if (likeLabel) likeLabel.style.opacity = '0';
-      if (nopeLabel) nopeLabel.style.opacity = '0';
+      if (labels.like) labels.like.style.opacity = '0';
+      if (labels.nope) labels.nope.style.opacity = '0';
     };
 
     const onPointerUp = () => {
@@ -416,40 +424,19 @@ export function initializeCardStack(experiences: Experience[]): void {
 
           // Confetti at card center (like only)
           if (!prefersReducedMotion) {
-            const rect = card.getBoundingClientRect();
-            const cx = rect.left + rect.width / 2;
-            const cy = rect.top + rect.height / 2;
-            for (let i = 0; i < 4; i++) {
-              const emoji = LIKE_EMOJIS[(Math.random() * LIKE_EMOJIS.length) | 0];
-              const emojiEl = document.createElement('div');
-              emojiEl.className = 'confetti-emoji';
-              emojiEl.textContent = emoji;
-              const angle = Math.random() * Math.PI * 2;
-              const dist = 60 + Math.random() * 60;
-              const emDx = Math.cos(angle) * dist;
-              const emDy = Math.sin(angle) * dist;
-              emojiEl.style.left = cx + 'px';
-              emojiEl.style.top = cy + 'px';
-              emojiEl.style.setProperty('--dx', emDx + 'px');
-              emojiEl.style.setProperty('--dy', emDy + 'px');
-              emojiEl.style.setProperty('--dur', (900 + Math.random() * 300) + 'ms');
-              emojiEl.style.setProperty('--delay', ((i * 40) | 0) + 'ms');
-              emojiEl.style.setProperty('--emojiSize', (24 + Math.random() * 8) + 'px');
-              document.body.appendChild(emojiEl);
-              emojiEl.addEventListener('animationend', () => emojiEl.remove());
-            }
+            createLikeEmojiConfetti(card);
           }
 
           // Shake like label
-          if (likeLabel) {
-            likeLabel.style.opacity = '1';
-            likeLabel.classList.add('shake-right');
-            setTimeout(() => likeLabel.classList.remove('shake-right'), 220);
+          if (labels.like) {
+            labels.like.style.opacity = '1';
+            labels.like.classList.add('shake-right');
+            setTimeout(() => labels.like?.classList.remove('shake-right'), 220);
           }
-        } else if (nopeLabel) {
-          nopeLabel.style.opacity = '1';
-          nopeLabel.classList.add('shake-left');
-          setTimeout(() => nopeLabel.classList.remove('shake-left'), 220);
+        } else if (labels.nope) {
+          labels.nope.style.opacity = '1';
+          labels.nope.classList.add('shake-left');
+          setTimeout(() => labels.nope?.classList.remove('shake-left'), 220);
         }
         // Fade out the drag hint on first actual selection
         if (!hintDismissed) {
@@ -595,9 +582,9 @@ export function initializeCardStack(experiences: Experience[]): void {
 
   Array.from(stack.children).forEach((el) => attachDrag(el as HTMLElement));
 
-  function showCountNumber(countNumber: number) {
-    // Show just the count number flying up from the card
-    const stackRect = (stack as HTMLElement).getBoundingClientRect();
+  // Helper: Get center position within a band area of the stack
+  const getStackBandCenter = () => {
+    const stackRect = stack.getBoundingClientRect();
     const stackCenterX = stackRect.left + stackRect.width / 2;
     const stackCenterY = stackRect.top + stackRect.height / 2;
     
@@ -608,8 +595,14 @@ export function initializeCardStack(experiences: Experience[]): void {
     const bandY1 = stackCenterY - bandHeight / 2;
     const bandY2 = stackCenterY + bandHeight / 2;
     
-    const centerX = (bandX1 + bandX2) / 2;
-    const centerY = (bandY1 + bandY2) / 2;
+    return {
+      x: (bandX1 + bandX2) / 2,
+      y: (bandY1 + bandY2) / 2
+    };
+  };
+
+  const showCountNumber = (countNumber: number) => {
+    const { x: centerX, y: centerY } = getStackBandCenter();
     const num = document.createElement('div');
     num.className = 'confetti-number';
     num.textContent = String(countNumber);
@@ -626,13 +619,44 @@ export function initializeCardStack(experiences: Experience[]): void {
     num.style.setProperty('--delay', '0ms');
     document.body.appendChild(num);
     num.addEventListener('animationend', () => num.remove());
-  }
+  };
+
+  // Helper: Create like emoji confetti burst at card center
+  const createLikeEmojiConfetti = (card: HTMLElement) => {
+    const { x: cx, y: cy } = getElementCenter(card);
+    for (let i = 0; i < 4; i++) {
+      const emoji = LIKE_EMOJIS[(Math.random() * LIKE_EMOJIS.length) | 0];
+      const emojiEl = document.createElement('div');
+      emojiEl.className = 'confetti-emoji';
+      emojiEl.textContent = emoji;
+      const angle = Math.random() * Math.PI * 2;
+      const dist = 60 + Math.random() * 60;
+      const emDx = Math.cos(angle) * dist;
+      const emDy = Math.sin(angle) * dist;
+      emojiEl.style.left = cx + 'px';
+      emojiEl.style.top = cy + 'px';
+      emojiEl.style.setProperty('--dx', emDx + 'px');
+      emojiEl.style.setProperty('--dy', emDy + 'px');
+      emojiEl.style.setProperty('--dur', (900 + Math.random() * 300) + 'ms');
+      emojiEl.style.setProperty('--delay', ((i * 40) | 0) + 'ms');
+      emojiEl.style.setProperty('--emojiSize', (24 + Math.random() * 8) + 'px');
+      document.body.appendChild(emojiEl);
+      emojiEl.addEventListener('animationend', () => emojiEl.remove());
+    }
+  };
+
+  // Helper: Get center coordinates of an element
+  const getElementCenter = (element: HTMLElement) => {
+    const rect = element.getBoundingClientRect();
+    return {
+      x: rect.left + rect.width / 2,
+      y: rect.top + rect.height / 2
+    };
+  };
 
   // Success confetti: center-screen burst after join
-  function fireConfetti(targetElement: HTMLElement) {
-    const rect = targetElement.getBoundingClientRect();
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
+  const fireConfetti = (targetElement: HTMLElement) => {
+    const { x: centerX, y: centerY } = getElementCenter(targetElement);
     
     const emit = () => {
       for (let i = 0; i < SUCCESS_CONFETTI_PARTICLES_PER_BURST; i++) {
@@ -658,5 +682,5 @@ export function initializeCardStack(experiences: Experience[]): void {
     for (let b = 0; b < SUCCESS_CONFETTI_BURSTS; b++) {
       setTimeout(emit, b * 100);
     }
-  }
+  };
 }
