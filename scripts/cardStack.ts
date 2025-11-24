@@ -4,10 +4,12 @@ import type { Experience } from '../types';
 import { openInNewTab, triggerHaptic, LIKE_EMOJIS, createConfettiParticle, createConfettiEmoji } from '../utils.js';
 
 // Constants
+
 const MAX_SELECTIONS = 5;
 const MAX_VISIBLE_CARDS = 3;
 const AUTO_DEMO_THRESHOLD = 180;
-const SWIPE_THRESHOLD = 200;
+const isMobileQuery = window.matchMedia('(max-width: 960px)');
+const SWIPE_THRESHOLD = isMobileQuery.matches ? 50 : 200;
 const CLICK_TOLERANCE = 5;
 const FIFTH_CARD_FADE_MULTIPLIER = 0.5;
 const SUCCESS_CONFETTI_RADIUS = { min: 128, max: 480 } as const;
@@ -21,8 +23,6 @@ const DEMO_START_DELAY = 8000;
 const WIGGLE_REPEAT_INTERVAL = 12000;
 const CLICK_BLOCK_DURATION = 800;
 const DEFAULT_URL = 'https://www.google.com';
-
-const isMobileQuery = window.matchMedia('(max-width: 960px)');
 
 const easeInOutCubic = (t: number): number => {
   return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
@@ -313,6 +313,7 @@ class CardStack {
     const labels = this.getCardLabels(card);
 
     const onPointerDown = (e: PointerEvent) => {
+      console.log('onPinterDown');
       if (card !== this.getTopCard()) return;
       e.preventDefault();
       document.body.style.overflow = 'hidden';
@@ -335,6 +336,7 @@ class CardStack {
     };
 
     const onPointerMove = (e: PointerEvent) => {
+      console.log('onPointerMove');
       if (!dragging) return;
       dx = e.clientX - startX;
       dy = e.clientY - startY;
@@ -357,6 +359,7 @@ class CardStack {
     };
 
     const onPointerUp = () => {
+      console.log('onPointerUp');
       if (!dragging) return;
       if (pointerId !== null) card.releasePointerCapture(pointerId);
       dragging = false;
