@@ -3,7 +3,7 @@
 import type { Experience } from '../types';
 import { disableNativeImageDrag } from '../utils.js';
 import { initializeCardStack } from './cardStack.js';
-import { initializeCarousel, setupCarouselCardInteractions } from './carousel.js';
+import { initializeCarousel } from './carousel.js';
 import { initializeEasterEgg } from './easterEgg.js';
 import { initializeEmailValidation } from './emailValidation.js';
 
@@ -54,7 +54,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Initialize modules (card stack now virtualized)
   initializeCardStack(shuffledExperiences);
   initializeCarousel(shuffledExperiences);
-  setupCarouselCardInteractions();
   initializeEasterEgg();
   initializeEmailValidation();
 

@@ -3,13 +3,18 @@
 import type { Experience } from '../types';
 import { openInNewTab } from '../utils.js';
 
-// Store filtered experiences for virtual scrolling
-let filteredExperiences: Experience[] = [];
+// Constants
+const CARD_WIDTH = 340;
+const GAP = 32;
+const ITEM_WIDTH = CARD_WIDTH + GAP;
+const SCROLL_SPEED_PX_PER_SEC = 80;
+const VISIBLE_BUFFER = 2;
+const MAX_DELTA_TIME = 0.1;
+const TRACK_HEIGHT = '220px';
+const DEFAULT_URL = 'https://www.google.com';
 
-// Generate empty carousel container (cards created dynamically)
-export function generateCarousel(_experiences: Experience[]): string {
-  return ''; // Virtual scrolling will create cards dynamically
-}
+// Module state
+let filteredExperiences: Experience[] = [];
 
 // Initialize carousel with virtual scrolling
 export function initializeCarousel(experiences: Experience[]): void {
@@ -20,65 +25,95 @@ export function initializeCarousel(experiences: Experience[]): void {
   
   if (!track || !scroller || filteredExperiences.length === 0) return;
 
-  // Environment detection
-  const isDesktopHover = window.matchMedia('(hover: hover)').matches;
+  const carousel = new VirtualCarousel(track, scroller, experiences);
+  carousel.initialize();
+}
 
-  // Auto-scroll pause state
-  let isAutoScrollPaused = false;
-  const pauseAutoScroll = () => { isAutoScrollPaused = true; };
-  const resumeAutoScroll = () => { isAutoScrollPaused = false; };
-
-  // Constants
-  const CARD_WIDTH = 340;
-  const GAP = 32;
-  const ITEM_WIDTH = CARD_WIDTH + GAP;
-  const SCROLL_SPEED_PX_PER_SEC = 80;
-  const VISIBLE_BUFFER = 2; // Extra cards on each side
-  const MAX_DELTA_TIME = 0.1;
-
-  // Virtual scrolling state
-  let scrollPosition = 0; // Virtual scroll position (continuously growing)
-  let lastTs = 0;
+class VirtualCarousel {
+  private readonly track: HTMLElement;
+  private readonly scroller: HTMLElement;
+  private readonly experiences: Experience[];
+  private readonly isDesktopHover: boolean;
   
-  // Card pool for reuse
-  const cardPool: HTMLElement[] = [];
-  const activeCards = new Map<number, HTMLElement>();
+  private scrollPosition = 0;
+  private lastTimestamp = 0;
+  private isAutoScrollPaused = false;
+  
+  private readonly cardPool: HTMLElement[] = [];
+  private readonly activeCards = new Map<number, HTMLElement>();
 
-  // Setup track for absolute positioning
-  track.style.position = 'relative';
-  track.style.height = '220px';
-  track.style.overflow = 'visible';
-  track.style.animation = 'none';
+  constructor(track: HTMLElement, scroller: HTMLElement, experiences: Experience[]) {
+    this.track = track;
+    this.scroller = scroller;
+    this.experiences = experiences;
+    this.isDesktopHover = window.matchMedia('(hover: hover)').matches;
+  }
 
-  // Create or reuse a card element
-  const getOrCreateCard = (): HTMLElement => {
-    let card = cardPool.pop();
-    if (!card) {
-      card = document.createElement('article');
-      card.className = 'xp-card';
-      card.style.position = 'absolute';
-      card.style.top = '0';
-      card.style.width = `${CARD_WIDTH}px`;
-      
-      const img = document.createElement('img');
-      img.draggable = false;
-      card.appendChild(img);
-      
-      const label = document.createElement('div');
-      label.className = 'xp-card__label';
-      card.appendChild(label);
-    }
+  initialize(): void {
+    this.setupTrack();
+    this.updateVisibleCards();
+    this.startAnimationLoop();
+    this.setupTagFiltering();
+  }
+
+  private setupTrack(): void {
+    this.track.style.position = 'relative';
+    this.track.style.height = TRACK_HEIGHT;
+    this.track.style.overflow = 'visible';
+    this.track.style.animation = 'none';
+  }
+
+  private pauseAutoScroll = (): void => {
+    this.isAutoScrollPaused = true;
+  };
+
+  private resumeAutoScroll = (): void => {
+    this.isAutoScrollPaused = false;
+  };
+
+  private createCardElement(): HTMLElement {
+    const card = document.createElement('article');
+    card.className = 'xp-card';
+    card.style.position = 'absolute';
+    card.style.top = '0';
+    card.style.width = `${CARD_WIDTH}px`;
+    
+    const img = document.createElement('img');
+    img.draggable = false;
+    card.appendChild(img);
+    
+    const label = document.createElement('div');
+    label.className = 'xp-card__label';
+    card.appendChild(label);
+    
     return card;
-  };
+  }
 
-  // Return card to pool
-  const recycleCard = (card: HTMLElement) => {
+  private getOrCreateCard(): HTMLElement {
+    return this.cardPool.pop() || this.createCardElement();
+  }
+
+  private recycleCard(card: HTMLElement): void {
     card.remove();
-    cardPool.push(card);
-  };
+    this.cardPool.push(card);
+  }
 
-  // Update card with experience data
-  const updateCard = (card: HTMLElement, exp: Experience, virtualIndex: number) => {
+  private attachCardHandlers(card: HTMLElement): void {
+    if (card.dataset.hasClickHandler) return;
+
+    card.addEventListener('click', () => {
+      openInNewTab(card.dataset.url || DEFAULT_URL);
+    });
+    card.dataset.hasClickHandler = 'true';
+
+    if (this.isDesktopHover && !card.dataset.hoverBound) {
+      card.addEventListener('mouseenter', this.pauseAutoScroll);
+      card.addEventListener('mouseleave', this.resumeAutoScroll);
+      card.dataset.hoverBound = 'true';
+    }
+  }
+
+  private updateCardContent(card: HTMLElement, exp: Experience, virtualIndex: number): void {
     const img = card.querySelector('img') as HTMLImageElement;
     const label = card.querySelector('.xp-card__label') as HTMLElement;
     
@@ -90,125 +125,114 @@ export function initializeCarousel(experiences: Experience[]): void {
     card.dataset.url = exp.url;
     card.dataset.virtualIndex = String(virtualIndex);
 
-    // Attach click handler if not already present
-    if (!card.dataset.hasClickHandler) {
-      card.addEventListener('click', () => {
-        openInNewTab(card.dataset.url || 'https://www.google.com');
-      });
-      card.dataset.hasClickHandler = 'true';
-    }
+    this.attachCardHandlers(card);
+  }
 
-    // Desktop hover pause/resume
-    if (isDesktopHover && !card.dataset.hoverBound) {
-      card.addEventListener('mouseenter', pauseAutoScroll);
-      card.addEventListener('mouseleave', () => {
-        resumeAutoScroll();
-      });
-      card.dataset.hoverBound = 'true';
-    }
-  };
+  private getExperienceIndex(virtualIndex: number): number {
+    return ((virtualIndex % filteredExperiences.length) + filteredExperiences.length) % filteredExperiences.length;
+  }
 
-  // Update visible cards based on scroll position
-  const updateVisibleCards = () => {
+  private calculateVisibleRange(): { startIndex: number; endIndex: number } {
+    const viewportWidth = this.scroller.getBoundingClientRect().width;
+    const startIndex = Math.floor(this.scrollPosition / ITEM_WIDTH) - VISIBLE_BUFFER;
+    const endIndex = Math.ceil((this.scrollPosition + viewportWidth) / ITEM_WIDTH) + VISIBLE_BUFFER;
+    return { startIndex, endIndex };
+  }
+
+  private removeInvisibleCards(neededIndices: Set<number>): void {
+    this.activeCards.forEach((card, idx) => {
+      if (!neededIndices.has(idx)) {
+        this.recycleCard(card);
+        this.activeCards.delete(idx);
+      }
+    });
+  }
+
+  private updateCardPositions(): void {
+    this.activeCards.forEach((card, idx) => {
+      card.style.left = `${idx * ITEM_WIDTH - this.scrollPosition}px`;
+    });
+  }
+
+  private addNewVisibleCards(neededIndices: Set<number>): void {
+    neededIndices.forEach(virtualIndex => {
+      if (this.activeCards.has(virtualIndex)) return;
+      
+      const expIndex = this.getExperienceIndex(virtualIndex);
+      const exp = filteredExperiences[expIndex];
+      
+      const card = this.getOrCreateCard();
+      this.updateCardContent(card, exp, virtualIndex);
+      card.style.left = `${virtualIndex * ITEM_WIDTH - this.scrollPosition}px`;
+      
+      this.activeCards.set(virtualIndex, card);
+      this.track.appendChild(card);
+    });
+  }
+
+  private updateVisibleCards(): void {
     if (filteredExperiences.length === 0) {
-      activeCards.forEach(card => recycleCard(card));
-      activeCards.clear();
+      this.activeCards.forEach(card => this.recycleCard(card));
+      this.activeCards.clear();
       return;
     }
 
-    const viewportWidth = scroller.getBoundingClientRect().width;
-    
-    // Calculate which virtual indices should be visible
-    const startIndex = Math.floor(scrollPosition / ITEM_WIDTH) - VISIBLE_BUFFER;
-    const endIndex = Math.ceil((scrollPosition + viewportWidth) / ITEM_WIDTH) + VISIBLE_BUFFER;
+    const { startIndex, endIndex } = this.calculateVisibleRange();
     
     const neededIndices = new Set<number>();
     for (let i = startIndex; i <= endIndex; i++) {
       neededIndices.add(i);
     }
     
-    // Remove cards that are no longer visible
-    activeCards.forEach((card, idx) => {
-      if (!neededIndices.has(idx)) {
-        recycleCard(card);
-        activeCards.delete(idx);
-      }
-    });
-    
-    // Update positions of all active cards
-    activeCards.forEach((card, idx) => {
-      card.style.left = `${idx * ITEM_WIDTH - scrollPosition}px`;
-    });
-    
-    // Add newly visible cards
-    neededIndices.forEach(virtualIndex => {
-      if (activeCards.has(virtualIndex)) return;
-      
-      // Get the experience for this index (wrap around)
-      const expIndex = ((virtualIndex % filteredExperiences.length) + filteredExperiences.length) % filteredExperiences.length;
-      const exp = filteredExperiences[expIndex];
-      
-      // Get or create card element
-      const card = getOrCreateCard();
-      updateCard(card, exp, virtualIndex);
-      
-      // Position card
-      card.style.left = `${virtualIndex * ITEM_WIDTH - scrollPosition}px`;
-      
-      activeCards.set(virtualIndex, card);
-      track.appendChild(card);
-    });
-  };
+    this.removeInvisibleCards(neededIndices);
+    this.updateCardPositions();
+    this.addNewVisibleCards(neededIndices);
+  }
 
-  // Animation loop
-  const tick = (ts: number) => {
-    if (!lastTs) lastTs = ts;
-    let dt = (ts - lastTs) / 1000;
-    dt = Math.min(dt, MAX_DELTA_TIME);
-    lastTs = ts;
+  private tick = (timestamp: number): void => {
+    if (!this.lastTimestamp) this.lastTimestamp = timestamp;
     
-    // Auto-scroll when not paused
-    if (!isAutoScrollPaused && dt > 0 && filteredExperiences.length > 0) {
-      scrollPosition += SCROLL_SPEED_PX_PER_SEC * dt;
-      updateVisibleCards();
+    let deltaTime = (timestamp - this.lastTimestamp) / 1000;
+    deltaTime = Math.min(deltaTime, MAX_DELTA_TIME);
+    this.lastTimestamp = timestamp;
+    
+    if (!this.isAutoScrollPaused && deltaTime > 0 && filteredExperiences.length > 0) {
+      this.scrollPosition += SCROLL_SPEED_PX_PER_SEC * deltaTime;
+      this.updateVisibleCards();
     }
     
-    requestAnimationFrame(tick);
+    requestAnimationFrame(this.tick);
   };
 
-  // Initialize
-  updateVisibleCards();
-  requestAnimationFrame(tick);
+  private startAnimationLoop(): void {
+    requestAnimationFrame(this.tick);
+  }
 
-  // Tag filtering
-  const applyFilter = (tag: string) => {
+  private applyFilter(tag: string): void {
     if (tag === 'all') {
-      filteredExperiences = [...experiences];
+      filteredExperiences = [...this.experiences];
     } else {
-      filteredExperiences = experiences.filter(exp => 
+      filteredExperiences = this.experiences.filter(exp => 
         exp.tags.some(t => t.toLowerCase() === tag.toLowerCase())
       );
     }
     
-    // Clear and re-render
-    activeCards.forEach(card => recycleCard(card));
-    activeCards.clear();
-    scrollPosition = 0;
-    updateVisibleCards();
-  };
+    this.activeCards.forEach(card => this.recycleCard(card));
+    this.activeCards.clear();
+    this.scrollPosition = 0;
+    this.updateVisibleCards();
+  }
 
-  const tagBtns = document.querySelectorAll<HTMLElement>('.chip');
-  tagBtns.forEach((btn) => {
-    btn.addEventListener('click', () => {
-      tagBtns.forEach((b) => b.classList.remove('chip--active'));
-      btn.classList.add('chip--active');
-      const selectedTag = btn.dataset.tag || 'all';
-      applyFilter(selectedTag);
+  private setupTagFiltering(): void {
+    const tagBtns = document.querySelectorAll<HTMLElement>('.chip');
+    
+    tagBtns.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        tagBtns.forEach((b) => b.classList.remove('chip--active'));
+        btn.classList.add('chip--active');
+        const selectedTag = btn.dataset.tag || 'all';
+        this.applyFilter(selectedTag);
+      });
     });
-  });
-}
-
-// Setup click handlers for carousel cards (no longer needed - handled inline)
-export function setupCarouselCardInteractions(): void {
-  // Click handlers are now attached during card creation in updateVisibleCards
+  }
 }
