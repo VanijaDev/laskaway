@@ -13,7 +13,7 @@ const SUCCESS_CONFETTI_PARTICLES_PER_BURST = 20;
 const SUCCESS_CONFETTI_BURSTS = 4;
 const ROTATION_FACTOR = 0.06;
 const LABEL_INTENSITY_DIVISOR = 120;
-const DEMO_ANIMATION_DURATION = 3000;
+const DEMO_ANIMATION_DURATION = isMobileQuery.matches ? 19000 : 3000;
 const WIGGLE_INITIAL_DELAY = 1000;
 const DEMO_START_DELAY = 8000;
 const WIGGLE_REPEAT_INTERVAL = 12000;
@@ -275,7 +275,6 @@ class CardStack {
         let pointerId = null;
         const labels = this.getCardLabels(card);
         const onPointerDown = (e) => {
-            console.log('onPinterDown');
             if (card !== this.getTopCard())
                 return;
             e.preventDefault();
@@ -299,7 +298,6 @@ class CardStack {
             }
         };
         const onPointerMove = (e) => {
-            console.log('onPointerMove');
             if (!dragging)
                 return;
             dx = e.clientX - startX;
@@ -320,7 +318,6 @@ class CardStack {
             }
         };
         const onPointerUp = () => {
-            console.log('onPointerUp');
             if (!dragging)
                 return;
             if (pointerId !== null)
