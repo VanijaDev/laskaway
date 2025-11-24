@@ -38,16 +38,23 @@ export function initializeCarousel(experiences: Experience[]): void {
   const ITEM_WIDTH = CARD_WIDTH + GAP;
   const SCROLL_SPEED_PX_PER_SEC = 80;
   const VISIBLE_BUFFER = 2; // Extra cards on each side
-  const DRAG_THRESHOLD = 6;
+  const DRAG_THRESHOLD = 8;
   const MAX_DELTA_TIME = 0.1;
+  const MOMENTUM_FRICTION = 0.95;
+  const MOMENTUM_MIN_VELOCITY = 0.1;
 
   // Virtual scrolling state
   let scrollPosition = 0; // Virtual scroll position (continuously growing)
   let lastTs = 0;
   let draggingScroller = false;
-  let maybeDrag = false;
   let dragStartX = 0;
+  let dragStartY = 0;
   let dragStartScroll = 0;
+  let dragStartTime = 0;
+  let lastDragX = 0;
+  let lastDragTime = 0;
+  let velocity = 0;
+  let isDraggingHorizontal: boolean | null = null;
   
   // Card pool for reuse
   const cardPool: HTMLElement[] = [];
@@ -186,10 +193,21 @@ export function initializeCarousel(experiences: Experience[]): void {
     dt = Math.min(dt, MAX_DELTA_TIME);
     lastTs = ts;
     
+    // Auto-scroll when not paused and not dragging
     if (!draggingScroller && !isAutoScrollPaused && dt > 0 && filteredExperiences.length > 0) {
       scrollPosition += SCROLL_SPEED_PX_PER_SEC * dt;
       updateVisibleCards();
     }
+    
+    // Apply momentum after drag ends
+    if (!draggingScroller && Math.abs(velocity) > MOMENTUM_MIN_VELOCITY) {
+      scrollPosition += velocity;
+      velocity *= MOMENTUM_FRICTION;
+      updateVisibleCards();
+    } else if (!draggingScroller) {
+      velocity = 0;
+    }
+    
     requestAnimationFrame(tick);
   };
 
@@ -197,50 +215,96 @@ export function initializeCarousel(experiences: Experience[]): void {
   updateVisibleCards();
   requestAnimationFrame(tick);
 
-  // Drag handlers
+  // Touch/pointer handlers with proper mobile support
   const onPointerDown = (e: PointerEvent) => {
-    maybeDrag = true;
+    // Stop momentum
+    velocity = 0;
+    
     draggingScroller = false;
+    isDraggingHorizontal = null;
     dragStartX = e.clientX;
+    dragStartY = e.clientY;
     dragStartScroll = scrollPosition;
-    // Mobile: pause auto scroll on any interaction start
-    console.log('Pointer down');
+    dragStartTime = Date.now();
+    lastDragX = e.clientX;
+    lastDragTime = dragStartTime;
+    
+    // Mobile: pause auto scroll on interaction
     if (isMobileEnv) pauseAutoScroll();
   };
 
   const onPointerMove = (e: PointerEvent) => {
     const dx = e.clientX - dragStartX;
+    const dy = e.clientY - dragStartY;
+    
+    // Determine drag direction on first significant movement
+    if (isDraggingHorizontal === null && (Math.abs(dx) > 3 || Math.abs(dy) > 3)) {
+      isDraggingHorizontal = Math.abs(dx) > Math.abs(dy);
+    }
+    
+    // Only handle horizontal drags
+    if (isDraggingHorizontal === false) return;
+    
     if (!draggingScroller) {
-      if (!maybeDrag) return;
       if (Math.abs(dx) < DRAG_THRESHOLD) return;
+      
       draggingScroller = true;
       // Prevent page scrolling during carousel drag
       document.body.style.overflow = 'hidden';
       document.body.style.touchAction = 'none';
       try { scroller.setPointerCapture?.(e.pointerId); } catch {}
     }
+    
+    // Update scroll position
     scrollPosition = dragStartScroll - dx;
     updateVisibleCards();
+    
+    // Track velocity for momentum
+    const now = Date.now();
+    const timeDelta = now - lastDragTime;
+    if (timeDelta > 0) {
+      const positionDelta = e.clientX - lastDragX;
+      velocity = -positionDelta; // Negative because we subtract dx
+      lastDragX = e.clientX;
+      lastDragTime = now;
+    }
+    
     e.preventDefault();
   };
 
   const onPointerUp = (e: PointerEvent) => {
-    console.log('Pointer up');
     if (draggingScroller) {
-      justDraggedUntil = Date.now() + 100;
+      justDraggedUntil = Date.now() + 150;
+      
+      // Calculate final velocity for momentum
+      const totalTime = Date.now() - dragStartTime;
+      const totalDx = e.clientX - dragStartX;
+      
+      // Only apply momentum if drag was fast enough and long enough
+      if (totalTime > 0 && totalTime < 300 && Math.abs(totalDx) > 30) {
+        velocity = -totalDx / totalTime * 16; // Scale for 60fps
+        // Cap velocity
+        const maxVelocity = 50;
+        velocity = Math.max(-maxVelocity, Math.min(maxVelocity, velocity));
+      } else {
+        velocity = 0;
+      }
+      
       // Re-enable page scrolling
       document.body.style.overflow = '';
       document.body.style.touchAction = '';
       try { scroller.releasePointerCapture?.(e.pointerId); } catch {}
     }
-    maybeDrag = false;
+    
     draggingScroller = false;
+    isDraggingHorizontal = null;
+    
     // Resume after mobile interaction ends
     if (isMobileEnv) resumeAutoScroll();
   };
 
-  scroller.addEventListener('pointerdown', onPointerDown);
-  scroller.addEventListener('pointermove', onPointerMove);
+  scroller.addEventListener('pointerdown', onPointerDown, { passive: false });
+  scroller.addEventListener('pointermove', onPointerMove, { passive: false });
   scroller.addEventListener('pointerup', onPointerUp);
   scroller.addEventListener('pointercancel', onPointerUp);
 
