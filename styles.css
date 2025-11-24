@@ -568,7 +568,7 @@ body {
 /* Experiences scroller */
 .experiences { padding: 36px 0 12px; }
 .section-title { font-family: Poppins, Inter, system-ui, sans-serif; font-size: 1.25rem; margin: 0 0 12px; color: var(--muted); text-align: left; }
-.scroller { overflow: hidden; mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent); }
+.scroller { overflow: hidden; padding: 10px 0; mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent); }
 .scroller__track { display: flex; gap: 32px; padding: 8px; will-change: transform; animation: scroll var(--duration, 36s) linear infinite; }
 .scroller:hover .scroller__track { animation-play-state: paused; }
 
