@@ -217,6 +217,9 @@ export function initializeCarousel(experiences: Experience[]): void {
 
   // Touch/pointer handlers with proper mobile support
   const onPointerDown = (e: PointerEvent) => {
+    // Only handle primary button (left click/touch)
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    
     // Stop momentum
     velocity = 0;
     
@@ -234,6 +237,9 @@ export function initializeCarousel(experiences: Experience[]): void {
   };
 
   const onPointerMove = (e: PointerEvent) => {
+    // Ignore mousemove without button pressed (just hovering)
+    if (e.pointerType === 'mouse' && e.buttons === 0) return;
+    
     const dx = e.clientX - dragStartX;
     const dy = e.clientY - dragStartY;
     
