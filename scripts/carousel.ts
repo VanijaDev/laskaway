@@ -23,6 +23,15 @@ export function initializeCarousel(experiences: Experience[]): void {
   
   if (!track || !scroller || filteredExperiences.length === 0) return;
 
+  // Environment detection
+  const isDesktopHover = window.matchMedia('(hover: hover)').matches;
+  const isMobileEnv = window.matchMedia('(hover: none)').matches;
+
+  // Auto-scroll pause state
+  let isAutoScrollPaused = false;
+  const pauseAutoScroll = () => { isAutoScrollPaused = true; };
+  const resumeAutoScroll = () => { isAutoScrollPaused = false; };
+
   // Constants
   const CARD_WIDTH = 340;
   const GAP = 32;
@@ -106,6 +115,16 @@ export function initializeCarousel(experiences: Experience[]): void {
       });
       card.dataset.hasClickHandler = 'true';
     }
+
+    // Desktop hover pause/resume
+    if (isDesktopHover && !card.dataset.hoverBound) {
+      card.addEventListener('mouseenter', pauseAutoScroll);
+      card.addEventListener('mouseleave', () => {
+        // Only resume if not dragging at the moment
+        if (!draggingScroller) resumeAutoScroll();
+      });
+      card.dataset.hoverBound = 'true';
+    }
   };
 
   // Update visible cards based on scroll position
@@ -167,7 +186,7 @@ export function initializeCarousel(experiences: Experience[]): void {
     dt = Math.min(dt, MAX_DELTA_TIME);
     lastTs = ts;
     
-    if (!draggingScroller && dt > 0 && filteredExperiences.length > 0) {
+    if (!draggingScroller && !isAutoScrollPaused && dt > 0 && filteredExperiences.length > 0) {
       scrollPosition += SCROLL_SPEED_PX_PER_SEC * dt;
       updateVisibleCards();
     }
@@ -184,6 +203,9 @@ export function initializeCarousel(experiences: Experience[]): void {
     draggingScroller = false;
     dragStartX = e.clientX;
     dragStartScroll = scrollPosition;
+    // Mobile: pause auto scroll on any interaction start
+    console.log('Pointer down');
+    if (isMobileEnv) pauseAutoScroll();
   };
 
   const onPointerMove = (e: PointerEvent) => {
@@ -203,6 +225,7 @@ export function initializeCarousel(experiences: Experience[]): void {
   };
 
   const onPointerUp = (e: PointerEvent) => {
+    console.log('Pointer up');
     if (draggingScroller) {
       justDraggedUntil = Date.now() + 100;
       // Re-enable page scrolling
@@ -212,6 +235,8 @@ export function initializeCarousel(experiences: Experience[]): void {
     }
     maybeDrag = false;
     draggingScroller = false;
+    // Resume after mobile interaction ends
+    if (isMobileEnv) resumeAutoScroll();
   };
 
   scroller.addEventListener('pointerdown', onPointerDown);
