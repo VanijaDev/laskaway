@@ -405,7 +405,8 @@ class CardStack {
   }
 
   private handleSwipeCommit(card: HTMLElement, dirRight: boolean, labels: CardLabels): void {
-    card.style.transition = 'transform .373s ease-in, opacity .373s ease-in';
+    const flyOutDuration = isMobileQuery.matches ? 1 : 0.373;
+    card.style.transition = `transform ${flyOutDuration}s ease-in, opacity ${flyOutDuration}s ease-in`;
     card.style.zIndex = '99';
 
     if (dirRight) {
