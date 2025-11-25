@@ -363,7 +363,7 @@ class CardStack {
         card.addEventListener('click', onClick);
     }
     handleSwipeCommit(card, dirRight, labels) {
-        const flyOutDuration = isMobileQuery.matches ? 1 : 0.1;
+        const flyOutDuration = isMobileQuery.matches ? 1 : 0.05;
         card.style.transition = `transform ${flyOutDuration}s ease-in, opacity ${flyOutDuration}s ease-in`;
         card.style.zIndex = '99';
         if (dirRight) {
