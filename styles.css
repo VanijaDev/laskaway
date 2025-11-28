@@ -1,3 +1,17 @@
+/* Audienceful form styling to match previous waitlist form */
+.audienceful_form {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 14px;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-2);
+  min-height: 54px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0;
+}
 /*
   Live the Gift — Waitlist Page Styles
   - Warm, optimistic palette
@@ -102,120 +116,6 @@ body {
   margin: 0 0 28px;
 }
 
-/* Waitlist form */
-.waitlist { background: var(--surface); border: 1px solid var(--border); padding: 14px; border-radius: var(--radius-lg); box-shadow: var(--shadow-2); }
-
-/* Input wrapper with floating label */
-.input-wrapper {
-  position: relative;
-  width: 100%;
-}
-
-.floating-label {
-  position: absolute;
-  left: 16px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #9aa0a6;
-  font-size: 16px;
-  pointer-events: none;
-  transition: all 0.2s ease;
-  background: #ffffff;
-  padding: 0 4px;
-  z-index: 1;
-}
-
-.waitlist__controls { display: grid; grid-template-columns: 1fr auto; align-items: start; gap: 10px; }
-.waitlist__controls button { height: 54px; }
-
-.waitlist input[type="email"] {
-  width: 100%;
-  height: 54px;
-  border-radius: var(--radius-md);
-  border: 2px solid #e7e1d7;
-  background: #ffffff;
-  color: var(--text);
-  padding: 0 44px 0 16px;
-  font-size: 16px;
-  outline: none;
-  transition: all .25s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Floating label active state (input precedes label) */
-.input-wrapper input[type="email"]:focus + .floating-label,
-.input-wrapper input[type="email"]:not(:placeholder-shown) + .floating-label {
-  top: -1px;
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--primary);
-}
-
-.waitlist input[type="email"]::placeholder { 
-  color: transparent;
-  opacity: 0;
-}
-
-.waitlist input[type="email"]:focus:not(.valid):not(.invalid) { 
-  border-color: var(--primary);
-  box-shadow: 0 0 0 4px rgba(124, 92, 255, 0.12), 0 0 16px rgba(124, 92, 255, 0.08);
-  transform: translateY(-1px);
-}
-
-/* Validation states */
-/* handled below with shadow variant */
-
-.input-wrapper input[type="email"].invalid + .floating-label { color: #ef4444; }
-
-.waitlist input[type="email"].valid { padding-right: 44px; }
-/* Disabled state for email input during submit */
-.waitlist input[type="email"][disabled] {
-  background: #f9fafb;
-  color: #6b7280;
-  cursor: not-allowed;
-}
-
-.input-wrapper input[type="email"].valid + .floating-label { color: #10b981; }
-
-/* Validation icons */
-.input-icons {
-  position: absolute;
-  right: 14px;
-  top: 50%;
-  transform: translateY(-50%);
-  pointer-events: none;
-}
-
-.validation-icon {
-  display: none;
-  color: #10b981;
-  animation: scaleIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
-.validation-icon--valid {
-  display: none;
-}
-
-.input-wrapper input[type="email"].valid ~ .input-icons .validation-icon--valid { display: block; }
-
-/* (removed unused generic shake keyframes) */
-
-/* Scale in animation */
-@keyframes scaleIn {
-  0% { transform: scale(0) rotate(-45deg); opacity: 0; }
-  50% { transform: scale(1.1) rotate(5deg); }
-  100% { transform: scale(1) rotate(0deg); opacity: 1; }
-}
-
-.waitlist input[type="email"].invalid { border-color: #ef4444; box-shadow: 0 0 0 6px rgba(239, 68, 68, 0.16); }
-
-/* Ensure green when valid, including on focus */
-.waitlist input[type="email"].valid { border-color: #10b981; }
-.waitlist input[type="email"].valid:focus { border-color: #10b981; box-shadow: 0 0 0 6px rgba(16,185,129,0.16); }
-
-.help { margin-top: 10px; color: #6b7280; font-size: 13px; }
-.form-msg { margin: 10px 4px 0; font-size: 14px; color: var(--muted); min-height: 20px; }
-.form-msg.error { color: #b42318; }
-.form-msg.success { color: #166534; }
 
 .btn {
   display: inline-flex; align-items: center; justify-content: center;
@@ -249,12 +149,6 @@ body {
   .btn--primary.submitting::before { animation-duration: 1.5s; }
 }
 
-/* Success state */
-.success { margin-top: 20px; border-radius: var(--radius-lg); padding: 18px 18px 20px; background: #eaf8f1; border: 1px solid #b9e9d6; box-shadow: var(--shadow-2); }
-.success.hidden { display: none; }
-.success__icon { font-size: 22px; margin-bottom: 6px; }
-.success__title { margin: 0 0 4px; font-size: 20px; font-weight: 700; }
-.success__body { margin: 0; color: #0f5132; }
 
 /* Visual cards */
 .hero__visual { position: relative; }

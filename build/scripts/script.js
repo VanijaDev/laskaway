@@ -3,7 +3,6 @@ import { disableNativeImageDrag } from '../utils.js';
 import { initializeCardStack } from './cardStack.js';
 import { initializeCarousel } from './carousel.js';
 import { initializeEasterEgg } from './easterEgg.js';
-import { initializeEmailValidation } from './emailValidation.js';
 // Load HTML component
 async function loadComponent(elementId, componentPath) {
     const container = document.getElementById(elementId);
@@ -50,7 +49,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     initializeCardStack(shuffledExperiences);
     initializeCarousel(shuffledExperiences);
     initializeEasterEgg();
-    initializeEmailValidation();
     // Disable native image dragging once DOM nodes exist
     disableNativeImageDrag('.card img, .xp-card img');
 });
