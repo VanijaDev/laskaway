@@ -151,7 +151,7 @@ body {
 
 
 /* Visual cards */
-.hero__visual { position: relative; }
+.hero__visual { position: relative; z-index: 1;}
 .card-stack-stage { position: relative; height: 420px; }
 .card-stack { position: absolute; inset: 0; transition: opacity 0.4s ease; }
 .card-stack.is-hidden { opacity: 0; pointer-events: none; }
