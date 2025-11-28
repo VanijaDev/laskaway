@@ -286,5 +286,21 @@
     "alt": "ATX Ecosystem Resources, Updates, Networking, Lightning Pitches, Raffle & More",
     "tags": ["for him", "for her", "fun time"],
     "url": "https://www.meetup.com/austin-startup-meetup/events/304997249/"
+  },
+  {
+    "id": "two-hives-honey",
+    "title": "Two Hives Honey",
+    "image": "./assets/experience_images/two-hives-honey.jpg",
+    "alt": "Two Hives Honey",
+    "tags": ["for him", "for her", "food", "fun time"],
+    "url": "https://www.twohiveshoney.com/"
+  },
+  {
+    "id": "acerra_studio",
+    "title": "Acerra Studio",
+    "image": "./assets/experience_images/acerra_studio.jpg",
+    "alt": "Acerra Studio",
+    "tags": ["for him", "for her", "kids", "fun time"],
+    "url": "https://www.instagram.com/acerrastudio"
   }
 ]
