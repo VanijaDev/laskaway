@@ -274,10 +274,15 @@ class CardStack {
         let blockClickUntil = 0;
         let pointerId = null;
         const labels = this.getCardLabels(card);
+        let prevBodyOverflow = '';
+        let prevBodyTouchAction = '';
         const onPointerDown = (e) => {
             if (card !== this.getTopCard())
                 return;
             e.preventDefault();
+            // Save previous body styles
+            prevBodyOverflow = document.body.style.overflow;
+            prevBodyTouchAction = document.body.style.touchAction;
             document.body.style.overflow = 'hidden';
             document.body.style.touchAction = 'none';
             this.cancelDemoIfAny();
@@ -324,8 +329,9 @@ class CardStack {
                 card.releasePointerCapture(pointerId);
             dragging = false;
             card.classList.remove('is-dragging');
-            document.body.style.overflow = '';
-            document.body.style.touchAction = '';
+            // Restore previous body styles
+            document.body.style.overflow = prevBodyOverflow;
+            document.body.style.touchAction = prevBodyTouchAction;
             card.style.transition = '';
             card.style.zIndex = '';
             if (Math.abs(dx) < CLICK_TOLERANCE && Math.abs(dy) < CLICK_TOLERANCE) {
