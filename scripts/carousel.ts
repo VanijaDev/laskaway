@@ -54,6 +54,9 @@ class VirtualCarousel {
     this.updateVisibleCards();
     this.startAnimationLoop();
     this.setupTagFiltering();
+    document.addEventListener('visibilitychange', () => {
+      this.isAutoScrollPaused = document.hidden;
+    }, { passive: true });
   }
 
   private setupTrack(): void {
@@ -107,8 +110,21 @@ class VirtualCarousel {
     card.dataset.hasClickHandler = 'true';
 
     if (this.isDesktopHover && !card.dataset.hoverBound) {
-      card.addEventListener('mouseenter', this.pauseAutoScroll);
-      card.addEventListener('mouseleave', this.resumeAutoScroll);
+      card.addEventListener('mouseenter', () => {
+        this.pauseAutoScroll();
+        card.dataset.hover = '1';
+        // Apply immediate visual feedback without waiting for next tick
+        const idx = Number(card.dataset.virtualIndex || '0');
+        const left = idx * ITEM_WIDTH - this.scrollPosition;
+        card.style.transform = `translate3d(${left}px,0,0) scale(1.1)`;
+      });
+      card.addEventListener('mouseleave', () => {
+        card.dataset.hover = '';
+        this.resumeAutoScroll();
+        const idx = Number(card.dataset.virtualIndex || '0');
+        const left = idx * ITEM_WIDTH - this.scrollPosition;
+        card.style.transform = `translate3d(${left}px,0,0)`;
+      });
       card.dataset.hoverBound = 'true';
     }
   }
@@ -149,8 +165,14 @@ class VirtualCarousel {
   }
 
   private updateCardPositions(): void {
+    // Avoid multiple layout reads; compute via index math only
     this.activeCards.forEach((card, idx) => {
-      card.style.left = `${idx * ITEM_WIDTH - this.scrollPosition}px`;
+      const left = idx * ITEM_WIDTH - this.scrollPosition;
+      // Use transform for better compositing when possible
+      const isHover = card.dataset.hover === '1';
+      card.style.transform = isHover
+        ? `translate3d(${left}px,0,0) scale(1.06)`
+        : `translate3d(${left}px,0,0)`;
     });
   }
 
@@ -163,7 +185,8 @@ class VirtualCarousel {
       
       const card = this.getOrCreateCard();
       this.updateCardContent(card, exp, virtualIndex);
-      card.style.left = `${virtualIndex * ITEM_WIDTH - this.scrollPosition}px`;
+      const left = virtualIndex * ITEM_WIDTH - this.scrollPosition;
+      card.style.transform = `translate3d(${left}px,0,0)`;
       
       this.activeCards.set(virtualIndex, card);
       this.track.appendChild(card);
@@ -201,10 +224,17 @@ class VirtualCarousel {
       this.updateVisibleCards();
     }
     
-    requestAnimationFrame(this.tick);
+    if (document.contains(this.scroller)) {
+      requestAnimationFrame(this.tick);
+    }
   };
 
   private startAnimationLoop(): void {
+    // Respect reduced motion: slow or disable auto scroll if needed
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReduced) {
+      this.isAutoScrollPaused = true;
+    }
     requestAnimationFrame(this.tick);
   }
 
