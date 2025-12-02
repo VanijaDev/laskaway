@@ -11,12 +11,12 @@ const FIFTH_CARD_FADE_MULTIPLIER = 0.5;
 const SUCCESS_CONFETTI_RADIUS = { min: 128, max: 480 };
 const SUCCESS_CONFETTI_PARTICLES_PER_BURST = 20;
 const SUCCESS_CONFETTI_BURSTS = 4;
-const ROTATION_FACTOR = 0.06;
+const ROTATION_FACTOR = 0.08;
 const LABEL_INTENSITY_DIVISOR = 120;
 const DEMO_ANIMATION_DURATION = isMobileQuery.matches ? 19000 : 3000;
 const WIGGLE_INITIAL_DELAY = 1000;
-const DEMO_START_DELAY = 8000;
-const WIGGLE_REPEAT_INTERVAL = 12000;
+const WIGGLE_ANIMATION_DURATION = 2000;
+const WIGGLE_GAP_BETWEEN = 4000;
 const CLICK_BLOCK_DURATION = 800;
 const DEFAULT_URL = 'https://www.google.com';
 const easeInOutCubic = (t) => {
@@ -40,10 +40,8 @@ class CardStack {
         this.hasInteracted = false;
         this.hintDismissed = false;
         this.likedExperiences = [];
-        this.wiggleInterval = null;
         this.isDemoRunning = false;
         this.demoRAF = null;
-        this.tailTimers = [];
         this.stack = stack;
         this.experiences = experiences;
         this.prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -54,7 +52,15 @@ class CardStack {
     initialize() {
         this.setupInitialState();
         this.initVirtualCards();
-        this.scheduleWiggleAnimations();
+        if (!this.prefersReducedMotion) {
+            this.scheduleWiggleAnimations();
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden) {
+                    this.stopAllWiggles();
+                    this.cancelDemoIfAny();
+                }
+            }, { passive: true });
+        }
     }
     setupInitialState() {
         this.stack.classList.remove('is-hidden');
@@ -173,25 +179,60 @@ class CardStack {
         const fadeProgress = Math.min(1, Math.max(0, dx / fullFadeAt));
         this.updateStackOpacity(draggedCard, fadeProgress);
     }
+    sleep(ms) {
+        return new Promise(resolve => {
+            window.setTimeout(resolve, ms);
+        });
+    }
     scheduleWiggleAnimations() {
-        setTimeout(() => this.triggerWiggle(), WIGGLE_INITIAL_DELAY);
-        setTimeout(() => {
+        window.setTimeout(() => {
             if (!this.hasInteracted)
-                this.demoTopCardDrag();
-        }, DEMO_START_DELAY);
-        this.wiggleInterval = window.setInterval(() => {
-            if (!this.hasInteracted)
+                this.startIdleWiggleDemoLoop();
+        }, WIGGLE_INITIAL_DELAY);
+    }
+    startIdleWiggleDemoLoop() {
+        const loop = async () => {
+            while (!this.hasInteracted) {
+                if (document.hidden) {
+                    await this.sleep(300);
+                    continue;
+                }
                 this.triggerWiggle();
-        }, WIGGLE_REPEAT_INTERVAL);
+                await this.sleep(WIGGLE_ANIMATION_DURATION);
+                if (this.hasInteracted)
+                    break;
+                if (document.hidden)
+                    continue;
+                await this.sleep(WIGGLE_GAP_BETWEEN);
+                if (this.hasInteracted)
+                    break;
+                if (document.hidden)
+                    continue;
+                await this.demoTopCardDragOnce();
+                if (this.hasInteracted)
+                    break;
+                if (document.hidden)
+                    continue;
+                await this.sleep(WIGGLE_GAP_BETWEEN);
+            }
+        };
+        void loop();
     }
     triggerWiggle() {
         if (this.hasInteracted)
             return;
+        if (document.hidden)
+            return;
         this.activeCards.forEach((card, i) => {
             card.style.setProperty('--wiggle-delay', 1 + i * 0.3 + 's');
-            card.classList.remove('card--hint-wiggle');
-            void card.offsetWidth;
-            card.classList.add('card--hint-wiggle');
+            if (!card.classList.contains('card--hint-wiggle')) {
+                card.classList.add('card--hint-wiggle');
+            }
+            else {
+                card.classList.remove('card--hint-wiggle');
+                void card.offsetWidth;
+                card.classList.add('card--hint-wiggle');
+            }
         });
     }
     stopAllWiggles() {
@@ -207,66 +248,69 @@ class CardStack {
         if (this.demoRAF)
             cancelAnimationFrame(this.demoRAF);
         this.demoRAF = null;
-        this.tailTimers.forEach(id => clearTimeout(id));
-        this.tailTimers = [];
         const topCard = this.getTopCard();
         if (topCard) {
             this.clearDragTransform(topCard);
             this.resetSwipeLabels(topCard);
         }
     }
-    demoTopCardDrag() {
-        if (this.hasInteracted || this.isDemoRunning)
-            return;
-        const card = this.getTopCard();
-        if (!card)
-            return;
-        this.isDemoRunning = true;
-        card.classList.remove('card--hint-wiggle');
-        void card.offsetWidth;
-        const labels = this.getCardLabels(card);
-        const autoThreshold = isMobileQuery.matches ? AUTO_DEMO_THRESHOLD / 2 : AUTO_DEMO_THRESHOLD;
-        const start = performance.now();
-        const step = (now) => {
-            const elapsed = now - start;
-            const progress = Math.min(1, elapsed / DEMO_ANIMATION_DURATION);
-            let dx = 0;
-            let dy = 0;
-            if (progress < 0.33) {
-                const phaseProgress = easeInOutCubic(progress / 0.33);
-                dx = -autoThreshold * phaseProgress;
-                dy = -Math.abs(Math.sin(phaseProgress * Math.PI)) * 15;
-            }
-            else if (progress < 0.66) {
-                const phaseProgress = easeInOutCubic((progress - 0.33) / 0.33);
-                dx = -autoThreshold + (2 * autoThreshold * phaseProgress);
-                dy = -Math.abs(Math.sin(phaseProgress * Math.PI)) * 15;
-            }
-            else {
-                const phaseProgress = easeInOutCubic((progress - 0.66) / 0.34);
-                dx = autoThreshold * (1 - phaseProgress);
-                dy = -Math.abs(Math.sin(phaseProgress * Math.PI)) * 10;
-            }
-            const rot = dx * ROTATION_FACTOR;
-            card.style.setProperty('--drag-x', dx + 'px');
-            card.style.setProperty('--drag-y', dy + 'px');
-            card.style.setProperty('--drag-r', rot + 'deg');
-            const intensity = Math.min(1, Math.abs(dx) / LABEL_INTENSITY_DIVISOR);
-            this.updateLabelOpacity(labels, dx, intensity);
-            if (progress < 1) {
-                this.demoRAF = requestAnimationFrame(step);
-            }
-            else {
-                this.clearDragTransform(card);
-                this.resetSwipeLabels(card);
-                this.isDemoRunning = false;
-                this.demoRAF = null;
-                const delay = 6000 + Math.random() * 4000;
-                const tid = window.setTimeout(() => this.demoTopCardDrag(), delay);
-                this.tailTimers.push(tid);
-            }
-        };
-        this.demoRAF = requestAnimationFrame(step);
+    demoTopCardDragOnce() {
+        return new Promise((resolve) => {
+            if (this.hasInteracted || this.isDemoRunning)
+                return resolve();
+            const card = this.getTopCard();
+            if (!card)
+                return resolve();
+            this.isDemoRunning = true;
+            card.classList.remove('card--hint-wiggle');
+            void card.offsetWidth;
+            const labels = this.getCardLabels(card);
+            const autoThreshold = isMobileQuery.matches ? AUTO_DEMO_THRESHOLD / 2 : AUTO_DEMO_THRESHOLD;
+            const start = performance.now();
+            const step = (now) => {
+                if (this.hasInteracted) {
+                    this.isDemoRunning = false;
+                    this.demoRAF = null;
+                    return resolve();
+                }
+                const elapsed = now - start;
+                const progress = Math.min(1, elapsed / DEMO_ANIMATION_DURATION);
+                let dx = 0;
+                let dy = 0;
+                if (progress < 0.33) {
+                    const phaseProgress = easeInOutCubic(progress / 0.33);
+                    dx = -autoThreshold * phaseProgress;
+                    dy = -Math.abs(Math.sin(phaseProgress * Math.PI)) * 15;
+                }
+                else if (progress < 0.66) {
+                    const phaseProgress = easeInOutCubic((progress - 0.33) / 0.33);
+                    dx = -autoThreshold + (2 * autoThreshold * phaseProgress);
+                    dy = -Math.abs(Math.sin(phaseProgress * Math.PI)) * 15;
+                }
+                else {
+                    const phaseProgress = easeInOutCubic((progress - 0.66) / 0.34);
+                    dx = autoThreshold * (1 - phaseProgress);
+                    dy = -Math.abs(Math.sin(phaseProgress * Math.PI)) * 10;
+                }
+                const rot = dx * ROTATION_FACTOR;
+                card.style.setProperty('--drag-x', dx + 'px');
+                card.style.setProperty('--drag-y', dy + 'px');
+                card.style.setProperty('--drag-r', rot + 'deg');
+                const intensity = Math.min(1, Math.abs(dx) / LABEL_INTENSITY_DIVISOR);
+                this.updateLabelOpacity(labels, dx, intensity);
+                if (progress < 1) {
+                    this.demoRAF = requestAnimationFrame(step);
+                }
+                else {
+                    this.clearDragTransform(card);
+                    this.resetSwipeLabels(card);
+                    this.isDemoRunning = false;
+                    this.demoRAF = null;
+                    resolve();
+                }
+            };
+            this.demoRAF = requestAnimationFrame(step);
+        });
     }
     attachDragHandlers(card) {
         let startX = 0, startY = 0, dx = 0, dy = 0, dragging = false;
@@ -297,8 +341,6 @@ class CardStack {
             card.style.zIndex = '10';
             if (!this.hasInteracted) {
                 this.hasInteracted = true;
-                if (this.wiggleInterval)
-                    clearInterval(this.wiggleInterval);
                 this.stopAllWiggles();
             }
         };
@@ -497,10 +539,6 @@ class CardStack {
         this.dragHint?.classList.add('drag-hint--fade');
         this.stopAllWiggles();
         this.cancelDemoIfAny();
-        if (this.wiggleInterval) {
-            clearInterval(this.wiggleInterval);
-            this.wiggleInterval = null;
-        }
         if (!this.prefersReducedMotion && this.giftBox) {
             this.fireConfetti(this.giftBox);
         }
