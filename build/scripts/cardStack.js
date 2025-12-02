@@ -382,9 +382,9 @@ class CardStack {
             // Restore previous body styles
             document.body.style.overflow = prevBodyOverflow;
             document.body.style.touchAction = prevBodyTouchAction;
-            card.style.transition = '';
-            card.style.zIndex = '';
             if (Math.abs(dx) < CLICK_TOLERANCE && Math.abs(dy) < CLICK_TOLERANCE) {
+                card.style.transition = '';
+                card.style.zIndex = '';
                 delete card.dataset.autoAdvanced;
                 this.resetSwipeLabels(card);
                 this.clearDragTransform(card);
@@ -395,9 +395,12 @@ class CardStack {
             blockClickUntil = Date.now() + CLICK_BLOCK_DURATION;
             const dirRight = dx > 0;
             if (Math.abs(dx) >= SWIPE_THRESHOLD) {
+                // Directly commit fly-out; do not reset transition/zIndex here
                 this.handleSwipeCommit(card, dirRight, labels);
             }
             else {
+                card.style.transition = '';
+                card.style.zIndex = '';
                 this.handleSnapBack(card);
             }
             dx = dy = 0;
