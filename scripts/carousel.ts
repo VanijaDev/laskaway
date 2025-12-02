@@ -80,6 +80,7 @@ class VirtualCarousel {
     card.style.position = 'absolute';
     card.style.top = '0';
     card.style.width = `${CARD_WIDTH}px`;
+    card.style.transformOrigin = 'center center';
     
     const img = document.createElement('img');
     img.draggable = false;
@@ -113,17 +114,12 @@ class VirtualCarousel {
       card.addEventListener('mouseenter', () => {
         this.pauseAutoScroll();
         card.dataset.hover = '1';
-        // Apply immediate visual feedback without waiting for next tick
-        const idx = Number(card.dataset.virtualIndex || '0');
-        const left = idx * ITEM_WIDTH - this.scrollPosition;
-        card.style.transform = `translate3d(${left}px,0,0) scale(1.1)`;
+        card.style.transform = 'scale(1.06)';
       });
       card.addEventListener('mouseleave', () => {
         card.dataset.hover = '';
         this.resumeAutoScroll();
-        const idx = Number(card.dataset.virtualIndex || '0');
-        const left = idx * ITEM_WIDTH - this.scrollPosition;
-        card.style.transform = `translate3d(${left}px,0,0)`;
+        card.style.transform = '';
       });
       card.dataset.hoverBound = 'true';
     }
@@ -165,14 +161,12 @@ class VirtualCarousel {
   }
 
   private updateCardPositions(): void {
-    // Avoid multiple layout reads; compute via index math only
+    // Use absolute left positioning to stay compatible with Easter Egg effects
     this.activeCards.forEach((card, idx) => {
       const left = idx * ITEM_WIDTH - this.scrollPosition;
-      // Use transform for better compositing when possible
+      card.style.left = `${left}px`;
       const isHover = card.dataset.hover === '1';
-      card.style.transform = isHover
-        ? `translate3d(${left}px,0,0) scale(1.06)`
-        : `translate3d(${left}px,0,0)`;
+      card.style.transform = isHover ? 'scale(1.06)' : '';
     });
   }
 
@@ -186,7 +180,8 @@ class VirtualCarousel {
       const card = this.getOrCreateCard();
       this.updateCardContent(card, exp, virtualIndex);
       const left = virtualIndex * ITEM_WIDTH - this.scrollPosition;
-      card.style.transform = `translate3d(${left}px,0,0)`;
+      card.style.left = `${left}px`;
+      card.style.transform = '';
       
       this.activeCards.set(virtualIndex, card);
       this.track.appendChild(card);
