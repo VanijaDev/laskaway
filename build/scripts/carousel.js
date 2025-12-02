@@ -101,7 +101,7 @@ class VirtualCarousel {
             card.addEventListener('mouseenter', () => {
                 this.pauseAutoScroll();
                 card.dataset.hover = '1';
-                card.style.transform = 'scale(1.06)';
+                card.style.transform = 'scale(1.1)';
             });
             card.addEventListener('mouseleave', () => {
                 card.dataset.hover = '';
