@@ -425,11 +425,17 @@ class CardStack {
             this.hintDismissed = true;
         }
         card.classList.add(dirRight ? 'fly-out-right' : 'fly-out-left');
+        let cleaned = false;
         const handleEnd = () => {
+            if (cleaned)
+                return;
+            cleaned = true;
             card.removeEventListener('transitionend', handleEnd);
             this.cleanupSwipedCard(card, dirRight);
         };
         card.addEventListener('transitionend', handleEnd);
+        // Safety timeout in case transitionend doesn't fire on some mobile browsers
+        setTimeout(() => handleEnd(), (flyOutDuration + 0.1) * 1000);
     }
     handleLikeAction(card, labels) {
         const title = card.dataset.title || '';

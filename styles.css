@@ -199,8 +199,8 @@ body {
 }
 
 /* Fling out animations */
-.card.fly-out-right { transition: transform .373s ease-in, opacity .373s ease-in; opacity: 0; transform: translate(1200px, -60px) rotate(24deg) !important; }
-.card.fly-out-left  { transition: transform .373s ease-in, opacity .373s ease-in; opacity: 0; transform: translate(-1200px, -60px) rotate(-24deg) !important; }
+.card.fly-out-right { opacity: 0; transform: translate(1200px, -60px) rotate(24deg) !important; }
+.card.fly-out-left  { opacity: 0; transform: translate(-1200px, -60px) rotate(-24deg) !important; }
 .card.snap-back { transition: transform .22s cubic-bezier(.2,.8,.3,1.2); }
 .card.base-animate { transition: transform .22s ease; }
 
