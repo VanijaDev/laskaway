@@ -485,7 +485,7 @@ body {
 .chip--active:hover { background: linear-gradient(135deg, #6b4ce6 0%, #db377f 100%); }
 
 /* Footer */
-.footer { border-top: 1px solid rgba(0,0,0,0.08); padding: 22px 0 40px; margin-top: 12px; backdrop-filter: blur(2px); }
+.footer { border-top: 1px solid rgba(0,0,0,0.08); padding: 22px 0 40px; margin-top: 12px; background: transparent; backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px); }
 .footer__grid { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
 .brand { font-weight: 700; color: #374151; transition: transform 0.2s ease; }
 .brand:hover { transform: scale(1.05); }
