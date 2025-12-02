@@ -397,6 +397,7 @@ body {
   animation: confetti-pop var(--dur, 900ms) cubic-bezier(.2,.8,.2,1) forwards;
   animation-delay: var(--delay, 0ms);
   filter: drop-shadow(0 2px 2px rgba(0,0,0,.12));
+  z-index: 9999;
 }
 @keyframes confetti-pop {
   0% { transform: translate(0, 0) rotate(0deg) scale(var(--scale, 1)); opacity: 1; }
@@ -411,6 +412,7 @@ body {
   font-size: var(--emojiSize, 18px);
   animation: confetti-emoji var(--dur, 1000ms) cubic-bezier(.2,.8,.2,1) forwards;
   animation-delay: var(--delay, 0ms);
+  z-index: 9999;
 }
 @keyframes confetti-emoji {
   0% { transform: translate(0, 0) scale(1); opacity: 1; }
@@ -436,6 +438,7 @@ body {
   animation: confetti-number var(--dur, 1400ms) cubic-bezier(.2,.7,.3,1) forwards;
   animation-delay: var(--delay, 0ms);
   line-height: 1;
+  z-index: 9999;
 }
 @keyframes confetti-number {
   0% { transform: translate(0, 0) scale(0.5) rotate(0deg); opacity: 0; }
