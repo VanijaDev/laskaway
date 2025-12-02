@@ -202,6 +202,15 @@ class CardStack {
     if (labels.nope) labels.nope.style.opacity = '0';
   }
 
+  private resetCardState(card: HTMLElement): void {
+    card.classList.remove('fly-out-right', 'fly-out-left');
+    this.clearDragTransform(card);
+    card.style.transition = '';
+    card.style.zIndex = '';
+    this.resetSwipeLabels(card);
+    delete card.dataset.autoAdvanced;
+  }
+
   private applyFifthCardFade(draggedCard: HTMLElement, dx: number): void {
     if (this.likedExperiences.length !== 4) return;
     if (dx <= 0) {
@@ -529,12 +538,7 @@ class CardStack {
   }
 
   private cleanupSwipedCard(card: HTMLElement, dirRight: boolean): void {
-    card.classList.remove('fly-out-right', 'fly-out-left');
-    this.clearDragTransform(card);
-    card.style.transition = '';
-    card.style.zIndex = '';
-    delete card.dataset.autoAdvanced;
-    this.resetSwipeLabels(card);
+    this.resetCardState(card);
 
     if (this.likedExperiences.length >= MAX_SELECTIONS) {
       this.showGiftBox();
@@ -560,11 +564,7 @@ class CardStack {
   private recycleCard(card: HTMLElement): void {
     const nextExp = this.experiences[this.nextExpIndex++];
     this.updateCardContent(card, nextExp);
-    this.clearDragTransform(card);
-    this.resetSwipeLabels(card);
-    card.classList.remove('fly-out-right', 'fly-out-left');
-    card.style.transition = '';
-    card.style.zIndex = '';
+    this.resetCardState(card);
     this.setRandomBase(card);
     this.stack.insertBefore(card, this.stack.firstChild);
     this.activeCards.unshift(card);
