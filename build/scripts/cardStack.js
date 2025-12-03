@@ -5,7 +5,6 @@ const MAX_SELECTIONS = 5;
 const MAX_VISIBLE_CARDS = 3;
 const AUTO_DEMO_THRESHOLD = 180;
 const isMobileQuery = window.matchMedia('(max-width: 960px)');
-const SWIPE_THRESHOLD = isMobileQuery.matches ? 50 : 200;
 const CLICK_TOLERANCE = 5;
 const FIFTH_CARD_FADE_MULTIPLIER = 0.5;
 const SUCCESS_CONFETTI_RADIUS = { min: 128, max: 480 };
@@ -394,7 +393,7 @@ class CardStack {
             }
             blockClickUntil = Date.now() + CLICK_BLOCK_DURATION;
             const dirRight = dx > 0;
-            if (Math.abs(dx) >= SWIPE_THRESHOLD) {
+            if (Math.abs(dx) >= AUTO_DEMO_THRESHOLD) {
                 // Directly commit fly-out; do not reset transition/zIndex here
                 this.handleSwipeCommit(card, dirRight, labels);
             }
@@ -422,7 +421,7 @@ class CardStack {
         card.addEventListener('click', onClick);
     }
     handleSwipeCommit(card, dirRight, labels) {
-        const flyOutDuration = isMobileQuery.matches ? 1.0 : 0.5;
+        const flyOutDuration = 0.5;
         card.style.transition = `transform ${flyOutDuration}s ease-in, opacity ${flyOutDuration}s ease-in`;
         card.style.zIndex = '99';
         // Ensure browser picks up the new transition before we change classes
