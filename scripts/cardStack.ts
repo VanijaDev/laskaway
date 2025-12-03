@@ -8,7 +8,6 @@ import { openInNewTab, triggerHaptic, LIKE_EMOJIS, createConfettiParticle, creat
 const MAX_SELECTIONS = 5;
 const MAX_VISIBLE_CARDS = 3;
 const AUTO_DEMO_THRESHOLD = 180;
-const isMobileQuery = window.matchMedia('(max-width: 960px)');
 const CLICK_TOLERANCE = 5;
 const FIFTH_CARD_FADE_MULTIPLIER = 0.5;
 const SUCCESS_CONFETTI_RADIUS = { min: 128, max: 480 } as const;
@@ -305,7 +304,7 @@ class CardStack {
       void card.offsetWidth;
 
       const labels = this.getCardLabels(card);
-      const autoThreshold = isMobileQuery.matches ? AUTO_DEMO_THRESHOLD / 2 : AUTO_DEMO_THRESHOLD;
+      const autoThreshold = AUTO_DEMO_THRESHOLD;
       const start = performance.now();
 
       const step = (now: number) => {
