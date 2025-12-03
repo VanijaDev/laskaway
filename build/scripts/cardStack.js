@@ -1,23 +1,45 @@
-/* Card Stack Module - Tinder-like swipeable card stack */
+/* Card Stack Module - Tinder-like swipeable card stack (Refactored) */
 import { openInNewTab, triggerHaptic, LIKE_EMOJIS, createConfettiParticle, createConfettiEmoji } from '../utils.js';
-// Constants
+// ============================================================================
+// CONSTANTS
+// ============================================================================
 const MAX_SELECTIONS = 5;
 const MAX_VISIBLE_CARDS = 3;
+// Touch/Drag Configuration
+const SWIPE_THRESHOLD = 50; // Minimum distance to trigger swipe (mobile optimized)
+const VELOCITY_THRESHOLD = 0.3; // Minimum velocity (px/ms) to trigger fast swipe
+const CLICK_TOLERANCE = 10; // Max movement to still register as click
+const MIN_DRAG_DISTANCE = 15; // Minimum drag to prevent accidental swipes
+// Animation Durations (ms)
+const FLY_OUT_DURATION = 1000; // Mobile optimized for visibility
+const WIGGLE_ANIMATION_DURATION = 2000;
+const WIGGLE_INITIAL_DELAY = 1000;
+const WIGGLE_GAP_BETWEEN = 4000;
+const DEMO_ANIMATION_DURATION = 3000;
+// Visual Constants
+const ROTATION_FACTOR = 0.08;
+const LABEL_INTENSITY_DIVISOR = 120;
 const AUTO_DEMO_THRESHOLD = 180;
-const isMobileQuery = window.matchMedia('(max-width: 960px)');
-const CLICK_TOLERANCE = 5;
 const FIFTH_CARD_FADE_MULTIPLIER = 0.5;
+const HAPTIC_THRESHOLD = 180;
+// Confetti Configuration
 const SUCCESS_CONFETTI_RADIUS = { min: 128, max: 480 };
 const SUCCESS_CONFETTI_PARTICLES_PER_BURST = 20;
 const SUCCESS_CONFETTI_BURSTS = 4;
-const ROTATION_FACTOR = 0.08;
-const LABEL_INTENSITY_DIVISOR = 120;
-const DEMO_ANIMATION_DURATION = 3000;
-const WIGGLE_INITIAL_DELAY = 1000;
-const WIGGLE_ANIMATION_DURATION = 2000;
-const WIGGLE_GAP_BETWEEN = 4000;
 const CLICK_BLOCK_DURATION = 800;
 const DEFAULT_URL = 'https://www.google.com';
+const isMobileQuery = window.matchMedia('(max-width: 960px)');
+var CardState;
+(function (CardState) {
+    CardState["IDLE"] = "idle";
+    CardState["DRAGGING"] = "dragging";
+    CardState["FLYING_OUT"] = "flying-out";
+    CardState["SNAPPING_BACK"] = "snapping-back";
+    CardState["REMOVED"] = "removed";
+})(CardState || (CardState = {}));
+// ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
 const easeInOutCubic = (t) => {
     return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 };
@@ -25,6 +47,12 @@ const getElementCenter = (element) => {
     const rect = element.getBoundingClientRect();
     return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
 };
+const clamp = (value, min, max) => {
+    return Math.min(Math.max(value, min), max);
+};
+// ============================================================================
+// MAIN CLASS
+// ============================================================================
 export function initializeCardStack(experiences) {
     const stackElement = document.querySelector('.card-stack');
     if (!stackElement)
@@ -35,104 +63,255 @@ export function initializeCardStack(experiences) {
 class CardStack {
     constructor(stack, experiences) {
         this.nextExpIndex = 0;
+        this.likedExperiences = [];
+        // State
         this.activeCards = [];
+        this.cardStates = new WeakMap();
         this.hasInteracted = false;
         this.hintDismissed = false;
-        this.likedExperiences = [];
+        this.clickBlockUntil = 0;
+        // Animation State
         this.isDemoRunning = false;
         this.demoRAF = null;
+        // Body scroll lock state
+        this.prevBodyOverflow = '';
+        this.prevBodyTouchAction = '';
         this.stack = stack;
         this.experiences = experiences;
-        this.prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         this.giftBox = document.getElementById('giftBox');
         this.selectedCardsContainer = document.getElementById('selectedCards');
         this.dragHint = document.getElementById('dragHint');
+        this.prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     }
+    // ============================================================================
+    // INITIALIZATION
+    // ============================================================================
     initialize() {
         this.setupInitialState();
         this.initVirtualCards();
         if (!this.prefersReducedMotion) {
             this.scheduleWiggleAnimations();
-            document.addEventListener('visibilitychange', () => {
-                if (document.hidden) {
-                    this.stopAllWiggles();
-                    this.cancelDemoIfAny();
-                }
-            }, { passive: true });
+            this.setupVisibilityHandling();
         }
     }
     setupInitialState() {
         this.stack.classList.remove('is-hidden');
         if (this.giftBox) {
             this.giftBox.classList.remove('is-visible');
-            if (!this.giftBox.classList.contains('hidden')) {
-                this.giftBox.classList.add('hidden');
-            }
+            this.giftBox.classList.add('hidden');
         }
     }
-    createCard() {
+    setupVisibilityHandling() {
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                this.stopAllWiggles();
+                this.cancelDemoIfAny();
+            }
+        }, { passive: true });
+    }
+    initVirtualCards() {
+        const cardCount = Math.min(MAX_VISIBLE_CARDS, this.experiences.length);
+        for (let i = 0; i < cardCount; i++) {
+            const exp = this.experiences[this.nextExpIndex++];
+            const card = this.createCard(exp);
+            this.stack.appendChild(card);
+            this.activeCards.push(card);
+            this.cardStates.set(card, CardState.IDLE);
+            this.attachDragHandlers(card);
+        }
+    }
+    // ============================================================================
+    // CARD CREATION & MANAGEMENT
+    // ============================================================================
+    createCard(exp) {
         const card = document.createElement('figure');
         card.className = 'card card--hint-wiggle';
         card.innerHTML = `
-      <img src="" alt="" loading="lazy" />
+      <img src="${exp.image}" alt="${exp.alt}" loading="lazy" />
       <div class="swipe-label swipe-label--like" aria-hidden="true">Gift this!</div>
       <div class="swipe-label swipe-label--nope" aria-hidden="true">Not today</div>
-      <figcaption></figcaption>
+      <figcaption>${exp.title}</figcaption>
     `;
         const img = card.querySelector('img');
         if (img)
             img.draggable = false;
-        return card;
-    }
-    updateCardContent(card, exp) {
-        const img = card.querySelector('img');
-        const caption = card.querySelector('figcaption');
-        img.src = exp.image;
-        img.alt = exp.alt;
-        caption.textContent = exp.title;
         card.dataset.title = exp.title;
         card.dataset.url = exp.url;
+        this.setRandomBase(card);
+        return card;
     }
     setRandomBase(el) {
         const randX = Math.floor(Math.random() * 9 - 4);
         const randY = Math.floor(Math.random() * 9 - 4);
         const randTilt = Math.floor(Math.random() * 13 - 6);
-        el.style.setProperty('--base-x', randX + 'px');
-        el.style.setProperty('--base-y', randY + 'px');
-        el.style.setProperty('--base-r', randTilt + 'deg');
-    }
-    initVirtualCards() {
-        for (let i = 0; i < Math.min(MAX_VISIBLE_CARDS, this.experiences.length); i++) {
-            const exp = this.experiences[this.nextExpIndex++];
-            const card = this.createCard();
-            this.updateCardContent(card, exp);
-            this.setRandomBase(card);
-            this.stack.appendChild(card);
-            this.activeCards.push(card);
-            this.attachDragHandlers(card);
-        }
+        el.style.setProperty('--base-x', `${randX}px`);
+        el.style.setProperty('--base-y', `${randY}px`);
+        el.style.setProperty('--base-r', `${randTilt}deg`);
     }
     getTopCard() {
         return this.activeCards[this.activeCards.length - 1] || null;
-    }
-    getStackCardsExcept(excludeCard) {
-        return this.activeCards.filter(c => c !== excludeCard);
-    }
-    updateStackOpacity(excludeCard, fadeProgress) {
-        this.getStackCardsExcept(excludeCard).forEach(c => {
-            c.style.opacity = String(1 - fadeProgress);
-        });
-    }
-    resetStackOpacity(excludeCard) {
-        this.getStackCardsExcept(excludeCard).forEach(c => {
-            c.style.opacity = '';
-        });
     }
     getCardLabels(card) {
         return {
             like: card.querySelector('.swipe-label--like'),
             nope: card.querySelector('.swipe-label--nope')
         };
+    }
+    // ============================================================================
+    // DRAG HANDLING (Mobile-Optimized)
+    // ============================================================================
+    attachDragHandlers(card) {
+        const dragState = {
+            active: false,
+            startX: 0,
+            startY: 0,
+            currentX: 0,
+            currentY: 0,
+            startTime: 0,
+            pointerId: null,
+            moved: false,
+            hapticTriggered: false
+        };
+        const labels = this.getCardLabels(card);
+        // Pointer Down - Start drag
+        const onPointerDown = (e) => {
+            // Only allow top card to be dragged
+            if (card !== this.getTopCard())
+                return;
+            if (this.cardStates.get(card) !== CardState.IDLE)
+                return;
+            e.preventDefault();
+            // Lock body scroll
+            this.lockBodyScroll();
+            // Cancel any running demo
+            this.cancelDemoIfAny();
+            // Initialize drag state
+            dragState.active = true;
+            dragState.startX = e.clientX;
+            dragState.startY = e.clientY;
+            dragState.currentX = e.clientX;
+            dragState.currentY = e.clientY;
+            dragState.startTime = performance.now();
+            dragState.pointerId = e.pointerId;
+            dragState.moved = false;
+            dragState.hapticTriggered = false;
+            // Capture pointer for reliable tracking
+            card.setPointerCapture(dragState.pointerId);
+            // Update visual state
+            card.classList.add('is-dragging');
+            card.style.transition = 'none';
+            card.style.zIndex = '10';
+            this.cardStates.set(card, CardState.DRAGGING);
+            // Mark as interacted
+            if (!this.hasInteracted) {
+                this.hasInteracted = true;
+                this.stopAllWiggles();
+            }
+        };
+        // Pointer Move - Update drag
+        const onPointerMove = (e) => {
+            if (!dragState.active)
+                return;
+            e.preventDefault();
+            dragState.currentX = e.clientX;
+            dragState.currentY = e.clientY;
+            const dx = dragState.currentX - dragState.startX;
+            const dy = dragState.currentY - dragState.startY;
+            // Check if moved beyond tolerance
+            if (!dragState.moved && (Math.abs(dx) > CLICK_TOLERANCE || Math.abs(dy) > CLICK_TOLERANCE)) {
+                dragState.moved = true;
+            }
+            // Update card position
+            this.updateCardTransform(card, dx, dy);
+            // Update label opacity
+            const intensity = clamp(Math.abs(dx) / LABEL_INTENSITY_DIVISOR, 0, 1);
+            this.updateLabelOpacity(labels, dx, intensity);
+            // Apply fifth card fade effect
+            this.applyFifthCardFade(card, dx);
+            // Trigger haptic feedback at threshold
+            if (!dragState.hapticTriggered && Math.abs(dx) > HAPTIC_THRESHOLD) {
+                dragState.hapticTriggered = true;
+                triggerHaptic(20);
+            }
+        };
+        // Pointer Up - End drag
+        const onPointerUp = (e) => {
+            if (!dragState.active)
+                return;
+            e.preventDefault();
+            // Release pointer capture
+            if (dragState.pointerId !== null) {
+                card.releasePointerCapture(dragState.pointerId);
+            }
+            // Unlock body scroll
+            this.unlockBodyScroll();
+            // Reset dragging state
+            dragState.active = false;
+            card.classList.remove('is-dragging');
+            const dx = dragState.currentX - dragState.startX;
+            const dy = dragState.currentY - dragState.startY;
+            const duration = performance.now() - dragState.startTime;
+            // Check if it was a click (minimal movement)
+            if (!dragState.moved || (Math.abs(dx) < CLICK_TOLERANCE && Math.abs(dy) < CLICK_TOLERANCE)) {
+                this.handleClick(card);
+                this.resetCardVisuals(card);
+                this.cardStates.set(card, CardState.IDLE);
+                return;
+            }
+            // Check if drag distance meets minimum
+            if (Math.abs(dx) < MIN_DRAG_DISTANCE) {
+                this.handleSnapBack(card);
+                return;
+            }
+            // Calculate velocity
+            const velocity = duration > 0 ? Math.abs(dx) / duration : 0;
+            // Determine if swipe should commit
+            const shouldCommit = Math.abs(dx) >= SWIPE_THRESHOLD || velocity >= VELOCITY_THRESHOLD;
+            if (shouldCommit) {
+                const dirRight = dx > 0;
+                this.handleSwipeCommit(card, dirRight, labels);
+            }
+            else {
+                this.handleSnapBack(card);
+            }
+        };
+        // Pointer Cancel - Handle interruption
+        const onPointerCancel = () => {
+            if (!dragState.active)
+                return;
+            dragState.active = false;
+            this.unlockBodyScroll();
+            this.handleSnapBack(card);
+        };
+        // Click handler
+        const onClick = (evt) => {
+            // Block clicks during/after drag
+            if (dragState.moved || Date.now() < this.clickBlockUntil) {
+                evt.preventDefault();
+                evt.stopPropagation();
+            }
+        };
+        // Attach event listeners
+        card.addEventListener('pointerdown', onPointerDown);
+        card.addEventListener('pointermove', onPointerMove);
+        card.addEventListener('pointerup', onPointerUp);
+        card.addEventListener('pointercancel', onPointerCancel);
+        card.addEventListener('lostpointercapture', onPointerCancel);
+        card.addEventListener('click', onClick);
+    }
+    // ============================================================================
+    // VISUAL UPDATES
+    // ============================================================================
+    updateCardTransform(card, dx, dy) {
+        const rot = dx * ROTATION_FACTOR;
+        card.style.setProperty('--drag-x', `${dx}px`);
+        card.style.setProperty('--drag-y', `${dy}px`);
+        card.style.setProperty('--drag-r', `${rot}deg`);
+    }
+    clearCardTransform(card) {
+        card.style.removeProperty('--drag-x');
+        card.style.removeProperty('--drag-y');
+        card.style.removeProperty('--drag-r');
     }
     updateLabelOpacity(labels, dx, intensity) {
         if (dx > 0) {
@@ -154,25 +333,15 @@ class CardStack {
                 labels.nope.style.opacity = '0';
         }
     }
-    clearDragTransform(card) {
-        card.style.removeProperty('--drag-x');
-        card.style.removeProperty('--drag-y');
-        card.style.removeProperty('--drag-r');
-    }
-    resetSwipeLabels(card) {
+    resetCardVisuals(card) {
+        this.clearCardTransform(card);
+        card.style.transition = '';
+        card.style.zIndex = '';
         const labels = this.getCardLabels(card);
         if (labels.like)
             labels.like.style.opacity = '0';
         if (labels.nope)
             labels.nope.style.opacity = '0';
-    }
-    resetCardState(card) {
-        card.classList.remove('fly-out-right', 'fly-out-left');
-        this.clearDragTransform(card);
-        card.style.transition = '';
-        card.style.zIndex = '';
-        this.resetSwipeLabels(card);
-        delete card.dataset.autoAdvanced;
     }
     applyFifthCardFade(draggedCard, dx) {
         if (this.likedExperiences.length !== 4)
@@ -182,56 +351,231 @@ class CardStack {
             return;
         }
         const cardWidth = draggedCard.getBoundingClientRect().width;
-        const fullFadeAt = AUTO_DEMO_THRESHOLD + cardWidth * FIFTH_CARD_FADE_MULTIPLIER;
-        const fadeProgress = Math.min(1, Math.max(0, dx / fullFadeAt));
+        const fullFadeAt = SWIPE_THRESHOLD + cardWidth * FIFTH_CARD_FADE_MULTIPLIER;
+        const fadeProgress = clamp(dx / fullFadeAt, 0, 1);
         this.updateStackOpacity(draggedCard, fadeProgress);
     }
-    sleep(ms) {
-        return new Promise(resolve => {
-            window.setTimeout(resolve, ms);
+    updateStackOpacity(excludeCard, fadeProgress) {
+        this.activeCards
+            .filter(c => c !== excludeCard)
+            .forEach(c => {
+            c.style.opacity = String(1 - fadeProgress);
         });
     }
+    resetStackOpacity(excludeCard) {
+        this.activeCards
+            .filter(c => c !== excludeCard)
+            .forEach(c => {
+            c.style.opacity = '';
+        });
+    }
+    // ============================================================================
+    // SWIPE ACTIONS
+    // ============================================================================
+    handleSwipeCommit(card, dirRight, labels) {
+        this.cardStates.set(card, CardState.FLYING_OUT);
+        // Apply transition with reflow to ensure it takes effect
+        const flyOutDuration = FLY_OUT_DURATION / 1000; // Convert to seconds
+        card.style.transition = `transform ${flyOutDuration}s ease-in, opacity ${flyOutDuration}s ease-in`;
+        card.style.zIndex = '99';
+        void card.offsetWidth; // Force reflow
+        // Handle like/nope action
+        if (dirRight) {
+            this.handleLikeAction(card, labels);
+        }
+        else {
+            this.handleNopeAction(labels);
+        }
+        // Dismiss hint
+        if (!this.hintDismissed) {
+            this.dragHint?.classList.add('drag-hint--fade');
+            this.hintDismissed = true;
+        }
+        // Apply fly-out class
+        card.classList.add(dirRight ? 'fly-out-right' : 'fly-out-left');
+        // Handle completion
+        let cleaned = false;
+        const handleEnd = () => {
+            if (cleaned)
+                return;
+            cleaned = true;
+            card.removeEventListener('transitionend', handleEnd);
+            this.cleanupSwipedCard(card, dirRight);
+        };
+        card.addEventListener('transitionend', handleEnd, { once: true });
+        // Safety timeout
+        setTimeout(() => handleEnd(), FLY_OUT_DURATION + 100);
+    }
+    handleSnapBack(card) {
+        this.cardStates.set(card, CardState.SNAPPING_BACK);
+        card.classList.add('snap-back');
+        this.clearCardTransform(card);
+        this.resetStackOpacity(card);
+        const labels = this.getCardLabels(card);
+        if (labels.like)
+            labels.like.style.opacity = '0';
+        if (labels.nope)
+            labels.nope.style.opacity = '0';
+        let cleaned = false;
+        const handleBack = () => {
+            if (cleaned)
+                return;
+            cleaned = true;
+            card.classList.remove('snap-back');
+            card.style.transition = '';
+            card.style.zIndex = '';
+            card.removeEventListener('transitionend', handleBack);
+            // Haptic bounce feedback
+            card.classList.add('haptic-bounce');
+            setTimeout(() => card.classList.remove('haptic-bounce'), 200);
+            this.cardStates.set(card, CardState.IDLE);
+        };
+        card.addEventListener('transitionend', handleBack, { once: true });
+        // Safety timeout (snap-back duration is 220ms in CSS)
+        setTimeout(() => handleBack(), 320);
+    }
+    handleClick(card) {
+        // Block subsequent clicks
+        this.clickBlockUntil = Date.now() + CLICK_BLOCK_DURATION;
+        // Open URL
+        const url = card.dataset.url || DEFAULT_URL;
+        openInNewTab(url);
+    }
+    handleLikeAction(card, labels) {
+        const title = card.dataset.title || '';
+        const url = card.dataset.url || '';
+        const imgEl = card.querySelector('img');
+        const image = imgEl ? imgEl.src : '';
+        this.likedExperiences.push({ title, image, url });
+        if (!this.prefersReducedMotion) {
+            this.showCountNumber(this.likedExperiences.length);
+            this.createLikeEmojiConfetti(card);
+        }
+        if (labels.like) {
+            labels.like.style.opacity = '1';
+            labels.like.classList.add('shake-right');
+            setTimeout(() => labels.like?.classList.remove('shake-right'), 220);
+        }
+    }
+    handleNopeAction(labels) {
+        if (labels.nope) {
+            labels.nope.style.opacity = '1';
+            labels.nope.classList.add('shake-left');
+            setTimeout(() => labels.nope?.classList.remove('shake-left'), 220);
+        }
+    }
+    // ============================================================================
+    // CARD LIFECYCLE
+    // ============================================================================
+    cleanupSwipedCard(card, dirRight) {
+        this.cardStates.set(card, CardState.REMOVED);
+        card.classList.remove('fly-out-right', 'fly-out-left');
+        this.resetCardVisuals(card);
+        // Check if max selections reached
+        if (this.likedExperiences.length >= MAX_SELECTIONS) {
+            this.showGiftBox();
+            return;
+        }
+        // Remove from active cards
+        const topIdx = this.activeCards.indexOf(card);
+        if (topIdx > -1) {
+            this.activeCards.splice(topIdx, 1);
+        }
+        // Recycle or remove card
+        if (this.nextExpIndex < this.experiences.length) {
+            this.recycleCard(card);
+        }
+        else {
+            card.remove();
+        }
+        // Apply dribble effect for likes
+        if (dirRight) {
+            this.applyDribbleEffect();
+        }
+    }
+    recycleCard(card) {
+        const nextExp = this.experiences[this.nextExpIndex++];
+        // Update card content
+        const img = card.querySelector('img');
+        const caption = card.querySelector('figcaption');
+        img.src = nextExp.image;
+        img.alt = nextExp.alt;
+        caption.textContent = nextExp.title;
+        card.dataset.title = nextExp.title;
+        card.dataset.url = nextExp.url;
+        // Reset visual state
+        this.resetCardVisuals(card);
+        this.setRandomBase(card);
+        // Insert at bottom of stack
+        this.stack.insertBefore(card, this.stack.firstChild);
+        this.activeCards.unshift(card);
+        this.cardStates.set(card, CardState.IDLE);
+        // Animate other cards
+        const others = this.activeCards.slice(0, -1);
+        others.forEach(c => c.classList.add('base-animate'));
+        this.setRandomBase(this.activeCards[0]);
+        setTimeout(() => {
+            others.forEach(c => c.classList.remove('base-animate'));
+        }, 240);
+    }
+    applyDribbleEffect() {
+        setTimeout(() => {
+            const others = this.activeCards.slice(0, -1);
+            others.forEach((c, idx) => {
+                const randomDelay = Math.random() * 80;
+                setTimeout(() => {
+                    c.classList.add('dribble');
+                    setTimeout(() => c.classList.remove('dribble'), 320);
+                }, idx * 60 + randomDelay);
+            });
+        }, 200);
+    }
+    // ============================================================================
+    // BODY SCROLL LOCK
+    // ============================================================================
+    lockBodyScroll() {
+        this.prevBodyOverflow = document.body.style.overflow;
+        this.prevBodyTouchAction = document.body.style.touchAction;
+        document.body.style.overflow = 'hidden';
+        document.body.style.touchAction = 'none';
+    }
+    unlockBodyScroll() {
+        document.body.style.overflow = this.prevBodyOverflow;
+        document.body.style.touchAction = this.prevBodyTouchAction;
+    }
+    // ============================================================================
+    // IDLE ANIMATIONS
+    // ============================================================================
     scheduleWiggleAnimations() {
-        window.setTimeout(() => {
+        setTimeout(() => {
             if (!this.hasInteracted)
                 this.startIdleWiggleDemoLoop();
         }, WIGGLE_INITIAL_DELAY);
     }
-    startIdleWiggleDemoLoop() {
-        const loop = async () => {
-            while (!this.hasInteracted) {
-                if (document.hidden) {
-                    await this.sleep(300);
-                    continue;
-                }
-                this.triggerWiggle();
-                await this.sleep(WIGGLE_ANIMATION_DURATION);
-                if (this.hasInteracted)
-                    break;
-                if (document.hidden)
-                    continue;
-                await this.sleep(WIGGLE_GAP_BETWEEN);
-                if (this.hasInteracted)
-                    break;
-                if (document.hidden)
-                    continue;
-                await this.demoTopCardDragOnce();
-                if (this.hasInteracted)
-                    break;
-                if (document.hidden)
-                    continue;
-                await this.sleep(WIGGLE_GAP_BETWEEN);
+    async startIdleWiggleDemoLoop() {
+        while (!this.hasInteracted) {
+            if (document.hidden) {
+                await this.sleep(300);
+                continue;
             }
-        };
-        void loop();
+            this.triggerWiggle();
+            await this.sleep(WIGGLE_ANIMATION_DURATION);
+            if (this.hasInteracted || document.hidden)
+                continue;
+            await this.sleep(WIGGLE_GAP_BETWEEN);
+            if (this.hasInteracted || document.hidden)
+                continue;
+            await this.demoTopCardDragOnce();
+            if (this.hasInteracted || document.hidden)
+                continue;
+            await this.sleep(WIGGLE_GAP_BETWEEN);
+        }
     }
     triggerWiggle() {
-        if (this.hasInteracted)
-            return;
-        if (document.hidden)
+        if (this.hasInteracted || document.hidden)
             return;
         this.activeCards.forEach((card, i) => {
-            card.style.setProperty('--wiggle-delay', 1 + i * 0.3 + 's');
+            card.style.setProperty('--wiggle-delay', `${1 + i * 0.3}s`);
             if (!card.classList.contains('card--hint-wiggle')) {
                 card.classList.add('card--hint-wiggle');
             }
@@ -257,8 +601,12 @@ class CardStack {
         this.demoRAF = null;
         const topCard = this.getTopCard();
         if (topCard) {
-            this.clearDragTransform(topCard);
-            this.resetSwipeLabels(topCard);
+            this.clearCardTransform(topCard);
+            const labels = this.getCardLabels(topCard);
+            if (labels.like)
+                labels.like.style.opacity = '0';
+            if (labels.nope)
+                labels.nope.style.opacity = '0';
         }
     }
     demoTopCardDragOnce() {
@@ -299,18 +647,18 @@ class CardStack {
                     dx = autoThreshold * (1 - phaseProgress);
                     dy = -Math.abs(Math.sin(phaseProgress * Math.PI)) * 10;
                 }
-                const rot = dx * ROTATION_FACTOR;
-                card.style.setProperty('--drag-x', dx + 'px');
-                card.style.setProperty('--drag-y', dy + 'px');
-                card.style.setProperty('--drag-r', rot + 'deg');
-                const intensity = Math.min(1, Math.abs(dx) / LABEL_INTENSITY_DIVISOR);
+                this.updateCardTransform(card, dx, dy);
+                const intensity = clamp(Math.abs(dx) / LABEL_INTENSITY_DIVISOR, 0, 1);
                 this.updateLabelOpacity(labels, dx, intensity);
                 if (progress < 1) {
                     this.demoRAF = requestAnimationFrame(step);
                 }
                 else {
-                    this.clearDragTransform(card);
-                    this.resetSwipeLabels(card);
+                    this.clearCardTransform(card);
+                    if (labels.like)
+                        labels.like.style.opacity = '0';
+                    if (labels.nope)
+                        labels.nope.style.opacity = '0';
                     this.isDemoRunning = false;
                     this.demoRAF = null;
                     resolve();
@@ -319,225 +667,16 @@ class CardStack {
             this.demoRAF = requestAnimationFrame(step);
         });
     }
-    attachDragHandlers(card) {
-        let startX = 0, startY = 0, dx = 0, dy = 0, dragging = false;
-        let moved = false;
-        let blockClickUntil = 0;
-        let pointerId = null;
-        const labels = this.getCardLabels(card);
-        let prevBodyOverflow = '';
-        let prevBodyTouchAction = '';
-        const onPointerDown = (e) => {
-            if (card !== this.getTopCard())
-                return;
-            e.preventDefault();
-            // Save previous body styles
-            prevBodyOverflow = document.body.style.overflow;
-            prevBodyTouchAction = document.body.style.touchAction;
-            document.body.style.overflow = 'hidden';
-            document.body.style.touchAction = 'none';
-            this.cancelDemoIfAny();
-            pointerId = e.pointerId;
-            card.setPointerCapture(pointerId);
-            dragging = true;
-            moved = false;
-            startX = e.clientX;
-            startY = e.clientY;
-            card.classList.add('is-dragging');
-            card.style.transition = 'none';
-            card.style.zIndex = '10';
-            if (!this.hasInteracted) {
-                this.hasInteracted = true;
-                this.stopAllWiggles();
-            }
-        };
-        const onPointerMove = (e) => {
-            if (!dragging)
-                return;
-            dx = e.clientX - startX;
-            dy = e.clientY - startY;
-            if (!moved && (Math.abs(dx) > CLICK_TOLERANCE || Math.abs(dy) > CLICK_TOLERANCE)) {
-                moved = true;
-            }
-            const rot = dx * ROTATION_FACTOR;
-            card.style.setProperty('--drag-x', dx + 'px');
-            card.style.setProperty('--drag-y', dy + 'px');
-            card.style.setProperty('--drag-r', rot + 'deg');
-            const intensity = Math.min(1, Math.abs(dx) / LABEL_INTENSITY_DIVISOR);
-            this.updateLabelOpacity(labels, dx, intensity);
-            this.applyFifthCardFade(card, dx);
-            if (Math.abs(dx) > AUTO_DEMO_THRESHOLD && !card.dataset.autoAdvanced) {
-                card.dataset.autoAdvanced = 'true';
-                triggerHaptic(20);
-            }
-        };
-        const onPointerUp = () => {
-            if (!dragging)
-                return;
-            if (pointerId !== null)
-                card.releasePointerCapture(pointerId);
-            dragging = false;
-            card.classList.remove('is-dragging');
-            // Restore previous body styles
-            document.body.style.overflow = prevBodyOverflow;
-            document.body.style.touchAction = prevBodyTouchAction;
-            if (Math.abs(dx) < CLICK_TOLERANCE && Math.abs(dy) < CLICK_TOLERANCE) {
-                card.style.transition = '';
-                card.style.zIndex = '';
-                delete card.dataset.autoAdvanced;
-                this.resetSwipeLabels(card);
-                this.clearDragTransform(card);
-                moved = false;
-                dx = dy = 0;
-                return;
-            }
-            blockClickUntil = Date.now() + CLICK_BLOCK_DURATION;
-            const dirRight = dx > 0;
-            if (Math.abs(dx) >= AUTO_DEMO_THRESHOLD) {
-                // Directly commit fly-out; do not reset transition/zIndex here
-                this.handleSwipeCommit(card, dirRight, labels);
-            }
-            else {
-                card.style.transition = '';
-                card.style.zIndex = '';
-                this.handleSnapBack(card);
-            }
-            dx = dy = 0;
-        };
-        const onClick = (evt) => {
-            if (dragging || moved || Date.now() < blockClickUntil) {
-                evt.preventDefault();
-                evt.stopPropagation();
-                return;
-            }
-            const url = card.dataset.url || DEFAULT_URL;
-            openInNewTab(url);
-        };
-        card.addEventListener('pointerdown', onPointerDown);
-        card.addEventListener('pointermove', onPointerMove);
-        card.addEventListener('pointerup', onPointerUp);
-        card.addEventListener('pointercancel', onPointerUp);
-        card.addEventListener('lostpointercapture', onPointerUp);
-        card.addEventListener('click', onClick);
+    sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
     }
-    handleSwipeCommit(card, dirRight, labels) {
-        const flyOutDuration = 0.5;
-        card.style.transition = `transform ${flyOutDuration}s ease-in, opacity ${flyOutDuration}s ease-in`;
-        card.style.zIndex = '99';
-        // Ensure browser picks up the new transition before we change classes
-        void card.offsetWidth;
-        if (dirRight) {
-            this.handleLikeAction(card, labels);
-        }
-        else {
-            this.handleNopeAction(labels);
-        }
-        if (!this.hintDismissed) {
-            this.dragHint?.classList.add('drag-hint--fade');
-            this.hintDismissed = true;
-        }
-        card.classList.add(dirRight ? 'fly-out-right' : 'fly-out-left');
-        let cleaned = false;
-        const handleEnd = () => {
-            if (cleaned)
-                return;
-            cleaned = true;
-            card.removeEventListener('transitionend', handleEnd);
-            this.cleanupSwipedCard(card, dirRight);
-        };
-        card.addEventListener('transitionend', handleEnd);
-        // Safety timeout in case transitionend doesn't fire on some mobile browsers
-        setTimeout(() => handleEnd(), (flyOutDuration + 0.1) * 1000);
-    }
-    handleLikeAction(card, labels) {
-        const title = card.dataset.title || '';
-        const url = card.dataset.url || '';
-        const imgEl = card.querySelector('img');
-        const image = imgEl ? imgEl.src : '';
-        this.likedExperiences.push({ title, image, url });
-        if (!this.prefersReducedMotion) {
-            this.showCountNumber(this.likedExperiences.length);
-            this.createLikeEmojiConfetti(card);
-        }
-        if (labels.like) {
-            labels.like.style.opacity = '1';
-            labels.like.classList.add('shake-right');
-            setTimeout(() => labels.like?.classList.remove('shake-right'), 220);
-        }
-    }
-    handleNopeAction(labels) {
-        if (labels.nope) {
-            labels.nope.style.opacity = '1';
-            labels.nope.classList.add('shake-left');
-            setTimeout(() => labels.nope?.classList.remove('shake-left'), 220);
-        }
-    }
-    handleSnapBack(card) {
-        card.classList.add('snap-back');
-        this.clearDragTransform(card);
-        delete card.dataset.autoAdvanced;
-        this.resetSwipeLabels(card);
-        this.resetStackOpacity(card);
-        const handleBack = () => {
-            card.classList.remove('snap-back');
-            card.style.transition = '';
-            card.style.zIndex = '';
-            card.removeEventListener('transitionend', handleBack);
-            card.classList.add('haptic-bounce');
-            setTimeout(() => card.classList.remove('haptic-bounce'), 200);
-        };
-        card.addEventListener('transitionend', handleBack);
-    }
-    cleanupSwipedCard(card, dirRight) {
-        this.resetCardState(card);
-        if (this.likedExperiences.length >= MAX_SELECTIONS) {
-            this.showGiftBox();
-            return;
-        }
-        const topIdx = this.activeCards.indexOf(card);
-        if (topIdx > -1) {
-            this.activeCards.splice(topIdx, 1);
-        }
-        if (this.nextExpIndex < this.experiences.length && this.likedExperiences.length < MAX_SELECTIONS) {
-            this.recycleCard(card);
-        }
-        else {
-            card.remove();
-        }
-        if (dirRight) {
-            this.applyDribbleEffect();
-        }
-    }
-    recycleCard(card) {
-        const nextExp = this.experiences[this.nextExpIndex++];
-        this.updateCardContent(card, nextExp);
-        this.resetCardState(card);
-        this.setRandomBase(card);
-        this.stack.insertBefore(card, this.stack.firstChild);
-        this.activeCards.unshift(card);
-        const others = this.activeCards.slice(0, -1);
-        others.forEach(c => c.classList.add('base-animate'));
-        this.setRandomBase(this.activeCards[0]);
-        setTimeout(() => others.forEach(c => c.classList.remove('base-animate')), 240);
-    }
-    applyDribbleEffect() {
-        setTimeout(() => {
-            const others = this.activeCards.slice(0, -1);
-            if (others.length > 0) {
-                others.forEach((c, idx) => {
-                    const randomDelay = Math.random() * 80;
-                    setTimeout(() => {
-                        c.classList.add('dribble');
-                        setTimeout(() => c.classList.remove('dribble'), 320);
-                    }, idx * 60 + randomDelay);
-                });
-            }
-        }, 200);
-    }
+    // ============================================================================
+    // GIFT BOX
+    // ============================================================================
     showGiftBox() {
         if (this.stack) {
             this.stack.classList.add('is-hidden');
-            window.setTimeout(() => {
+            setTimeout(() => {
                 this.activeCards.splice(0).forEach(node => node.remove());
             }, 400);
         }
@@ -554,7 +693,7 @@ class CardStack {
         this.populateMiniCards();
         if (this.giftBox) {
             this.giftBox.setAttribute('tabindex', '-1');
-            this.giftBox.focus();
+            this.giftBox.focus({ preventScroll: true });
         }
     }
     populateMiniCards() {
@@ -570,6 +709,9 @@ class CardStack {
             this.selectedCardsContainer.appendChild(mini);
         });
     }
+    // ============================================================================
+    // CONFETTI
+    // ============================================================================
     getStackBandCenter() {
         const stackRect = this.stack.getBoundingClientRect();
         const stackCenterX = stackRect.left + stackRect.width / 2;
@@ -593,20 +735,20 @@ class CardStack {
         const dx = 140 + Math.random() * 100;
         const dy = -(60 + Math.random() * 80);
         const rot = Math.floor(Math.random() * 40 - 20);
-        num.style.left = centerX + 'px';
-        num.style.top = centerY + 'px';
-        num.style.setProperty('--dx', dx + 'px');
-        num.style.setProperty('--dy', dy + 'px');
-        num.style.setProperty('--rot', rot + 'deg');
+        num.style.left = `${centerX}px`;
+        num.style.top = `${centerY}px`;
+        num.style.setProperty('--dx', `${dx}px`);
+        num.style.setProperty('--dy', `${dy}px`);
+        num.style.setProperty('--rot', `${rot}deg`);
         num.style.setProperty('--dur', '1400ms');
         num.style.setProperty('--delay', '0ms');
         document.body.appendChild(num);
-        num.addEventListener('animationend', () => num.remove());
+        num.addEventListener('animationend', () => num.remove(), { once: true });
     }
     createLikeEmojiConfetti(card) {
         const { x: cx, y: cy } = getElementCenter(card);
         for (let i = 0; i < 4; i++) {
-            const emoji = LIKE_EMOJIS[(Math.random() * LIKE_EMOJIS.length) | 0];
+            const emoji = LIKE_EMOJIS[Math.floor(Math.random() * LIKE_EMOJIS.length)];
             const emojiEl = document.createElement('div');
             emojiEl.className = 'confetti-emoji';
             emojiEl.textContent = emoji;
@@ -614,15 +756,15 @@ class CardStack {
             const dist = 60 + Math.random() * 60;
             const emDx = Math.cos(angle) * dist;
             const emDy = Math.sin(angle) * dist;
-            emojiEl.style.left = cx + 'px';
-            emojiEl.style.top = cy + 'px';
-            emojiEl.style.setProperty('--dx', emDx + 'px');
-            emojiEl.style.setProperty('--dy', emDy + 'px');
-            emojiEl.style.setProperty('--dur', (900 + Math.random() * 300) + 'ms');
-            emojiEl.style.setProperty('--delay', ((i * 40) | 0) + 'ms');
-            emojiEl.style.setProperty('--emojiSize', (24 + Math.random() * 8) + 'px');
+            emojiEl.style.left = `${cx}px`;
+            emojiEl.style.top = `${cy}px`;
+            emojiEl.style.setProperty('--dx', `${emDx}px`);
+            emojiEl.style.setProperty('--dy', `${emDy}px`);
+            emojiEl.style.setProperty('--dur', `${900 + Math.random() * 300}ms`);
+            emojiEl.style.setProperty('--delay', `${i * 40}ms`);
+            emojiEl.style.setProperty('--emojiSize', `${24 + Math.random() * 8}px`);
             document.body.appendChild(emojiEl);
-            emojiEl.addEventListener('animationend', () => emojiEl.remove());
+            emojiEl.addEventListener('animationend', () => emojiEl.remove(), { once: true });
         }
     }
     fireConfetti(targetElement) {
@@ -631,19 +773,20 @@ class CardStack {
             for (let i = 0; i < SUCCESS_CONFETTI_PARTICLES_PER_BURST; i++) {
                 const isEmoji = Math.random() < 0.15;
                 const angle = Math.random() * Math.PI * 2;
-                const distance = SUCCESS_CONFETTI_RADIUS.min + Math.random() * (SUCCESS_CONFETTI_RADIUS.max - SUCCESS_CONFETTI_RADIUS.min);
+                const distance = SUCCESS_CONFETTI_RADIUS.min +
+                    Math.random() * (SUCCESS_CONFETTI_RADIUS.max - SUCCESS_CONFETTI_RADIUS.min);
                 const dx = Math.cos(angle) * distance;
                 const dy = Math.sin(angle) * distance;
                 if (isEmoji) {
                     const em = createConfettiEmoji(centerX, centerY, dx, dy, LIKE_EMOJIS);
-                    em.style.setProperty('--emojiSize', (20 + Math.random() * 10) + 'px');
+                    em.style.setProperty('--emojiSize', `${20 + Math.random() * 10}px`);
                     document.body.appendChild(em);
-                    em.addEventListener('animationend', () => em.remove());
+                    em.addEventListener('animationend', () => em.remove(), { once: true });
                 }
                 else {
                     const piece = createConfettiParticle(centerX, centerY, dx, dy);
                     document.body.appendChild(piece);
-                    piece.addEventListener('animationend', () => piece.remove());
+                    piece.addEventListener('animationend', () => piece.remove(), { once: true });
                 }
             }
         };
