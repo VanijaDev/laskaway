@@ -422,9 +422,11 @@ class CardStack {
         card.addEventListener('click', onClick);
     }
     handleSwipeCommit(card, dirRight, labels) {
-        const flyOutDuration = isMobileQuery.matches ? 3.0 : 0.5;
+        const flyOutDuration = isMobileQuery.matches ? 1.0 : 0.5;
         card.style.transition = `transform ${flyOutDuration}s ease-in, opacity ${flyOutDuration}s ease-in`;
         card.style.zIndex = '99';
+        // Ensure browser picks up the new transition before we change classes
+        void card.offsetWidth;
         if (dirRight) {
             this.handleLikeAction(card, labels);
         }
