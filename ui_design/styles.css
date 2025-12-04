@@ -963,7 +963,7 @@ button {
 
 .footer__inner {
   display: grid;
-  grid-template-columns: 1.5fr repeat(3, 1fr);
+  grid-template-columns: 1.5fr 1fr 1fr;
   gap: 60px;
 }
 
@@ -974,6 +974,7 @@ button {
 .footer__tagline {
   color: rgba(255, 255, 255, 0.6);
   margin-top: 12px;
+  max-width: 200px;
 }
 
 .footer__heading {
@@ -1106,12 +1107,8 @@ button {
   }
   
   .footer__inner {
-    grid-template-columns: 1fr 1fr;
-    gap: 40px;
-  }
-  
-  .footer__brand {
-    grid-column: 1 / -1;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 30px;
   }
   
   .cta__inner {
@@ -1135,11 +1132,17 @@ button {
   
   .footer__inner {
     grid-template-columns: 1fr;
+    gap: 32px;
     text-align: center;
   }
   
   .footer__col {
     text-align: center;
+  }
+  
+  .footer__tagline {
+    max-width: none;
+    margin: 12px auto 0;
   }
 }
 
