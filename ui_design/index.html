@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Laskaway – Gift Experiences, Not Things</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="page">
+    <!-- Floating confetti background -->
+    <div class="confetti-bg" aria-hidden="true"></div>
+
+    <!-- Header -->
+    <header class="header">
+      <div class="container header__inner">
+        <a href="#" class="logo">
+          <span class="logo__icon">🎁</span>
+          <span class="logo__text">Laskaway</span>
+        </a>
+        <nav class="nav" aria-label="Main navigation">
+          <a href="#how-it-works" class="nav__link">How It Works</a>
+          <a href="#experiences" class="nav__link">Experiences</a>
+          <a href="#pricing" class="nav__link">Pricing</a>
+        </nav>
+        <a href="#create-gift" class="btn btn--primary btn--sm">Create Gift</a>
+      </div>
+    </header>
+
+    <!-- Hero -->
+    <section class="hero">
+      <div class="container hero__grid">
+        <div class="hero__content">
+          <h1 class="hero__title">
+            Gift <span class="gradient-text">Unforgettable</span><br />Experiences
+          </h1>
+          <p class="hero__subtitle">
+            Create a personalized gift pack with up to 5 amazing experiences. Let your loved ones choose the adventure that excites them most!
+          </p>
+          <div class="hero__cta">
+            <a href="#create-gift" class="btn btn--primary btn--lg">
+              <span class="btn__icon">✨</span>
+              Start Creating
+            </a>
+            <a href="#how-it-works" class="btn btn--ghost btn--lg">Learn More</a>
+          </div>
+          <div class="hero__stats">
+            <div class="stat">
+              <span class="stat__number">500+</span>
+              <span class="stat__label">Experiences</span>
+            </div>
+            <div class="stat">
+              <span class="stat__number">10k+</span>
+              <span class="stat__label">Happy Recipients</span>
+            </div>
+            <div class="stat">
+              <span class="stat__number">4.9</span>
+              <span class="stat__label">Rating ⭐</span>
+            </div>
+          </div>
+        </div>
+        <div class="hero__visual">
+          <div class="gift-card-stack">
+            <div class="gift-card gift-card--1">
+              <img src="https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=400&h=300&fit=crop" alt="Road trip adventure" />
+              <span class="gift-card__label">Road Trip</span>
+            </div>
+            <div class="gift-card gift-card--2">
+              <img src="https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=400&h=300&fit=crop" alt="Spa relaxation" />
+              <span class="gift-card__label">Spa Day</span>
+            </div>
+            <div class="gift-card gift-card--3">
+              <img src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400&h=300&fit=crop" alt="Fine dining" />
+              <span class="gift-card__label">Fine Dining</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- How It Works -->
+    <section id="how-it-works" class="how-it-works">
+      <div class="container">
+        <h2 class="section-title">How It <span class="gradient-text">Works</span></h2>
+        <p class="section-subtitle">Create the perfect gift in just 3 simple steps</p>
+        
+        <div class="steps">
+          <div class="step">
+            <div class="step__icon">🎯</div>
+            <h3 class="step__title">1. Pick Experiences</h3>
+            <p class="step__desc">Browse our curated collection and select up to 5 experiences you think they'll love.</p>
+          </div>
+          <div class="step">
+            <div class="step__icon">🎨</div>
+            <h3 class="step__title">2. Personalize</h3>
+            <p class="step__desc">Add a heartfelt message and customize the gift card design to make it special.</p>
+          </div>
+          <div class="step">
+            <div class="step__icon">🚀</div>
+            <h3 class="step__title">3. Send & Celebrate</h3>
+            <p class="step__desc">Deliver instantly via email or print it out. Watch their face light up!</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Experiences Showcase -->
+    <section id="experiences" class="experiences">
+      <div class="container">
+        <h2 class="section-title">Popular <span class="gradient-text">Experiences</span></h2>
+        <p class="section-subtitle">From thrilling adventures to peaceful retreats</p>
+        
+        <div class="category-tabs">
+          <button class="tab tab--active" data-category="all">All</button>
+          <button class="tab" data-category="adventure">Adventure</button>
+          <button class="tab" data-category="relax">Relaxation</button>
+          <button class="tab" data-category="food">Food & Drink</button>
+          <button class="tab" data-category="culture">Culture</button>
+        </div>
+
+        <div class="experience-grid" id="experienceGrid">
+          <!-- Cards will be generated by JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- Gift Builder -->
+    <section id="create-gift" class="gift-builder">
+      <div class="container">
+        <h2 class="section-title">Create Your <span class="gradient-text">Gift Pack</span></h2>
+        <p class="section-subtitle">Select up to 5 experiences for your loved one</p>
+
+        <div class="builder">
+          <div class="builder__sidebar">
+            <div class="builder__pack">
+              <h3 class="builder__pack-title">
+                <span class="builder__pack-icon">🎁</span>
+                Your Gift Pack
+                <span class="builder__count" id="packCount">0/5</span>
+              </h3>
+              <div class="builder__items" id="packItems">
+                <div class="builder__empty">
+                  <span class="builder__empty-icon">💫</span>
+                  <p>Select experiences from the grid to add them to your gift pack!</p>
+                </div>
+              </div>
+              <div class="builder__actions">
+                <input type="text" class="input" id="recipientName" placeholder="Recipient's name" />
+                <textarea class="input input--textarea" id="giftMessage" placeholder="Add a personal message..."></textarea>
+                <button class="btn btn--primary btn--full" id="sendGiftBtn" disabled>
+                  <span class="btn__icon">🎉</span>
+                  Send Gift
+                </button>
+              </div>
+            </div>
+          </div>
+          
+          <div class="builder__main">
+            <div class="builder__search">
+              <input type="text" class="input input--search" id="searchExperiences" placeholder="Search experiences..." />
+            </div>
+            <div class="builder__grid" id="builderGrid">
+              <!-- Cards will be generated by JS -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Testimonials -->
+    <section class="testimonials">
+      <div class="container">
+        <h2 class="section-title">What People <span class="gradient-text">Say</span></h2>
+        
+        <div class="testimonial-grid">
+          <div class="testimonial">
+            <div class="testimonial__stars">⭐⭐⭐⭐⭐</div>
+            <p class="testimonial__text">"My mom was so happy when she got to choose her own adventure. She picked the spa day and loved every minute!"</p>
+            <div class="testimonial__author">
+              <div class="testimonial__avatar">👩</div>
+              <div>
+                <div class="testimonial__name">Sarah M.</div>
+                <div class="testimonial__role">Gifted to Mom</div>
+              </div>
+            </div>
+          </div>
+          <div class="testimonial">
+            <div class="testimonial__stars">⭐⭐⭐⭐⭐</div>
+            <p class="testimonial__text">"Best birthday gift ever! Having 5 options to choose from made it feel so personal. I went skydiving!"</p>
+            <div class="testimonial__author">
+              <div class="testimonial__avatar">👨</div>
+              <div>
+                <div class="testimonial__name">Mike R.</div>
+                <div class="testimonial__role">Received as Gift</div>
+              </div>
+            </div>
+          </div>
+          <div class="testimonial">
+            <div class="testimonial__stars">⭐⭐⭐⭐⭐</div>
+            <p class="testimonial__text">"The interface is so fun to use! Creating a gift pack felt like wrapping a present. Highly recommend!"</p>
+            <div class="testimonial__author">
+              <div class="testimonial__avatar">👩‍🦰</div>
+              <div>
+                <div class="testimonial__name">Emma L.</div>
+                <div class="testimonial__role">Regular Gifter</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta">
+      <div class="container cta__inner">
+        <div class="cta__content">
+          <h2 class="cta__title">Ready to Make Someone's Day?</h2>
+          <p class="cta__subtitle">Create a gift pack they'll never forget</p>
+        </div>
+        <a href="#create-gift" class="btn btn--white btn--lg">
+          <span class="btn__icon">🎁</span>
+          Create Gift Now
+        </a>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="container footer__inner">
+        <div class="footer__brand">
+          <a href="#" class="logo logo--light">
+            <span class="logo__icon">🎁</span>
+            <span class="logo__text">Laskaway</span>
+          </a>
+          <p class="footer__tagline">Gift experiences, not things.</p>
+        </div>
+        <div class="footer__links">
+          <div class="footer__col">
+            <h4 class="footer__heading">Product</h4>
+            <a href="#">How It Works</a>
+            <a href="#">Experiences</a>
+            <a href="#">Pricing</a>
+            <a href="#">For Business</a>
+          </div>
+          <div class="footer__col">
+            <h4 class="footer__heading">Company</h4>
+            <a href="#">About Us</a>
+            <a href="#">Careers</a>
+            <a href="#">Blog</a>
+            <a href="#">Press</a>
+          </div>
+          <div class="footer__col">
+            <h4 class="footer__heading">Support</h4>
+            <a href="#">Help Center</a>
+            <a href="#">Contact</a>
+            <a href="#">Privacy</a>
+            <a href="#">Terms</a>
+          </div>
+        </div>
+        <div class="footer__bottom">
+          <p>&copy; 2025 Laskaway. Made with ❤️ for gift-givers everywhere.</p>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Success Modal -->
+  <div class="modal" id="successModal" hidden>
+    <div class="modal__backdrop"></div>
+    <div class="modal__content">
+      <div class="modal__icon">🎉</div>
+      <h3 class="modal__title">Gift Sent!</h3>
+      <p class="modal__text">Your gift pack has been sent to <span id="recipientDisplay"></span>. They'll receive an email with their surprise!</p>
+      <button class="btn btn--primary" id="closeModal">Create Another Gift</button>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
