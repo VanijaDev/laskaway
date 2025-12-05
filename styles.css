@@ -287,6 +287,50 @@ body {
   50% { transform: translateY(-10px); }
 }
 
+/* Card wiggle animation */
+@keyframes card-wiggle {
+  0%, 100% { 
+    transform: 
+      translate(var(--stack-x, 0), var(--stack-y, 0))
+      rotate(var(--stack-rotation, 0))
+      scale(var(--stack-scale, 1));
+  }
+  15% { 
+    transform: 
+      translate(calc(var(--stack-x, 0) + 12px), var(--stack-y, 0))
+      rotate(calc(var(--stack-rotation, 0) + 3deg))
+      scale(var(--stack-scale, 1));
+  }
+  30% { 
+    transform: 
+      translate(calc(var(--stack-x, 0) - 12px), var(--stack-y, 0))
+      rotate(calc(var(--stack-rotation, 0) - 3deg))
+      scale(var(--stack-scale, 1));
+  }
+  45% { 
+    transform: 
+      translate(calc(var(--stack-x, 0) + 8px), var(--stack-y, 0))
+      rotate(calc(var(--stack-rotation, 0) + 2deg))
+      scale(var(--stack-scale, 1));
+  }
+  60% { 
+    transform: 
+      translate(calc(var(--stack-x, 0) - 8px), var(--stack-y, 0))
+      rotate(calc(var(--stack-rotation, 0) - 2deg))
+      scale(var(--stack-scale, 1));
+  }
+  75% { 
+    transform: 
+      translate(var(--stack-x, 0), var(--stack-y, 0))
+      rotate(var(--stack-rotation, 0))
+      scale(var(--stack-scale, 1));
+  }
+}
+
+.card.wiggle {
+  animation: card-wiggle 2.5s ease-in-out;
+}
+
 /* Hover Effects (Desktop) */
 @media (hover: hover) and (pointer: fine) {
   .card:not(.is-dragging):not(.is-flying-out):hover {

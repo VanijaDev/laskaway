@@ -48,6 +48,7 @@ export class CardStack {
         this.cards = [];
         this.dragState = null;
         this.rafId = null;
+        this.wiggleIntervalId = null;
         this.handlePointerDown = (e) => {
             const card = e.currentTarget;
             if (card.dataset.state !== CardState.IDLE)
@@ -115,11 +116,34 @@ export class CardStack {
     initialize() {
         this.renderCards();
         this.attachEventListeners();
+        this.startWiggleAnimation();
     }
     destroy() {
         this.detachEventListeners();
         if (this.rafId)
             cancelAnimationFrame(this.rafId);
+        if (this.wiggleIntervalId)
+            clearInterval(this.wiggleIntervalId);
+    }
+    // ========================================================================
+    // WIGGLE ANIMATION
+    // ========================================================================
+    startWiggleAnimation() {
+        const triggerWiggle = () => {
+            this.cards.forEach((card, index) => {
+                setTimeout(() => {
+                    card.classList.add('wiggle');
+                    // Remove class after animation completes
+                    setTimeout(() => {
+                        card.classList.remove('wiggle');
+                    }, 2500);
+                }, index * 100); // Stagger by 100ms per card
+            });
+        };
+        // Initial wiggle after 1 second
+        setTimeout(triggerWiggle, 1000);
+        // Repeat every 10 seconds
+        this.wiggleIntervalId = window.setInterval(triggerWiggle, 10000);
     }
     // ========================================================================
     // CARD RENDERING
