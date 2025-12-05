@@ -78,6 +78,7 @@ export class CardStack {
   private dragState: DragState | null = null;
   private rafId: number | null = null;
   private wiggleIntervalId: number | null = null;
+  private hasUserInteracted: boolean = false;
 
   constructor(container: HTMLElement, experiences: Experience[]) {
     this.container = container;
@@ -122,6 +123,22 @@ export class CardStack {
 
     // Repeat every 10 seconds
     this.wiggleIntervalId = window.setInterval(triggerWiggle, 10000);
+  }
+
+  private stopWiggleAnimation(): void {
+    if (this.wiggleIntervalId) {
+      clearInterval(this.wiggleIntervalId);
+      this.wiggleIntervalId = null;
+    }
+    // Remove wiggle class from all cards
+    this.cards.forEach(card => card.classList.remove('wiggle'));
+  }
+
+  private hideDragLabel(): void {
+    const label = document.querySelector('.card-stack-label');
+    if (label) {
+      label.classList.add('fade-out');
+    }
   }
 
   // ========================================================================
@@ -208,6 +225,13 @@ export class CardStack {
 
     e.preventDefault();
     card.setPointerCapture(e.pointerId);
+
+    // On first interaction, stop wiggle and hide label
+    if (!this.hasUserInteracted) {
+      this.hasUserInteracted = true;
+      this.stopWiggleAnimation();
+      this.hideDragLabel();
+    }
 
     // Initialize drag state
     this.dragState = {

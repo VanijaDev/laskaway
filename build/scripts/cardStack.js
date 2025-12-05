@@ -49,12 +49,19 @@ export class CardStack {
         this.dragState = null;
         this.rafId = null;
         this.wiggleIntervalId = null;
+        this.hasUserInteracted = false;
         this.handlePointerDown = (e) => {
             const card = e.currentTarget;
             if (card.dataset.state !== CardState.IDLE)
                 return;
             e.preventDefault();
             card.setPointerCapture(e.pointerId);
+            // On first interaction, stop wiggle and hide label
+            if (!this.hasUserInteracted) {
+                this.hasUserInteracted = true;
+                this.stopWiggleAnimation();
+                this.hideDragLabel();
+            }
             // Initialize drag state
             this.dragState = {
                 startX: e.clientX,
@@ -144,6 +151,20 @@ export class CardStack {
         setTimeout(triggerWiggle, 1000);
         // Repeat every 10 seconds
         this.wiggleIntervalId = window.setInterval(triggerWiggle, 10000);
+    }
+    stopWiggleAnimation() {
+        if (this.wiggleIntervalId) {
+            clearInterval(this.wiggleIntervalId);
+            this.wiggleIntervalId = null;
+        }
+        // Remove wiggle class from all cards
+        this.cards.forEach(card => card.classList.remove('wiggle'));
+    }
+    hideDragLabel() {
+        const label = document.querySelector('.card-stack-label');
+        if (label) {
+            label.classList.add('fade-out');
+        }
     }
     // ========================================================================
     // CARD RENDERING
