@@ -297,26 +297,26 @@ body {
   }
   15% { 
     transform: 
-      translate(calc(var(--stack-x, 0) + 12px), var(--stack-y, 0))
-      rotate(calc(var(--stack-rotation, 0) + 3deg))
+      translate(calc(var(--stack-x, 0) + 20px), var(--stack-y, 0))
+      rotate(calc(var(--stack-rotation, 0) + 4deg))
       scale(var(--stack-scale, 1));
   }
   30% { 
     transform: 
-      translate(calc(var(--stack-x, 0) - 12px), var(--stack-y, 0))
-      rotate(calc(var(--stack-rotation, 0) - 3deg))
+      translate(calc(var(--stack-x, 0) - 20px), var(--stack-y, 0))
+      rotate(calc(var(--stack-rotation, 0) - 4deg))
       scale(var(--stack-scale, 1));
   }
   45% { 
     transform: 
-      translate(calc(var(--stack-x, 0) + 8px), var(--stack-y, 0))
-      rotate(calc(var(--stack-rotation, 0) + 2deg))
+      translate(calc(var(--stack-x, 0) + 14px), var(--stack-y, 0))
+      rotate(calc(var(--stack-rotation, 0) + 3deg))
       scale(var(--stack-scale, 1));
   }
   60% { 
     transform: 
-      translate(calc(var(--stack-x, 0) - 8px), var(--stack-y, 0))
-      rotate(calc(var(--stack-rotation, 0) - 2deg))
+      translate(calc(var(--stack-x, 0) - 14px), var(--stack-y, 0))
+      rotate(calc(var(--stack-rotation, 0) - 3deg))
       scale(var(--stack-scale, 1));
   }
   75% { 
