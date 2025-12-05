@@ -154,13 +154,14 @@ export class CardStack {
     updateStackPositions() {
         this.cards.forEach((card, index) => {
             const offset = index;
-            const y = offset * CONFIG.STACK_OFFSET_Y;
-            const x = offset * CONFIG.STACK_OFFSET_X;
-            const rotation = offset * CONFIG.STACK_ROTATION;
-            const scale = Math.pow(CONFIG.STACK_SCALE, offset);
+            const y = offset * 6; // Smaller vertical offset for tighter stack
+            const x = offset * 2; // Small horizontal shift for depth
+            // Very subtle random rotation between -2 and +2 degrees
+            const randomRotation = (Math.random() - 0.5) * 14; // -2 to +2 degrees
+            const scale = 1 - (offset * 0.02); // Very subtle scale difference
             card.style.setProperty('--stack-y', `${y}px`);
             card.style.setProperty('--stack-x', `${x}px`);
-            card.style.setProperty('--stack-rotation', `${rotation}deg`);
+            card.style.setProperty('--stack-rotation', `${randomRotation}deg`);
             card.style.setProperty('--stack-scale', String(scale));
             card.style.zIndex = String(this.cards.length - index);
         });
