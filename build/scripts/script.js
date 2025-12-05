@@ -43,9 +43,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         loadComponent('experiencesCarousel', './html_components/experiences-carousel.html'),
         loadComponent('footerContent', './html_components/footer.html')
     ]);
-    // After hero content loads, load the nested hero visual component
+    // Load card stack component
     await loadComponent('heroVisual', './html_components/hero-card-stack.html');
-    // Initialize modules (card stack now virtualized)
+    // Initialize modules
     initializeCardStack(shuffledExperiences);
     initializeCarousel(shuffledExperiences);
     initializeEasterEgg();
