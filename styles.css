@@ -162,6 +162,30 @@ body {
   margin: 0 auto;
 }
 
+.card-stack-label {
+  position: absolute;
+  bottom: -40px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.card-stack-label .arrow-left,
+.card-stack-label .arrow-right {
+  font-size: 18px;
+  opacity: 0.6;
+}
+
+.card-stack-label .label-text {
+  color: var(--text);
+}
+
 .card {
   position: absolute;
   inset: 0;
