@@ -153,7 +153,7 @@ body {
 /* Visual cards */
 .hero__visual { position: relative; z-index: 1;}
 .card-stack-stage { position: relative; height: 420px; }
-.card-stack { position: absolute; inset: 0; transition: opacity 0.4s ease; }
+.card-stack { position: absolute; inset: 0; transition: opacity 0.4s ease; overflow: hidden; border-radius: 22px; }
 .card-stack.is-hidden { opacity: 0; pointer-events: none; }
 .card {
   position: absolute; inset: 0; border-radius: 22px; overflow: hidden;
