@@ -17,7 +17,7 @@ const experiences = [
   {
     id: 2,
     title: 'Luxury Spa Day',
-    category: 'relax',
+    category: 'wellness and spa',
     price: 189,
     duration: '4-5 hours',
     image: 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=600&h=400&fit=crop',
@@ -53,7 +53,7 @@ const experiences = [
   {
     id: 6,
     title: 'Sunset Yacht Cruise',
-    category: 'relax',
+    category: 'wellness and spa',
     price: 249,
     duration: '3 hours',
     image: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=600&h=400&fit=crop',
@@ -89,7 +89,7 @@ const experiences = [
   {
     id: 10,
     title: 'Meditation Retreat',
-    category: 'relax',
+    category: 'wellness and spa',
     price: 159,
     duration: 'Full day',
     image: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=600&h=400&fit=crop',

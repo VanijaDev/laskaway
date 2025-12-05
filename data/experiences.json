@@ -132,7 +132,7 @@
     "title": "Lake Austin Spa Resort",
     "image": "./assets/experience_images/lake-austin-spa-resort.jpg",
     "alt": "Lake Austin Spa Resort",
-    "tags": ["for him", "for her", "relax", "weekend getaway"],
+    "tags": ["for him", "for her", "wellness and spa", "weekend getaway"],
     "url": "https://www.lakeaustin.com/resort/"
   },
   {
@@ -140,7 +140,7 @@
     "title": "KUYA",
     "image": "./assets/experience_images/kuya.jpg",
     "alt": "KUYA",
-    "tags": ["for him", "for her", "relax"],
+    "tags": ["for him", "for her", "wellness and spa"],
     "url": "https://kuyawellness.com/"
   },
   {
@@ -148,7 +148,7 @@
     "title": "Oasis Spa",
     "image": "./assets/experience_images/oasis-spa.webp",
     "alt": "Oasis Spa",
-    "tags": ["for him", "for her", "relax"],
+    "tags": ["for him", "for her", "wellness and spa"],
     "url": "https://theoasisspaoftexas.com"
   },
   {
@@ -156,7 +156,7 @@
     "title": "Painting Classes",
     "image": "./assets/experience_images/painting-classes-twist.jpg",
     "alt": "Painting Classes",
-    "tags": ["kids", "for him", "for her", "relax", "fun time"],
+    "tags": ["kids", "for him", "for her", "wellness and spa", "fun time"],
     "url": "https://www.paintingwithatwist.com"
   },
   {
@@ -164,7 +164,7 @@
     "title": "Gentleman's Club",
     "image": "./assets/experience_images/the-yellow-rose.jpg",
     "alt": "Gentleman's Club",
-    "tags": ["for him", "relax", "fun time"],
+    "tags": ["for him", "wellness and spa", "fun time"],
     "url": "https://www.yellowrose.com/"
   },
   {
@@ -172,7 +172,7 @@
     "title": "Massage Therapy",
     "image": "./assets/experience_images/massage-therapy-oak-haven.jpg",
     "alt": "Massage Therapy",
-    "tags": ["for him", "for her", "relax"],
+    "tags": ["for him", "for her", "wellness and spa"],
     "url": "https://oakhavenmassage.com/"
   },
   {
@@ -188,7 +188,7 @@
     "title": "Bathe",
     "image": "./assets/experience_images/bathe.jpg",
     "alt": "Bathe",
-    "tags": ["for him", "for her", "relax"],
+    "tags": ["for him", "for her", "wellness and spa"],
     "url": "https://www.batheaustin.com"
   },
   {
@@ -212,7 +212,7 @@
     "title": "Float Therapy",
     "image": "./assets/experience_images/true-rest.jpg",
     "alt": "Float Therapy",
-    "tags": ["for him", "for her", "relax"],
+    "tags": ["for him", "for her", "wellness and spa"],
     "url": "https://truerest.com/"
   },
   {
@@ -252,7 +252,7 @@
     "title": "Texas Hill Country",
     "image": "./assets/experience_images/texas-hill-country.jpeg",
     "alt": "Texas Hill Country",
-    "tags": ["for him", "for her", "weekend getaway", "adventure", "relax"],
+    "tags": ["for him", "for her", "weekend getaway", "adventure", "wellness and spa"],
     "url": "https://www.miravalresorts.com/"
   },
   {
