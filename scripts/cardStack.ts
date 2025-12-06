@@ -144,6 +144,16 @@ export class CardStack {
     }
   }
 
+  private fadeOutBackgroundCards(progress: number): void {
+    // Fade out all cards except the top one (proportional to progress)
+    this.cards.forEach((card, index) => {
+      if (index > 0) {
+        card.style.transition = 'opacity 0.1s ease';
+        card.style.opacity = String(1 - progress);
+      }
+    });
+  }
+
   // ========================================================================
   // CARD RENDERING
   // ========================================================================
@@ -271,6 +281,15 @@ export class CardStack {
     const timeDelta = performance.now() - this.dragState.startTime;
     this.dragState.velocity = Math.abs(this.dragState.deltaX) / timeDelta;
 
+    // If this is potentially the 5th like, fade out background cards proportionally
+    if (this.likedCards.length === 4 && this.dragState.deltaX > 0) {
+      const fadeProgress = Math.min(Math.abs(this.dragState.deltaX) / 300, 1);
+      this.fadeOutBackgroundCards(fadeProgress);
+    } else if (this.likedCards.length === 4 && this.dragState.deltaX <= 0) {
+      // Restore background cards if dragging back
+      this.fadeOutBackgroundCards(0);
+    }
+
     // Update card position
     this.updateCardTransform(card);
     this.updateSwipeIndicators(card);
@@ -341,6 +360,7 @@ export class CardStack {
     card.classList.add('is-flying-out');
 
     // Track liked cards
+    let isFifthCard = false;
     if (direction === SwipeDirection.RIGHT && card.dataset.experienceIndex) {
       const experienceIndex = parseInt(card.dataset.experienceIndex, 10);
       const experience = this.experiences[experienceIndex];
@@ -350,6 +370,9 @@ export class CardStack {
         // Check if we have 5 liked cards
         if (this.likedCards.length === 5) {
           this.shouldCreatePack = true;
+          isFifthCard = true;
+          // Fully fade out background cards
+          this.fadeOutBackgroundCards(1);
         }
       }
     }
@@ -358,20 +381,26 @@ export class CardStack {
     const targetY = -100;
     const rotation = direction === SwipeDirection.RIGHT ? 30 : -30;
 
-    card.style.transition = `transform ${CONFIG.FLY_OUT_DURATION}ms cubic-bezier(0.4, 0.1, 0.2, 1), opacity ${CONFIG.FLY_OUT_DURATION}ms ease`;
+    // Don't fade out the 5th card itself, only background cards
+    if (isFifthCard) {
+      card.style.transition = `transform ${CONFIG.FLY_OUT_DURATION}ms cubic-bezier(0.4, 0.1, 0.2, 1)`;
+    } else {
+      card.style.transition = `transform ${CONFIG.FLY_OUT_DURATION}ms cubic-bezier(0.4, 0.1, 0.2, 1), opacity ${CONFIG.FLY_OUT_DURATION}ms ease`;
+      card.style.opacity = '0';
+    }
+    
     card.style.transform = `translate(${targetX}px, ${targetY}px) rotate(${rotation}deg)`;
-    card.style.opacity = '0';
 
     setTimeout(() => {
       this.removeCard(card);
-      this.nextCard();
       
-      // Create pack after animation completes
+      // Create pack after animation completes (skip nextCard)
       if (this.shouldCreatePack) {
         this.shouldCreatePack = false;
-        setTimeout(() => {
-          this.createPack();
-        }, 200);
+        // Show gift pack immediately when card exits
+        this.createPack();
+      } else {
+        this.nextCard();
       }
     }, CONFIG.FLY_OUT_DURATION);
   }
@@ -386,6 +415,11 @@ export class CardStack {
     // Reset indicators
     const indicators = card.querySelectorAll('.swipe-indicator') as NodeListOf<HTMLElement>;
     indicators.forEach(indicator => indicator.style.opacity = '0');
+
+    // Restore background cards if this was potentially the 5th card
+    if (this.likedCards.length === 4) {
+      this.fadeOutBackgroundCards(0);
+    }
 
     setTimeout(() => {
       card.dataset.state = CardState.IDLE;
@@ -484,8 +518,8 @@ export class CardStack {
   }
 
   private renderGiftPack(): void {
-    // Fade out card stack
-    this.container.style.transition = 'opacity 0.4s ease';
+    // Fade out card stack container quickly
+    this.container.style.transition = 'opacity 0.2s ease';
     this.container.style.opacity = '0';
     
     setTimeout(() => {
@@ -516,7 +550,7 @@ export class CardStack {
         card.href = experience.url;
         card.target = '_blank';
         card.rel = 'noopener noreferrer';
-        card.style.animationDelay = `${index * 0.1}s`;
+        card.style.animationDelay = `${0.3 + index * 0.1}s`;
         
         card.innerHTML = `
           <img src="${experience.image}" alt="${experience.alt}" />
@@ -538,18 +572,19 @@ export class CardStack {
       
       this.container.appendChild(giftPack);
       
-      // Fade in gift pack
+      // Fade in and bounce gift pack
       setTimeout(() => {
+        this.container.style.transition = 'opacity 0.6s ease';
         this.container.style.opacity = '1';
         giftPack.classList.add('gift-pack--visible');
       }, 50);
       
-      // Add button handlers
+      // Add button handler
       const shareButton = actions.querySelector('.gift-pack__button--primary') as HTMLButtonElement;
       if (shareButton) {
         shareButton.addEventListener('click', () => this.shareGiftPack());
       }
-    }, 400);
+    }, 200);
   }
   
   private shareGiftPack(): void {
