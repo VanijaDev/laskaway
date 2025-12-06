@@ -44,6 +44,7 @@ var SwipeDirection;
 // ============================================================================
 export class CardStack {
     constructor(container, experiences) {
+        this.parentElement = null;
         this.currentIndex = 0;
         this.cards = [];
         this.dragState = null;
@@ -126,6 +127,7 @@ export class CardStack {
             this.dragState = null;
         };
         this.container = container;
+        this.parentElement = container.parentElement;
         this.experiences = experiences;
     }
     // ========================================================================
@@ -417,12 +419,14 @@ export class CardStack {
         }
     }
     renderGiftPack() {
+        if (!this.parentElement)
+            return;
         // Fade out card stack container quickly
         this.container.style.transition = 'opacity 0.2s ease';
         this.container.style.opacity = '0';
         setTimeout(() => {
-            // Clear container
-            this.container.innerHTML = '';
+            // Hide card stack container
+            this.container.style.display = 'none';
             // Create gift pack
             const giftPack = document.createElement('div');
             giftPack.className = 'gift-pack';
@@ -458,7 +462,7 @@ export class CardStack {
             giftPack.appendChild(header);
             giftPack.appendChild(grid);
             giftPack.appendChild(actions);
-            this.container.appendChild(giftPack);
+            this.parentElement.appendChild(giftPack);
             // Fade in and bounce gift pack
             setTimeout(() => {
                 this.container.style.transition = 'opacity 0.6s ease';

@@ -73,6 +73,7 @@ interface CardElement extends HTMLElement {
 
 export class CardStack {
   private container: HTMLElement;
+  private parentElement: HTMLElement | null = null;
   private experiences: Experience[];
   private currentIndex: number = 0;
   private cards: CardElement[] = [];
@@ -85,6 +86,7 @@ export class CardStack {
 
   constructor(container: HTMLElement, experiences: Experience[]) {
     this.container = container;
+    this.parentElement = container.parentElement;
     this.experiences = experiences;
   }
 
@@ -518,13 +520,15 @@ export class CardStack {
   }
 
   private renderGiftPack(): void {
+    if (!this.parentElement) return;
+    
     // Fade out card stack container quickly
     this.container.style.transition = 'opacity 0.2s ease';
     this.container.style.opacity = '0';
     
     setTimeout(() => {
-      // Clear container
-      this.container.innerHTML = '';
+      // Hide card stack container
+      this.container.style.display = 'none';
       
       // Create gift pack
       const giftPack = document.createElement('div');
@@ -570,7 +574,7 @@ export class CardStack {
       giftPack.appendChild(grid);
       giftPack.appendChild(actions);
       
-      this.container.appendChild(giftPack);
+      this.parentElement!.appendChild(giftPack);
       
       // Fade in and bounce gift pack
       setTimeout(() => {

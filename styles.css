@@ -502,6 +502,7 @@ body {
 .gift-pack {
   text-align: center;
   max-width: 520px;
+  width: calc(100% - 32px);
   margin: 0 auto;
   padding: 56px 48px 48px;
   background: white;
@@ -525,7 +526,6 @@ body {
 
 .gift-pack__icon {
   font-size: 64px;
-  margin-bottom: 20px;
   animation: bounce-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), gift-float 2s ease-in-out infinite 0.6s;
 }
 
@@ -670,8 +670,14 @@ body {
 }
 
 @media (max-width: 768px) {
+  .card-stack {
+    width: 70vw;
+    max-width: 70vw;
+    height: 70vw;
+  }
+
   .gift-pack {
-    padding: 40px 24px 32px;
+    padding: 20px 24px 32px;
     border-radius: 28px;
     border-width: 2px;
     max-width: calc(100% - 32px);
@@ -679,8 +685,7 @@ body {
   }
   
   .gift-pack__icon {
-    font-size: 56px;
-    margin-bottom: 20px;
+    font-size: 100px;
   }
   
   .gift-pack__header h3 {
