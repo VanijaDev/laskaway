@@ -50,6 +50,8 @@ export class CardStack {
         this.rafId = null;
         this.wiggleIntervalId = null;
         this.hasUserInteracted = false;
+        this.likedCards = [];
+        this.shouldCreatePack = false;
         this.handlePointerDown = (e) => {
             const card = e.currentTarget;
             if (card.dataset.state !== CardState.IDLE)
@@ -187,6 +189,7 @@ export class CardStack {
         const card = document.createElement('article');
         card.className = 'card';
         card.dataset.index = String(index);
+        card.dataset.experienceIndex = String(index);
         card.dataset.state = CardState.IDLE;
         card.innerHTML = `
       <img src="${experience.image}" alt="${experience.alt}" />
@@ -259,6 +262,18 @@ export class CardStack {
         card.dataset.state = CardState.FLYING_OUT;
         card.classList.remove('is-dragging');
         card.classList.add('is-flying-out');
+        // Track liked cards
+        if (direction === SwipeDirection.RIGHT && card.dataset.experienceIndex) {
+            const experienceIndex = parseInt(card.dataset.experienceIndex, 10);
+            const experience = this.experiences[experienceIndex];
+            if (experience) {
+                this.likedCards.push(experience);
+                // Check if we have 5 liked cards
+                if (this.likedCards.length === 5) {
+                    this.shouldCreatePack = true;
+                }
+            }
+        }
         const targetX = direction === SwipeDirection.RIGHT ? 1000 : -1000;
         const targetY = -100;
         const rotation = direction === SwipeDirection.RIGHT ? 30 : -30;
@@ -268,6 +283,13 @@ export class CardStack {
         setTimeout(() => {
             this.removeCard(card);
             this.nextCard();
+            // Create pack after animation completes
+            if (this.shouldCreatePack) {
+                this.shouldCreatePack = false;
+                setTimeout(() => {
+                    this.createPack();
+                }, 200);
+            }
         }, CONFIG.FLY_OUT_DURATION);
     }
     cancelSwipe(card) {
@@ -313,6 +335,139 @@ export class CardStack {
         <p class="card-stack__complete-text">You've seen all the experiences</p>
       </div>
     `;
+    }
+    // ========================================================================
+    // PACK CREATION
+    // ========================================================================
+    createPack() {
+        console.log('Pack created with experiences:', this.likedCards);
+        // Trigger confetti effect
+        this.showConfetti();
+        // Replace card stack with gift pack
+        this.renderGiftPack();
+    }
+    showConfetti() {
+        const count = 150;
+        const defaults = {
+            origin: { y: 0.7 },
+            zIndex: 9999
+        };
+        function fire(particleRatio, opts) {
+            window.confetti(Object.assign({}, defaults, opts, {
+                particleCount: Math.floor(count * particleRatio)
+            }));
+        }
+        // Check if confetti is available
+        if (typeof window.confetti === 'function') {
+            fire(0.25, {
+                spread: 26,
+                startVelocity: 55,
+            });
+            fire(0.2, {
+                spread: 60,
+            });
+            fire(0.35, {
+                spread: 100,
+                decay: 0.91,
+                scalar: 0.8
+            });
+            fire(0.1, {
+                spread: 120,
+                startVelocity: 25,
+                decay: 0.92,
+                scalar: 1.2
+            });
+            fire(0.1, {
+                spread: 120,
+                startVelocity: 45,
+            });
+        }
+    }
+    renderGiftPack() {
+        // Fade out card stack
+        this.container.style.transition = 'opacity 0.4s ease';
+        this.container.style.opacity = '0';
+        setTimeout(() => {
+            // Clear container
+            this.container.innerHTML = '';
+            // Create gift pack
+            const giftPack = document.createElement('div');
+            giftPack.className = 'gift-pack';
+            const giftIcon = document.createElement('div');
+            giftIcon.className = 'gift-pack__icon';
+            giftIcon.textContent = '🎁';
+            const header = document.createElement('div');
+            header.className = 'gift-pack__header';
+            header.innerHTML = `
+        <h3><span class="gift-pack__title-gradient">Your Gift Pack is Ready!</span></h3>
+        <p>You've selected 5 amazing experiences</p>
+      `;
+            const grid = document.createElement('div');
+            grid.className = 'gift-pack__grid';
+            this.likedCards.forEach((experience, index) => {
+                const card = document.createElement('a');
+                card.className = 'gift-pack__card';
+                card.href = experience.url;
+                card.target = '_blank';
+                card.rel = 'noopener noreferrer';
+                card.style.animationDelay = `${index * 0.1}s`;
+                card.innerHTML = `
+          <img src="${experience.image}" alt="${experience.alt}" />
+        `;
+                grid.appendChild(card);
+            });
+            const actions = document.createElement('div');
+            actions.className = 'gift-pack__actions';
+            actions.innerHTML = `
+        <button class="gift-pack__button gift-pack__button--primary">Share Gift Pack</button>
+      `;
+            giftPack.appendChild(giftIcon);
+            giftPack.appendChild(header);
+            giftPack.appendChild(grid);
+            giftPack.appendChild(actions);
+            this.container.appendChild(giftPack);
+            // Fade in gift pack
+            setTimeout(() => {
+                this.container.style.opacity = '1';
+                giftPack.classList.add('gift-pack--visible');
+            }, 50);
+            // Add button handlers
+            const shareButton = actions.querySelector('.gift-pack__button--primary');
+            if (shareButton) {
+                shareButton.addEventListener('click', () => this.shareGiftPack());
+            }
+        }, 400);
+    }
+    shareGiftPack() {
+        // Create shareable text
+        const text = `Check out my gift pack! 🎁\n\n${this.likedCards.map(exp => exp.title).join('\n')}`;
+        // Try native share API
+        if (navigator.share) {
+            navigator.share({
+                title: 'My Gift Pack',
+                text: text,
+            }).catch(() => {
+                // Fallback to clipboard
+                this.copyToClipboard(text);
+            });
+        }
+        else {
+            // Fallback to clipboard
+            this.copyToClipboard(text);
+        }
+    }
+    copyToClipboard(text) {
+        navigator.clipboard.writeText(text).then(() => {
+            // Show temporary success message
+            const btn = document.querySelector('.gift-pack__button--primary');
+            if (btn) {
+                const originalText = btn.textContent;
+                btn.textContent = '✓ Copied!';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                }, 2000);
+            }
+        });
     }
 }
 // ============================================================================
