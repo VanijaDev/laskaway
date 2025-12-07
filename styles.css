@@ -498,7 +498,8 @@ body {
 
 .gentle-sway-active .hero__title,
 .gentle-sway-active .waitlist,
-.gentle-sway-active .xp-card {
+.gentle-sway-active .xp-card,
+.gentle-sway-active .card-stack {
   animation: gentle-sway 3s ease-in-out;
   transform-origin: center bottom;
 }
@@ -534,7 +535,8 @@ body {
   }
 }
 
-.wind-gust-active .xp-card {
+.wind-gust-active .xp-card,
+.wind-gust-active .card-stack {
   animation: wind-gust 2.4s ease-in-out;
 }
 
