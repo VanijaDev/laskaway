@@ -11,7 +11,7 @@ const VELOCITY_THRESHOLD = 0.3; // Minimum velocity (px/ms) to trigger fast swip
 const CLICK_TOLERANCE = 10; // Max movement to still register as click
 const MIN_DRAG_DISTANCE = 15; // Minimum drag to prevent accidental swipes
 // Animation Durations (ms)
-const FLY_OUT_DURATION = 1000; // Mobile optimized for visibility
+const FLY_OUT_DURATION = 500; // Fly-out for snappier releases
 const WIGGLE_ANIMATION_DURATION = 2000;
 const WIGGLE_INITIAL_DELAY = 1000;
 const WIGGLE_GAP_BETWEEN = 4000;
