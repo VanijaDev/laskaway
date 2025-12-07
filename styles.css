@@ -93,7 +93,7 @@ body {
   letter-spacing: -0.02em;
   line-height: 1.05;
   margin: 0 0 12px;
-  background: linear-gradient(90deg, #9D4EDD 0%, #FF6B9D 50%, #FFA07A 100%);
+  background: linear-gradient(135deg, #ec4899 0%, #f59e0b 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -151,176 +151,83 @@ body {
 
 
 /* Visual cards */
-.hero__visual { position: relative; z-index: 1; }
-
-/* Card Stack */
-.card-stack {
-  position: relative;
-  width: 100%;
-  max-width: 420px;
-  height: 420px;
-  margin: 0 auto;
-}
-
-/* Flying Number Animation */
-.flying-number {
-  position: fixed;
-  font-size: 128px;
-  font-weight: 700;
-  font-family: 'Poppins', sans-serif;
-  color: white;
-  background: linear-gradient(135deg, #9D4EDD 0%, #FF6B9D 50%, #FFA07A 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  text-shadow: 
-    -4px -4px 0 #9D4EDD,
-    4px -4px 0 #9D4EDD,
-    -4px 4px 0 #FF6B9D,
-    4px 4px 0 #FFA07A,
-    0 0 40px rgba(157, 78, 221, 0.9),
-    0 0 60px rgba(255, 107, 157, 0.7),
-    0 0 80px rgba(255, 160, 122, 0.5);
-  filter: drop-shadow(0 0 20px rgba(157, 78, 221, 0.8));
-  z-index: 9999;
-  pointer-events: none;
-  transform: translate(-50%, -50%);
-  opacity: 0;
-  transition: all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.flying-number--animate {
-  opacity: 1;
-  animation: flying-number-fade 1s ease-out forwards;
-}
-
-@keyframes flying-number-fade {
-  0% {
-    opacity: 0;
-    transform: translate(-50%, calc(-50% + var(--vertical-offset))) rotate(var(--rotation)) scale(0.8);
-  }
-  30% {
-    opacity: 1;
-    transform: translate(calc(-50% + 160px), calc(-50% + var(--vertical-offset))) rotate(var(--rotation)) scale(1.2);
-  }
-  100% {
-    opacity: 0;
-    transform: translate(calc(-50% + 400px), calc(-50% + var(--vertical-offset))) rotate(var(--rotation)) scale(1);
-  }
-}
-
-.card-stack-label {
-  position: absolute;
-  bottom: -40px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  color: var(--text-secondary);
-  font-size: 14px;
-  font-weight: 500;
-  transition: opacity 0.5s ease-out;
-}
-
-.card-stack-label.fade-out {
-  opacity: 0;
-  pointer-events: none;
-}
-
-.card-stack-label .arrow-left,
-.card-stack-label .arrow-right {
-  font-size: 18px;
-  opacity: 0.6;
-}
-
-.card-stack-label .label-text {
-  color: var(--text);
-}
-
+.hero__visual { position: relative; z-index: 1;}
+.card-stack-stage { position: relative; height: 420px; }
+.card-stack { position: absolute; inset: 0; transition: opacity 0.4s ease; }
+.card-stack.is-hidden { opacity: 0; pointer-events: none; }
 .card {
-  position: absolute;
-  inset: 0;
-  background: var(--surface);
-  border-radius: 20px;
-  border: 1px solid var(--border);
-  box-shadow: var(--shadow-1);
-  cursor: grab;
-  user-select: none;
-  touch-action: none;
-  overflow: hidden;
-  transform: 
-    translate(var(--stack-x, 0), var(--stack-y, 0))
-    rotate(var(--stack-rotation, 0))
-    scale(var(--stack-scale, 1));
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  position: absolute; inset: 0; border-radius: 22px; overflow: hidden;
+  background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow-1);
+  cursor: grab; user-select: none; touch-action: pan-y;
+  /* Compose base stack offset with drag offset to avoid layout jumps */
+  transform: translate(calc(var(--base-x, 0px) + var(--drag-x, 0px)), calc(var(--base-y, 0px) + var(--drag-y, 0px))) rotate(calc(var(--base-r, 0deg) + var(--drag-r, 0deg)));
+  transition: transform .18s ease, box-shadow .18s ease;
 }
 
-.card.is-dragging {
-  cursor: grabbing;
-  transition: none;
-  z-index: 999 !important;
-}
+/* Hidden card (kept in DOM but not visible) */
+.card.card--invisible { display: none; }
 
-.card.is-flying-out {
-  z-index: 1000 !important;
-}
-
-.card img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  pointer-events: none;
-}
-
+.card img { width: 100%; height: 100%; object-fit: cover; filter: saturate(1.05) contrast(1.05); -webkit-user-drag: none; user-select: none; transition: transform 0.27s ease; transform: none; }
+.card.is-dragging img { transform: none; transition: none; }
 .card figcaption {
-  position: absolute;
-  bottom: 16px;
-  left: 16px;
-  padding: 8px 14px;
-  background: rgba(255, 255, 255, 0.95);
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  font-weight: 600;
-  font-size: 14px;
-  color: var(--text);
-  backdrop-filter: blur(8px);
+  position: absolute; left: 14px; bottom: 14px; padding: 8px 12px; border-radius: 999px;
+  background: rgba(255,255,255,0.9); border: 1px solid var(--border); font-weight: 600; font-size: 13px; color: #222;
+}
+.card.is-dragging { cursor: grabbing; }
+
+/* Swipe labels */
+.swipe-label { position: absolute; top: 16px; padding: 12px 20px; border-radius: 14px; font-weight: 700; letter-spacing: .5px; font-size: 28px; opacity: 0; transition: opacity .12s ease; backdrop-filter: saturate(1.2) blur(2px); }
+.swipe-label--like { left: 16px; color: #065f46; background: rgba(16,185,129,.12); border: 3px solid rgba(16,185,129,.6); transform: rotate(-12deg); }
+.swipe-label--nope { right: 16px; color: #991b1b; background: rgba(239,68,68,.12); border: 3px solid rgba(239,68,68,.6); transform: rotate(12deg); }
+
+/* Nope shake (label only to avoid transform conflicts) */
+.swipe-label--nope.shake-left { animation: nope-shake 180ms ease; }
+@keyframes nope-shake {
+  0%   { transform: rotate(12deg) translateX(0); }
+  25%  { transform: rotate(12deg) translateX(-4px); }
+  50%  { transform: rotate(12deg) translateX(4px); }
+  75%  { transform: rotate(12deg) translateX(-2px); }
+  100% { transform: rotate(12deg) translateX(0); }
 }
 
-/* Swipe Indicators */
-.swipe-indicator {
-  position: absolute;
-  top: 20px;
-  padding: 12px 20px;
-  font-weight: 700;
-  font-size: 24px;
-  letter-spacing: 1px;
-  border-radius: 12px;
-  border: 3px solid;
-  opacity: 0;
-  transition: opacity 0.1s ease;
-  pointer-events: none;
-  backdrop-filter: blur(4px);
+/* Fling out animations */
+.card.fly-out-right { opacity: 0; transform: translate(1200px, -60px) rotate(24deg) !important; }
+.card.fly-out-left  { opacity: 0; transform: translate(-1200px, -60px) rotate(-24deg) !important; }
+.card.snap-back { transition: transform .22s cubic-bezier(.2,.8,.3,1.2); }
+.card.base-animate { transition: transform .22s ease; }
+
+/* Haptic-like bounce after snap back */
+.card.haptic-bounce { animation: haptic 180ms ease; }
+@keyframes haptic {
+  from { transform: translate(calc(var(--base-x, 0px)), calc(var(--base-y, 0px))) rotate(var(--base-r, 0deg)) scale(1.02); }
+  to   { transform: translate(calc(var(--base-x, 0px)), calc(var(--base-y, 0px))) rotate(var(--base-r, 0deg)) scale(1); }
 }
 
-.swipe-indicator--like {
-  left: 20px;
-  color: #059669;
-  background: rgba(16, 185, 129, 0.1);
-  border-color: rgba(16, 185, 129, 0.6);
-  transform: rotate(-15deg);
+/* Dribble effect after like */
+.card.dribble { animation: dribble 400ms cubic-bezier(.4,.1,.3,1.1); }
+@keyframes dribble {
+  0%   { transform: translate(calc(var(--base-x, 0px)), calc(var(--base-y, 0px))) rotate(var(--base-r, 0deg)) scale(1); }
+  25%  { transform: translate(calc(var(--base-x, 0px)), calc(var(--base-y, 0px) - 18px)) rotate(var(--base-r, 0deg)) scale(1.06); }
+  55%  { transform: translate(calc(var(--base-x, 0px)), calc(var(--base-y, 0px) + 6px)) rotate(var(--base-r, 0deg)) scale(0.96); }
+  75%  { transform: translate(calc(var(--base-x, 0px)), calc(var(--base-y, 0px) - 4px)) rotate(var(--base-r, 0deg)) scale(1.02); }
+  100% { transform: translate(calc(var(--base-x, 0px)), calc(var(--base-y, 0px))) rotate(var(--base-r, 0deg)) scale(1); }
 }
 
-.swipe-indicator--nope {
-  right: 20px;
-  color: #dc2626;
-  background: rgba(239, 68, 68, 0.1);
-  border-color: rgba(239, 68, 68, 0.6);
-  transform: rotate(15deg);
+/* Swipe hint wiggle - apply to all cards; stagger via --wiggle-delay */
+.card.card--hint-wiggle {
+  animation: hint-wiggle 4.4s ease-in-out var(--wiggle-delay, 1s) 1;
+}
+@keyframes hint-wiggle {
+  0%, 100% { transform: translate(calc(var(--base-x, 0px)), calc(var(--base-y, 0px))) rotate(var(--base-r, 0deg)); }
+  15% { transform: translate(calc(var(--base-x, 0px) + 28px), calc(var(--base-y, 0px))) rotate(calc(var(--base-r, 0deg) + 4deg)); }
+  30% { transform: translate(calc(var(--base-x, 0px) - 28px), calc(var(--base-y, 0px))) rotate(calc(var(--base-r, 0deg) - 4deg)); }
+  45% { transform: translate(calc(var(--base-x, 0px) + 20px), calc(var(--base-y, 0px))) rotate(calc(var(--base-r, 0deg) + 2deg)); }
+  60% { transform: translate(calc(var(--base-x, 0px) - 20px), calc(var(--base-y, 0px))) rotate(calc(var(--base-r, 0deg) - 2deg)); }
+  75% { transform: translate(calc(var(--base-x, 0px)), calc(var(--base-y, 0px))) rotate(var(--base-r, 0deg)); }
 }
 
-/* Completion State */
-.card-stack__complete {
+/* Gift box completion state */
+.gift-box {
   position: absolute;
   inset: 0;
   display: flex;
@@ -328,20 +235,33 @@ body {
   align-items: center;
   justify-content: center;
   background: var(--surface);
-  border-radius: 20px;
+  border-radius: 22px;
   border: 1px solid var(--border);
   box-shadow: var(--shadow-1);
-  padding: 40px 20px;
+  padding: 12px 24px;
   text-align: center;
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
 }
-
-.card-stack__complete-icon {
-  font-size: 64px;
+.gift-box.hidden {
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+  animation: none;
+}
+.gift-box.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+  visibility: visible;
+  animation: gift-box-appear 0.6s cubic-bezier(.2,.8,.2,1) forwards;
+}
+.gift-box__icon {
+  font-size: 72px;
   margin-bottom: 16px;
-  animation: bounce 1s ease-in-out infinite;
+  animation: gift-bounce 1s ease-in-out infinite;
 }
-
-.card-stack__complete-title {
+.gift-box__title {
   font-family: Poppins, Inter, system-ui, sans-serif;
   font-size: 24px;
   font-weight: 700;
@@ -351,79 +271,199 @@ body {
   background-clip: text;
   color: transparent;
 }
-
-.card-stack__complete-text {
-  margin: 0;
+.gift-box__subtitle {
+  margin: 0 0 20px;
   color: var(--muted);
-  font-size: 16px;
+  font-size: 15px;
 }
-
-@keyframes bounce {
+.gift-box__cards {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: 320px;
+}
+.gift-box__card-mini {
+  width: 55px;
+  height: 55px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 2px solid var(--border);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.gift-box__card-mini:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+.gift-box__card-mini img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.gift-box__cta {
+  margin-top: 24px;
+  width: 100%;
+  max-width: 260px;
+  background: linear-gradient(135deg, #7c5cff 0%, #ec4899 50%, #f59e0b 100%);
+  color: #fff;
+  box-shadow: 0 16px 30px rgba(236,72,153,0.25);
+  text-transform: none;
+}
+.gift-box__cta:hover {
+  filter: brightness(1.05);
+}
+@keyframes gift-box-appear {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes gift-bounce {
   0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
+  50% { transform: translateY(-8px); }
 }
 
-/* Card wiggle animation */
-@keyframes card-wiggle {
-  0%, 100% { 
-    transform: 
-      translate(var(--stack-x, 0), var(--stack-y, 0))
-      rotate(var(--stack-rotation, 0))
-      scale(var(--stack-scale, 1));
-  }
-  15% { 
-    transform: 
-      translate(calc(var(--stack-x, 0) + 20px), var(--stack-y, 0))
-      rotate(calc(var(--stack-rotation, 0) + 4deg))
-      scale(var(--stack-scale, 1));
-  }
-  30% { 
-    transform: 
-      translate(calc(var(--stack-x, 0) - 20px), var(--stack-y, 0))
-      rotate(calc(var(--stack-rotation, 0) - 4deg))
-      scale(var(--stack-scale, 1));
-  }
-  45% { 
-    transform: 
-      translate(calc(var(--stack-x, 0) + 14px), var(--stack-y, 0))
-      rotate(calc(var(--stack-rotation, 0) + 3deg))
-      scale(var(--stack-scale, 1));
-  }
-  60% { 
-    transform: 
-      translate(calc(var(--stack-x, 0) - 14px), var(--stack-y, 0))
-      rotate(calc(var(--stack-rotation, 0) - 3deg))
-      scale(var(--stack-scale, 1));
-  }
-  75% { 
-    transform: 
-      translate(var(--stack-x, 0), var(--stack-y, 0))
-      rotate(var(--stack-rotation, 0))
-      scale(var(--stack-scale, 1));
-  }
+/* Loading skeleton */
+.card-skeleton {
+  position: absolute;
+  inset: 0;
+}
+.card-skeleton.hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+.skeleton-card {
+  position: absolute;
+  inset: 0;
+  border-radius: 22px;
+  background: linear-gradient(90deg, #e5eaf5 25%, #f0f3f9 50%, #e5eaf5 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+  border: 1px solid var(--border);
+}
+.skeleton-card--mid {
+  transform: translate(16px, -6px) rotate(4deg);
+  opacity: 0.7;
+}
+.skeleton-card--back {
+  transform: translate(-12px, 10px) rotate(-5deg);
+  opacity: 0.5;
+}
+@keyframes skeleton-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }
 
-.card.wiggle {
-  animation: card-wiggle 2.5s ease-in-out;
+/* Drag hint below card stack */
+.drag-hint {
+  position: absolute;
+  bottom: -40px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 14px;
+  user-select: none;
+  opacity: 1;
+  transition: opacity .28s ease;
 }
-
-/* Hover Effects (Desktop) */
+.drag-hint__text { font-weight: 600; }
+.drag-hint__arrow { opacity: 0.9; }
+/* Fade-out state but keep layout space */
+.drag-hint.drag-hint--fade { opacity: 0; pointer-events: none; }
 @media (hover: hover) and (pointer: fine) {
-  .card:not(.is-dragging):not(.is-flying-out):hover {
-    transform: 
-      translate(var(--stack-x, 0), calc(var(--stack-y, 0px) - 8px))
-      rotate(var(--stack-rotation, 0))
-      scale(calc(var(--stack-scale, 1) * 1.02));
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
-  }
+  .drag-hint__arrow--left { animation: arrow-left-pulse 1.6s ease-in-out infinite; }
+  .drag-hint__arrow--right { animation: arrow-right-pulse 1.6s ease-in-out infinite; }
+}
+@keyframes arrow-left-pulse {
+  0%, 100% { transform: translateX(0); opacity: .9; }
+  50% { transform: translateX(-6px); opacity: 1; }
+}
+@keyframes arrow-right-pulse {
+  0%, 100% { transform: translateX(0); opacity: .9; }
+  50% { transform: translateX(6px); opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .drag-hint__arrow--left,
+  .drag-hint__arrow--right { animation: none; }
 }
 
-/* Responsive */
-@media (max-width: 560px) {
-  .card-stack {
-    max-width: 90vw;
-    height: 90vw;
-  }
+
+/* Lightweight confetti */
+.confetti-piece {
+  position: fixed;
+  width: 12px; height: 12px; border-radius: 3px;
+  pointer-events: none; opacity: 1; will-change: transform, opacity;
+  animation: confetti-pop var(--dur, 900ms) cubic-bezier(.2,.8,.2,1) forwards;
+  animation-delay: var(--delay, 0ms);
+  filter: drop-shadow(0 2px 2px rgba(0,0,0,.12));
+  z-index: 9999;
+}
+@keyframes confetti-pop {
+  0% { transform: translate(0, 0) rotate(0deg) scale(var(--scale, 1)); opacity: 1; }
+  60% { transform: translate(calc(var(--dx, 0px) * .6), calc(var(--dy, -160px) * .6)) rotate(var(--rot, 0deg)) scale(var(--scale, 1)); opacity: 1; }
+  100% { transform: translate(var(--dx, 0px), var(--dy, -160px)) rotate(var(--rot, 0deg)) scale(var(--scale, 1)); opacity: 0; }
+}
+
+/* Emoji sparkles */
+.confetti-emoji {
+  position: fixed;
+  pointer-events: none; will-change: transform, opacity;
+  font-size: var(--emojiSize, 18px);
+  animation: confetti-emoji var(--dur, 1000ms) cubic-bezier(.2,.8,.2,1) forwards;
+  animation-delay: var(--delay, 0ms);
+  z-index: 9999;
+}
+@keyframes confetti-emoji {
+  0% { transform: translate(0, 0) scale(1); opacity: 1; }
+  70% { transform: translate(calc(var(--dx, 0px) * .7), calc(var(--dy, -180px) * .7)) rotate(6deg) scale(1.1); opacity: 1; }
+  100% { transform: translate(var(--dx, 0px), var(--dy, -180px)) rotate(12deg) scale(1); opacity: 0; }
+}
+
+/* Confetti number */
+.confetti-number {
+  position: fixed;
+  pointer-events: none;
+  font-size: 120px;
+  font-weight: 900;
+  font-family: 'Poppins', Inter, system-ui, sans-serif;
+  color: #fff;
+  text-shadow: 
+    0 0 40px rgba(16,185,129,0.8),
+    0 0 80px rgba(16,185,129,0.6),
+    0 8px 32px rgba(0,0,0,0.4),
+    4px 4px 0 rgba(16,185,129,0.9),
+    -4px -4px 0 rgba(16,185,129,0.9);
+  will-change: transform, opacity;
+  animation: confetti-number var(--dur, 1400ms) cubic-bezier(.2,.7,.3,1) forwards;
+  animation-delay: var(--delay, 0ms);
+  line-height: 1;
+  z-index: 9999;
+}
+@keyframes confetti-number {
+  0% { transform: translate(0, 0) scale(0.5) rotate(0deg); opacity: 0; }
+  15% { opacity: 0.85; }
+  60% { transform: translate(calc(var(--dx, 0px) * .5), calc(var(--dy, -120px) * .5)) scale(1.2) rotate(var(--rot, 15deg)); opacity: 0.85; }
+  100% { transform: translate(var(--dx, 0px), var(--dy, -160px)) scale(0.8) rotate(var(--rot, 30deg)); opacity: 0; }
+}
+
+/* (removed confetti ring; not used by JS) */
+
+/* Left-swipe vacuum suck effect */
+.confetti-suck {
+  position: fixed;
+  width: 8px; height: 8px; border-radius: 2px;
+  pointer-events: none;
+  will-change: transform, opacity;
+  animation: confetti-suck 420ms cubic-bezier(.3,.9,.3,1) forwards;
+}
+@keyframes confetti-suck {
+  0% { transform: translate(0,0) scale(1); opacity: .7; filter: none; }
+  100% { transform: translate(var(--toX, -200px), var(--toY, 0px)) scale(.3) rotate(-18deg); opacity: 0; filter: blur(1px); }
 }
 
 /* Experiences scroller */
@@ -464,6 +504,8 @@ body {
 /* Responsive */
 @media (max-width: 960px) {
   .hero__grid { grid-template-columns: 1fr; gap: 28px; }
+  .card-stack-stage { max-height: 350px; }
+  .card-stack { height: 360px; transform: scale(0.8); }
 }
 
 @media (max-width: 560px) {
@@ -487,7 +529,19 @@ body {
 }
 
 /* Dancing cards */
+@keyframes card-dance {
+  0%, 100% { transform: translate(calc(var(--base-x, 0px)), calc(var(--base-y, 0px))) rotate(var(--base-r, 0deg)) scale(1); }
+  10% { transform: translate(calc(var(--base-x, 0px) - 8px), calc(var(--base-y, 0px) - 12px)) rotate(calc(var(--base-r, 0deg) - 5deg)) scale(1.05); }
+  25% { transform: translate(calc(var(--base-x, 0px) + 8px), calc(var(--base-y, 0px) - 18px)) rotate(calc(var(--base-r, 0deg) + 5deg)) scale(1.08); }
+  40% { transform: translate(calc(var(--base-x, 0px) - 6px), calc(var(--base-y, 0px) - 14px)) rotate(calc(var(--base-r, 0deg) - 4deg)) scale(1.06); }
+  55% { transform: translate(calc(var(--base-x, 0px) + 6px), calc(var(--base-y, 0px) - 10px)) rotate(calc(var(--base-r, 0deg) + 4deg)) scale(1.04); }
+  70% { transform: translate(calc(var(--base-x, 0px) - 4px), calc(var(--base-y, 0px) - 6px)) rotate(calc(var(--base-r, 0deg) - 2deg)) scale(1.02); }
+  85% { transform: translate(calc(var(--base-x, 0px) + 2px), calc(var(--base-y, 0px) - 3px)) rotate(calc(var(--base-r, 0deg) + 1deg)) scale(1.01); }
+}
 
+.card--dancing {
+  animation: card-dance 2.4s cubic-bezier(0.4, 0.0, 0.2, 1) forwards;
+}
 
 /* Gentle sway */
 @keyframes gentle-sway {
@@ -496,66 +550,55 @@ body {
   75% { transform: rotate(-1.5deg); }
 }
 
+.gentle-sway-active .card-stack,
 .gentle-sway-active .hero__title,
 .gentle-sway-active .waitlist,
-.gentle-sway-active .xp-card,
-.gentle-sway-active .card-stack {
+.gentle-sway-active .xp-card {
   animation: gentle-sway 3s ease-in-out;
   transform-origin: center bottom;
-}
-
-/* Dancing cards */
-@keyframes card-dance {
-  0%, 100% {
-    transform: rotate(0deg) translateX(0) scale(1);
-  }
-  15% {
-    transform: rotate(-8deg) translateX(-12px) scale(1.05);
-  }
-  30% {
-    transform: rotate(8deg) translateX(12px) scale(0.95);
-  }
-  45% {
-    transform: rotate(-6deg) translateX(-8px) scale(1.03);
-  }
-  60% {
-    transform: rotate(6deg) translateX(8px) scale(0.97);
-  }
-  75% {
-    transform: rotate(-3deg) translateX(-4px) scale(1.02);
-  }
-  85% {
-    transform: rotate(1deg) translateX(2px) scale(1.01);
-  }
-}
-
-.card--dancing {
-  animation: card-dance 2.4s cubic-bezier(0.4, 0.0, 0.2, 1) forwards !important;
-  transform-origin: center center;
 }
 
 /* Tumbling cards */
 @keyframes card-tumble {
   0% {
-    transform: rotate(0deg) translateY(0) scale(1);
+    transform: 
+      translateX(var(--base-x, 0))
+      translateY(var(--base-y, 0))
+      rotate(var(--base-r, 0deg))
+      scale(1);
   }
   25% {
-    transform: rotate(180deg) translateY(-30px) scale(1.1);
+    transform: 
+      translateX(calc(var(--base-x, 0) + 40px))
+      translateY(calc(var(--base-y, 0) - 80px))
+      rotate(calc(var(--base-r, 0deg) + 180deg))
+      scale(1.1);
   }
   50% {
-    transform: rotate(360deg) translateY(0) scale(0.95);
+    transform: 
+      translateX(calc(var(--base-x, 0) - 40px))
+      translateY(calc(var(--base-y, 0) - 120px))
+      rotate(calc(var(--base-r, 0deg) + 360deg))
+      scale(1.15);
   }
   75% {
-    transform: rotate(540deg) translateY(-20px) scale(1.05);
+    transform: 
+      translateX(calc(var(--base-x, 0) + 20px))
+      translateY(calc(var(--base-y, 0) - 60px))
+      rotate(calc(var(--base-r, 0deg) + 540deg))
+      scale(1.05);
   }
   100% {
-    transform: rotate(720deg) translateY(0) scale(1);
+    transform: 
+      translateX(var(--base-x, 0))
+      translateY(var(--base-y, 0))
+      rotate(calc(var(--base-r, 0deg) + 720deg))
+      scale(1);
   }
 }
 
 .card--tumbling {
-  animation: card-tumble 2.4s cubic-bezier(0.4, 0.0, 0.2, 1) forwards !important;
-  transform-origin: center center;
+  animation: card-tumble 2.4s cubic-bezier(0.4, 0.0, 0.2, 1) forwards;
 }
 
 /* Wind gust */
@@ -586,8 +629,8 @@ body {
   }
 }
 
-.wind-gust-active .xp-card,
-.wind-gust-active .card-stack {
+.wind-gust-active .card-stack,
+.wind-gust-active .xp-card {
   animation: wind-gust 2.4s ease-in-out;
 }
 
@@ -595,220 +638,4 @@ body {
 .wind-gust-active .waitlist {
   animation: wind-gust 2.4s ease-in-out;
   animation-delay: 0.1s;
-}
-
-/* Gift Pack */
-.gift-pack {
-  text-align: center;
-  max-width: 520px;
-  width: calc(100% - 32px);
-  margin: 0 auto;
-  padding: 56px 48px 48px;
-  background: white;
-  border: 3px solid transparent;
-  background-image: 
-    linear-gradient(white, white),
-    linear-gradient(90deg, #9D4EDD 0%, #FF6B9D 50%, #FFA07A 100%);
-  background-origin: border-box;
-  background-clip: padding-box, border-box;
-  border-radius: 32px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
-  opacity: 0;
-  transform: scale(0.9);
-  transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.gift-pack--visible {
-  opacity: 1;
-  transform: scale(1);
-}
-
-.gift-pack__icon {
-  font-size: 64px;
-  animation: bounce-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), gift-float 2s ease-in-out infinite 0.6s;
-}
-
-@keyframes gift-float {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-12px);
-  }
-}
-
-@keyframes bounce-in {
-  0% {
-    transform: scale(0);
-    opacity: 0;
-  }
-  50% {
-    transform: scale(1.1);
-  }
-  100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
-
-.gift-pack__header {
-  margin-bottom: 36px;
-}
-
-.gift-pack__header h3 {
-  font-size: 26px;
-  font-weight: 700;
-  margin: 0 0 10px 0;
-  line-height: 1.2;
-}
-
-.gift-pack__title-gradient {
-  background: linear-gradient(90deg, #A855F7 0%, #EC4899 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.gift-pack__header p {
-  font-size: 15px;
-  color: #6B7280;
-  margin: 0;
-  font-weight: 400;
-}
-
-.gift-pack__grid {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 32px;
-  flex-wrap: nowrap;
-}
-
-.gift-pack__card {
-  position: relative;
-  display: block;
-  background: white;
-  border-radius: 12px;
-  overflow: hidden;
-  width: 58px;
-  height: 58px;
-  flex-shrink: 0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-  cursor: pointer;
-  text-decoration: none;
-  opacity: 0;
-  transform: translateY(20px);
-  animation: card-appear 0.5s ease forwards;
-}
-
-@keyframes card-appear {
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.gift-pack__card:hover {
-  transform: translateY(-8px) scale(1.05);
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
-}
-
-.gift-pack__card img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.3s ease-in-out;
-}
-
-.gift-pack__card:hover img {
-  transform: scale(1.15);
-}
-
-.gift-pack__actions {
-  display: flex;
-  justify-content: center;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-
-.gift-pack__button {
-  padding: 14px 32px;
-  border-radius: 14px;
-  font-weight: 600;
-  font-size: 15px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  border: none;
-  font-family: inherit;
-}
-
-.gift-pack__button--primary {
-  background: linear-gradient(90deg, #9D4EDD 0%, #FF6B9D 50%, #FFA07A 100%);
-  color: white;
-  box-shadow: 0 4px 15px rgba(157, 78, 221, 0.4);
-}
-
-.gift-pack__button--primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(157, 78, 221, 0.6);
-}
-
-.gift-pack__button--secondary {
-  background: transparent;
-  color: var(--text);
-  border: 2px solid var(--border);
-}
-
-.gift-pack__button--secondary:hover {
-  background: var(--text);
-  color: var(--surface);
-  border-color: var(--text);
-  transform: translateY(-2px);
-}
-
-@media (max-width: 768px) {
-  .card-stack {
-    width: 70vw;
-    max-width: 70vw;
-    height: 70vw;
-  }
-
-  .gift-pack {
-    padding: 20px 24px 32px;
-    border-radius: 28px;
-    border-width: 2px;
-    max-width: calc(100% - 32px);
-    margin: 0 16px;
-  }
-  
-  .gift-pack__icon {
-    font-size: 100px;
-  }
-  
-  .gift-pack__header h3 {
-    font-size: 24px;
-  }
-  
-  .gift-pack__header p {
-    font-size: 14px;
-  }
-  
-  .gift-pack__grid {
-    gap: 10px;
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-  
-  .gift-pack__card {
-    width: 45px;
-    height: 45px;
-  }
-  
-  .gift-pack__button {
-    padding: 12px 28px;
-    font-size: 15px;
-    width: auto;
-  }
 }

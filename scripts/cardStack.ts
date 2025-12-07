@@ -1,684 +1,935 @@
-/**
- * Card Stack Component
- * 
- * A Tinder-like swipeable card stack with smooth animations and gesture support.
- * Built with modern web APIs and best practices for performance and maintainability.
- * 
- * Features:
- * - Touch and mouse support via Pointer Events API
- * - Smooth animations with CSS transforms and RAF
- * - Virtual rendering (only renders visible cards)
- * - Clean state management with enum-based state machine
- * - Velocity-based swipe detection
- * - Hover effects on desktop
- */
+/* Card Stack Module - Tinder-like swipeable card stack (Refactored) */
 
 import type { Experience } from '../types';
+import { openInNewTab, triggerHaptic, LIKE_EMOJIS, createConfettiParticle, createConfettiEmoji } from '../utils.js';
 
 // ============================================================================
-// CONSTANTS & CONFIGURATION
+// CONSTANTS
 // ============================================================================
 
-const CONFIG = {
-  VISIBLE_CARDS: 3,           // Number of cards visible in stack
-  SWIPE_THRESHOLD: 100,       // Pixels to trigger swipe
-  VELOCITY_THRESHOLD: 0.5,    // px/ms velocity to trigger swipe
-  FLY_OUT_DURATION: 400,      // ms for card to fly out
-  STACK_OFFSET_Y: 8,          // Vertical offset per card in stack
-  STACK_OFFSET_X: 0,          // Horizontal offset per card in stack
-  STACK_ROTATION: 2,          // Rotation offset per card (degrees)
-  STACK_SCALE: 0.95,          // Scale reduction per card
-} as const;
+const MAX_SELECTIONS = 5;
+const MAX_VISIBLE_CARDS = 3;
 
-// Card states for state machine
-enum CardState {
-  IDLE = 'idle',
-  DRAGGING = 'dragging',
-  ANIMATING = 'animating',
-  FLYING_OUT = 'flying-out',
+// Touch/Drag Configuration
+const SWIPE_THRESHOLD = 50; // Minimum distance to trigger swipe (mobile optimized)
+const VELOCITY_THRESHOLD = 0.3; // Minimum velocity (px/ms) to trigger fast swipe
+const CLICK_TOLERANCE = 10; // Max movement to still register as click
+const MIN_DRAG_DISTANCE = 15; // Minimum drag to prevent accidental swipes
+
+// Animation Durations (ms)
+const FLY_OUT_DURATION = 500; // Fly-out for snappier releases
+const WIGGLE_ANIMATION_DURATION = 2000;
+const WIGGLE_INITIAL_DELAY = 1000;
+const WIGGLE_GAP_BETWEEN = 4000;
+const DEMO_ANIMATION_DURATION = 3000;
+
+// Visual Constants
+const ROTATION_FACTOR = 0.08;
+const LABEL_INTENSITY_DIVISOR = 120;
+const AUTO_DEMO_THRESHOLD = 180;
+const FIFTH_CARD_FADE_MULTIPLIER = 0.5;
+const HAPTIC_THRESHOLD = 180;
+
+// Confetti Configuration
+const SUCCESS_CONFETTI_RADIUS = { min: 128, max: 480 } as const;
+const SUCCESS_CONFETTI_PARTICLES_PER_BURST = 20;
+const SUCCESS_CONFETTI_BURSTS = 4;
+
+const CLICK_BLOCK_DURATION = 800;
+const DEFAULT_URL = 'https://www.google.com';
+
+const isMobileQuery = window.matchMedia('(max-width: 960px)');
+
+// ============================================================================
+// TYPES
+// ============================================================================
+
+interface CardLabels {
+  like: HTMLElement | null;
+  nope: HTMLElement | null;
 }
 
-// Direction for swipe actions
-enum SwipeDirection {
-  LEFT = 'left',
-  RIGHT = 'right',
+interface LikedExperience {
+  title: string;
+  image: string;
+  url: string;
 }
-
-// ============================================================================
-// INTERFACES
-// ============================================================================
 
 interface DragState {
+  active: boolean;
   startX: number;
   startY: number;
   currentX: number;
   currentY: number;
-  deltaX: number;
-  deltaY: number;
   startTime: number;
-  velocity: number;
+  pointerId: number | null;
+  moved: boolean;
+  hapticTriggered: boolean;
 }
 
-interface CardElement extends HTMLElement {
-  dataset: {
-    index?: string;
-    experienceIndex?: string;
-    state?: CardState;
-  };
-}
-
-// ============================================================================
-// CARD STACK CLASS
-// ============================================================================
-
-export class CardStack {
-  private container: HTMLElement;
-  private parentElement: HTMLElement | null = null;
-  private experiences: Experience[];
-  private currentIndex: number = 0;
-  private cards: CardElement[] = [];
-  private dragState: DragState | null = null;
-  private rafId: number | null = null;
-  private wiggleIntervalId: number | null = null;
-  private hasUserInteracted: boolean = false;
-  private likedCards: Experience[] = [];
-  private shouldCreatePack: boolean = false;
-
-  constructor(container: HTMLElement, experiences: Experience[]) {
-    this.container = container;
-    this.parentElement = container.parentElement;
-    this.experiences = experiences;
-  }
-
-  // ========================================================================
-  // PUBLIC API
-  // ========================================================================
-
-  public initialize(): void {
-    this.renderCards();
-    this.attachEventListeners();
-    this.startWiggleAnimation();
-  }
-
-  public destroy(): void {
-    this.detachEventListeners();
-    if (this.rafId) cancelAnimationFrame(this.rafId);
-    if (this.wiggleIntervalId) clearInterval(this.wiggleIntervalId);
-  }
-
-  // ========================================================================
-  // WIGGLE ANIMATION
-  // ========================================================================
-
-  private startWiggleAnimation(): void {
-    const triggerWiggle = () => {
-      this.cards.forEach((card, index) => {
-        setTimeout(() => {
-          card.classList.add('wiggle');
-          // Remove class after animation completes
-          setTimeout(() => {
-            card.classList.remove('wiggle');
-          }, 2500);
-        }, index * 100); // Stagger by 100ms per card
-      });
-    };
-
-    // Initial wiggle after 1 second
-    setTimeout(triggerWiggle, 1000);
-
-    // Repeat every 10 seconds
-    this.wiggleIntervalId = window.setInterval(triggerWiggle, 10000);
-  }
-
-  private stopWiggleAnimation(): void {
-    if (this.wiggleIntervalId) {
-      clearInterval(this.wiggleIntervalId);
-      this.wiggleIntervalId = null;
-    }
-    // Remove wiggle class from all cards
-    this.cards.forEach(card => card.classList.remove('wiggle'));
-  }
-
-  private hideDragLabel(): void {
-    const label = document.querySelector('.card-stack-label');
-    if (label) {
-      label.classList.add('fade-out');
-    }
-  }
-
-  private fadeOutBackgroundCards(progress: number): void {
-    // Fade out all cards except the top one (proportional to progress)
-    this.cards.forEach((card, index) => {
-      if (index > 0) {
-        card.style.transition = 'opacity 0.1s ease';
-        card.style.opacity = String(1 - progress);
-      }
-    });
-  }
-
-  // ========================================================================
-  // CARD RENDERING
-  // ========================================================================
-
-  private renderCards(): void {
-    // Clear existing cards
-    this.container.innerHTML = '';
-    this.cards = [];
-
-    // Render only visible cards
-    const endIndex = Math.min(
-      this.currentIndex + CONFIG.VISIBLE_CARDS,
-      this.experiences.length
-    );
-
-    for (let i = this.currentIndex; i < endIndex; i++) {
-      const card = this.createCard(this.experiences[i], i);
-      this.cards.push(card);
-      this.container.appendChild(card);
-    }
-
-    // Apply stack positioning
-    this.updateStackPositions();
-  }
-
-  private createCard(experience: Experience, index: number): CardElement {
-    const card = document.createElement('article') as CardElement;
-    card.className = 'card';
-    card.dataset.index = String(index);
-    card.dataset.experienceIndex = String(index);
-    card.dataset.state = CardState.IDLE;
-
-    card.innerHTML = `
-      <img src="${experience.image}" alt="${experience.alt}" />
-      <figcaption>${experience.title}</figcaption>
-      <div class="swipe-indicator swipe-indicator--like">LIKE</div>
-      <div class="swipe-indicator swipe-indicator--nope">NOPE</div>
-    `;
-
-    return card;
-  }
-
-  private updateStackPositions(): void {
-    this.cards.forEach((card, index) => {
-      const offset = index;
-      const y = offset * 6; // Smaller vertical offset for tighter stack
-      const x = offset * 2; // Small horizontal shift for depth
-      
-      // Very subtle random rotation between -2 and +2 degrees
-      const randomRotation = (Math.random() - 0.5) * 14; // -2 to +2 degrees
-      
-      const scale = 1 - (offset * 0.02); // Very subtle scale difference
-
-      card.style.setProperty('--stack-y', `${y}px`);
-      card.style.setProperty('--stack-x', `${x}px`);
-      card.style.setProperty('--stack-rotation', `${randomRotation}deg`);
-      card.style.setProperty('--stack-scale', String(scale));
-      card.style.zIndex = String(this.cards.length - index);
-    });
-  }
-
-  // ========================================================================
-  // EVENT HANDLING
-  // ========================================================================
-
-  private attachEventListeners(): void {
-    const topCard = this.cards[0];
-    if (!topCard) return;
-
-    topCard.addEventListener('pointerdown', this.handlePointerDown);
-  }
-
-  private detachEventListeners(): void {
-    const topCard = this.cards[0];
-    if (!topCard) return;
-
-    topCard.removeEventListener('pointerdown', this.handlePointerDown);
-  }
-
-  private handlePointerDown = (e: PointerEvent): void => {
-    const card = e.currentTarget as CardElement;
-    if (card.dataset.state !== CardState.IDLE) return;
-
-    e.preventDefault();
-    card.setPointerCapture(e.pointerId);
-
-    // On first interaction, stop wiggle and hide label
-    if (!this.hasUserInteracted) {
-      this.hasUserInteracted = true;
-      this.stopWiggleAnimation();
-      this.hideDragLabel();
-    }
-
-    // Initialize drag state
-    this.dragState = {
-      startX: e.clientX,
-      startY: e.clientY,
-      currentX: e.clientX,
-      currentY: e.clientY,
-      deltaX: 0,
-      deltaY: 0,
-      startTime: performance.now(),
-      velocity: 0,
-    };
-
-    card.dataset.state = CardState.DRAGGING;
-    card.classList.add('is-dragging');
-
-    card.addEventListener('pointermove', this.handlePointerMove);
-    card.addEventListener('pointerup', this.handlePointerUp);
-    card.addEventListener('pointercancel', this.handlePointerUp);
-  };
-
-  private handlePointerMove = (e: PointerEvent): void => {
-    if (!this.dragState) return;
-
-    const card = e.currentTarget as CardElement;
-    
-    this.dragState.currentX = e.clientX;
-    this.dragState.currentY = e.clientY;
-    this.dragState.deltaX = this.dragState.currentX - this.dragState.startX;
-    this.dragState.deltaY = this.dragState.currentY - this.dragState.startY;
-
-    // Calculate velocity
-    const timeDelta = performance.now() - this.dragState.startTime;
-    this.dragState.velocity = Math.abs(this.dragState.deltaX) / timeDelta;
-
-    // If this is potentially the 5th like, fade out background cards proportionally
-    if (this.likedCards.length === 4 && this.dragState.deltaX > 0) {
-      const fadeProgress = Math.min(Math.abs(this.dragState.deltaX) / 300, 1);
-      this.fadeOutBackgroundCards(fadeProgress);
-    } else if (this.likedCards.length === 4 && this.dragState.deltaX <= 0) {
-      // Restore background cards if dragging back
-      this.fadeOutBackgroundCards(0);
-    }
-
-    // Update card position
-    this.updateCardTransform(card);
-    this.updateSwipeIndicators(card);
-  };
-
-  private handlePointerUp = (e: PointerEvent): void => {
-    if (!this.dragState) return;
-
-    const card = e.currentTarget as CardElement;
-    card.releasePointerCapture(e.pointerId);
-    
-    card.removeEventListener('pointermove', this.handlePointerMove);
-    card.removeEventListener('pointerup', this.handlePointerUp);
-    card.removeEventListener('pointercancel', this.handlePointerUp);
-
-    // Determine if swipe was committed
-    const shouldSwipe = 
-      Math.abs(this.dragState.deltaX) > CONFIG.SWIPE_THRESHOLD ||
-      this.dragState.velocity > CONFIG.VELOCITY_THRESHOLD;
-
-    if (shouldSwipe) {
-      const direction = this.dragState.deltaX > 0 ? SwipeDirection.RIGHT : SwipeDirection.LEFT;
-      this.commitSwipe(card, direction);
-    } else {
-      this.cancelSwipe(card);
-    }
-
-    this.dragState = null;
-  };
-
-  // ========================================================================
-  // ANIMATION & TRANSFORM
-  // ========================================================================
-
-  private updateCardTransform(card: CardElement): void {
-    if (!this.dragState) return;
-
-    const { deltaX, deltaY } = this.dragState;
-    const rotation = (deltaX / 20);
-
-    card.style.transform = `
-      translate(${deltaX}px, ${deltaY}px)
-      rotate(${rotation}deg)
-    `;
-  }
-
-  private updateSwipeIndicators(card: CardElement): void {
-    if (!this.dragState) return;
-
-    const likeIndicator = card.querySelector('.swipe-indicator--like') as HTMLElement;
-    const nopeIndicator = card.querySelector('.swipe-indicator--nope') as HTMLElement;
-
-    const progress = Math.min(Math.abs(this.dragState.deltaX) / CONFIG.SWIPE_THRESHOLD, 1);
-    const opacity = progress * 0.8;
-
-    if (this.dragState.deltaX > 0) {
-      likeIndicator.style.opacity = String(opacity);
-      nopeIndicator.style.opacity = '0';
-    } else {
-      nopeIndicator.style.opacity = String(opacity);
-      likeIndicator.style.opacity = '0';
-    }
-  }
-
-  private commitSwipe(card: CardElement, direction: SwipeDirection): void {
-    card.dataset.state = CardState.FLYING_OUT;
-    card.classList.remove('is-dragging');
-    card.classList.add('is-flying-out');
-
-    // Track liked cards
-    let isFifthCard = false;
-    if (direction === SwipeDirection.RIGHT && card.dataset.experienceIndex) {
-      const experienceIndex = parseInt(card.dataset.experienceIndex, 10);
-      const experience = this.experiences[experienceIndex];
-      if (experience) {
-        this.likedCards.push(experience);
-        
-        // Show flying number
-        this.showFlyingNumber(this.likedCards.length);
-        
-        // Check if we have 5 liked cards
-        if (this.likedCards.length === 5) {
-          this.shouldCreatePack = true;
-          isFifthCard = true;
-          // Fully fade out background cards
-          this.fadeOutBackgroundCards(1);
-        }
-      }
-    }
-
-    const targetX = direction === SwipeDirection.RIGHT ? 1000 : -1000;
-    const targetY = -100;
-    const rotation = direction === SwipeDirection.RIGHT ? 30 : -30;
-
-    // Don't fade out the 5th card itself, only background cards
-    if (isFifthCard) {
-      card.style.transition = `transform ${CONFIG.FLY_OUT_DURATION}ms cubic-bezier(0.4, 0.1, 0.2, 1)`;
-    } else {
-      card.style.transition = `transform ${CONFIG.FLY_OUT_DURATION}ms cubic-bezier(0.4, 0.1, 0.2, 1), opacity ${CONFIG.FLY_OUT_DURATION}ms ease`;
-      card.style.opacity = '0';
-    }
-    
-    card.style.transform = `translate(${targetX}px, ${targetY}px) rotate(${rotation}deg)`;
-
-    setTimeout(() => {
-      this.removeCard(card);
-      
-      // Create pack after animation completes (skip nextCard)
-      if (this.shouldCreatePack) {
-        this.shouldCreatePack = false;
-        // Show gift pack immediately when card exits
-        this.createPack();
-      } else {
-        this.nextCard();
-      }
-    }, CONFIG.FLY_OUT_DURATION);
-  }
-
-  private cancelSwipe(card: CardElement): void {
-    card.dataset.state = CardState.ANIMATING;
-    card.classList.remove('is-dragging');
-
-    card.style.transition = 'transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)';
-    card.style.transform = '';
-
-    // Reset indicators
-    const indicators = card.querySelectorAll('.swipe-indicator') as NodeListOf<HTMLElement>;
-    indicators.forEach(indicator => indicator.style.opacity = '0');
-
-    // Restore background cards if this was potentially the 5th card
-    if (this.likedCards.length === 4) {
-      this.fadeOutBackgroundCards(0);
-    }
-
-    setTimeout(() => {
-      card.dataset.state = CardState.IDLE;
-      card.style.transition = '';
-    }, 300);
-  }
-
-  private showFlyingNumber(count: number): void {
-    const numberElement = document.createElement('div');
-    numberElement.className = 'flying-number';
-    numberElement.textContent = String(count);
-    
-    // Position it on the center of the card stack
-    const cardStackRect = this.container.getBoundingClientRect();
-    const startX = cardStackRect.left + cardStackRect.width / 2;
-    const startY = cardStackRect.top + cardStackRect.height / 2;
-    
-    // Add random rotation between -15 and 15 degrees
-    const randomRotation = (Math.random() - 0.5) * 30;
-    
-    // Add random vertical offset between -80px and +80px
-    const randomVertical = (Math.random() - 0.5) * 160;
-    
-    numberElement.style.left = `${startX}px`;
-    numberElement.style.top = `${startY}px`;
-    numberElement.style.setProperty('--rotation', `${randomRotation}deg`);
-    numberElement.style.setProperty('--vertical-offset', `${randomVertical}px`);
-    numberElement.style.transform = `translate(-50%, -50%) rotate(var(--rotation))`;
-    
-    document.body.appendChild(numberElement);
-    
-    // Trigger animation
-    requestAnimationFrame(() => {
-      numberElement.classList.add('flying-number--animate');
-    });
-    
-    // Remove after animation completes
-    setTimeout(() => {
-      numberElement.remove();
-    }, 1000);
-  }
-
-  private removeCard(card: CardElement): void {
-    card.remove();
-    this.cards.shift();
-  }
-
-  private nextCard(): void {
-    this.currentIndex++;
-
-    // Render next card if available
-    if (this.currentIndex + CONFIG.VISIBLE_CARDS <= this.experiences.length) {
-      const nextIndex = this.currentIndex + CONFIG.VISIBLE_CARDS - 1;
-      const nextCard = this.createCard(this.experiences[nextIndex], nextIndex);
-      this.cards.push(nextCard);
-      this.container.appendChild(nextCard);
-    }
-
-    this.updateStackPositions();
-
-    // Attach listeners to new top card
-    if (this.cards.length > 0) {
-      this.attachEventListeners();
-    } else {
-      this.showCompletionState();
-    }
-  }
-
-  private showCompletionState(): void {
-    this.container.innerHTML = `
-      <div class="card-stack__complete">
-        <div class="card-stack__complete-icon">🎁</div>
-        <h3 class="card-stack__complete-title">All Done!</h3>
-        <p class="card-stack__complete-text">You've seen all the experiences</p>
-      </div>
-    `;
-  }
-
-  // ========================================================================
-  // PACK CREATION
-  // ========================================================================
-
-  private createPack(): void {
-    console.log('Pack created with experiences:', this.likedCards);
-    
-    // Fade out card stack first
-    this.container.style.transition = 'opacity 0.3s ease';
-    this.container.style.opacity = '0';
-    
-    // Show confetti immediately
-    setTimeout(() => {
-      this.showGiftPackConfetti();
-    }, 300);
-    
-    // Show gift pack 400ms after confetti starts
-    setTimeout(() => {
-      this.renderGiftPack();
-    }, 700);
-  }
-
-  private showGiftPackConfetti(): void {
-    if (typeof (window as any).confetti !== 'function') return;
-
-    // Calculate center position of card stack
-    const cardStackRect = this.container.getBoundingClientRect();
-    const originX = (cardStackRect.left + cardStackRect.width / 2) / window.innerWidth;
-    const originY = (cardStackRect.top + cardStackRect.height / 2) / window.innerHeight;
-
-    const count = 300; // 2x more particles for density
-    const defaults = {
-      origin: { x: originX, y: originY },
-      zIndex: 9999,
-      colors: ['#9D4EDD', '#FF6B9D', '#FFA07A', '#FFD700', '#FF1493']
-    };
-
-    function fire(particleRatio: number, opts: any) {
-      (window as any).confetti(Object.assign({}, defaults, opts, {
-        particleCount: Math.floor(count * particleRatio)
-      }));
-    }
-
-    // Multiple bursts with 2x smaller spread (gift pack ~520px, confetti ~260px radius)
-    fire(0.25, {
-      spread: 90,
-      startVelocity: 40,
-    });
-    fire(0.2, {
-      spread: 75,
-      startVelocity: 35,
-    });
-    fire(0.35, {
-      spread: 100,
-      decay: 0.91,
-      scalar: 1.0
-    });
-    fire(0.1, {
-      spread: 85,
-      startVelocity: 30,
-      decay: 0.92,
-      scalar: 1.2
-    });
-    fire(0.1, {
-      spread: 95,
-      startVelocity: 38,
-      scalar: 1.1
-    });
-  }
-
-  private renderGiftPack(): void {
-    if (!this.parentElement) return;
-    
-    // Hide card stack container immediately
-    this.container.style.display = 'none';
-    
-    // Create gift pack
-    const giftPack = document.createElement('div');
-    giftPack.className = 'gift-pack';
-      
-      const giftIcon = document.createElement('div');
-      giftIcon.className = 'gift-pack__icon';
-      giftIcon.textContent = '🎁';
-      
-      const header = document.createElement('div');
-      header.className = 'gift-pack__header';
-      header.innerHTML = `
-        <h3><span class="gift-pack__title-gradient">Your Gift Pack is Ready!</span></h3>
-        <p>You've selected 5 amazing experiences</p>
-      `;
-      
-      const grid = document.createElement('div');
-      grid.className = 'gift-pack__grid';
-      
-      this.likedCards.forEach((experience, index) => {
-        const card = document.createElement('a');
-        card.className = 'gift-pack__card';
-        card.href = experience.url;
-        card.target = '_blank';
-        card.rel = 'noopener noreferrer';
-        card.style.animationDelay = `${0.3 + index * 0.1}s`;
-        
-        card.innerHTML = `
-          <img src="${experience.image}" alt="${experience.alt}" />
-        `;
-        
-        grid.appendChild(card);
-      });
-      
-      const actions = document.createElement('div');
-      actions.className = 'gift-pack__actions';
-      actions.innerHTML = `
-        <button class="gift-pack__button gift-pack__button--primary">Share Gift Pack</button>
-      `;
-      
-    giftPack.appendChild(giftIcon);
-    giftPack.appendChild(header);
-    giftPack.appendChild(grid);
-    giftPack.appendChild(actions);
-    
-    this.parentElement!.appendChild(giftPack);
-    
-    // Fade in and bounce gift pack
-    setTimeout(() => {
-      giftPack.classList.add('gift-pack--visible');
-    }, 50);
-    
-    // Add button handler
-    const shareButton = actions.querySelector('.gift-pack__button--primary') as HTMLButtonElement;
-    if (shareButton) {
-      shareButton.addEventListener('click', () => this.shareGiftPack());
-    }
-  }
-  
-  private shareGiftPack(): void {
-    // Create shareable text
-    const text = `Check out my gift pack! 🎁\n\n${this.likedCards.map(exp => exp.title).join('\n')}`;
-    
-    // Try native share API
-    if (navigator.share) {
-      navigator.share({
-        title: 'My Gift Pack',
-        text: text,
-      }).catch(() => {
-        // Fallback to clipboard
-        this.copyToClipboard(text);
-      });
-    } else {
-      // Fallback to clipboard
-      this.copyToClipboard(text);
-    }
-  }
-  
-  private copyToClipboard(text: string): void {
-    navigator.clipboard.writeText(text).then(() => {
-      // Show temporary success message
-      const btn = document.querySelector('.gift-pack__button--primary');
-      if (btn) {
-        const originalText = btn.textContent;
-        btn.textContent = '✓ Copied!';
-        setTimeout(() => {
-          btn.textContent = originalText;
-        }, 2000);
-      }
-    });
-  }
+enum CardState {
+  IDLE = 'idle',
+  DRAGGING = 'dragging',
+  FLYING_OUT = 'flying-out',
+  SNAPPING_BACK = 'snapping-back',
+  REMOVED = 'removed'
 }
 
 // ============================================================================
-// INITIALIZATION
+// HELPER FUNCTIONS
+// ============================================================================
+
+const easeInOutCubic = (t: number): number => {
+  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+};
+
+const getElementCenter = (element: HTMLElement): { x: number; y: number } => {
+  const rect = element.getBoundingClientRect();
+  return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+};
+
+const clamp = (value: number, min: number, max: number): number => {
+  return Math.min(Math.max(value, min), max);
+};
+
+// ============================================================================
+// MAIN CLASS
 // ============================================================================
 
 export function initializeCardStack(experiences: Experience[]): void {
-  const container = document.querySelector('.card-stack') as HTMLElement | null;
-  if (!container || experiences.length === 0) return;
+  const stackElement = document.querySelector('.card-stack') as HTMLElement | null;
+  if (!stackElement) return;
 
-  const cardStack = new CardStack(container, experiences);
+  const cardStack = new CardStack(stackElement, experiences);
   cardStack.initialize();
+}
+
+class CardStack {
+  // DOM References
+  private readonly stack: HTMLElement;
+  private readonly giftBox: HTMLElement | null;
+  private readonly selectedCardsContainer: HTMLElement | null;
+  private readonly dragHint: HTMLElement | null;
+
+  // Data
+  private readonly experiences: Experience[];
+  private nextExpIndex = 0;
+  private likedExperiences: LikedExperience[] = [];
+
+  // State
+  private activeCards: HTMLElement[] = [];
+  private cardStates = new WeakMap<HTMLElement, CardState>();
+  private hasInteracted = false;
+  private hintDismissed = false;
+  private clickBlockUntil = 0;
+
+  // Animation State
+  private isDemoRunning = false;
+  private demoRAF: number | null = null;
+  private readonly prefersReducedMotion: boolean;
+
+  // Body scroll lock state
+  private prevBodyOverflow = '';
+  private prevBodyTouchAction = '';
+
+  constructor(stack: HTMLElement, experiences: Experience[]) {
+    this.stack = stack;
+    this.experiences = experiences;
+    this.giftBox = document.getElementById('giftBox');
+    this.selectedCardsContainer = document.getElementById('selectedCards');
+    this.dragHint = document.getElementById('dragHint');
+    this.prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  }
+
+  // ============================================================================
+  // INITIALIZATION
+  // ============================================================================
+
+  initialize(): void {
+    this.setupInitialState();
+    this.initVirtualCards();
+    
+    if (!this.prefersReducedMotion) {
+      this.scheduleWiggleAnimations();
+      this.setupVisibilityHandling();
+    }
+  }
+
+  private setupInitialState(): void {
+    this.stack.classList.remove('is-hidden');
+    
+    if (this.giftBox) {
+      this.giftBox.classList.remove('is-visible');
+      this.giftBox.classList.add('hidden');
+    }
+  }
+
+  private setupVisibilityHandling(): void {
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        this.stopAllWiggles();
+        this.cancelDemoIfAny();
+      }
+    }, { passive: true });
+  }
+
+  private initVirtualCards(): void {
+    const cardCount = Math.min(MAX_VISIBLE_CARDS, this.experiences.length);
+    
+    for (let i = 0; i < cardCount; i++) {
+      const exp = this.experiences[this.nextExpIndex++];
+      const card = this.createCard(exp);
+      this.stack.appendChild(card);
+      this.activeCards.push(card);
+      this.cardStates.set(card, CardState.IDLE);
+      this.attachDragHandlers(card);
+    }
+  }
+
+  // ============================================================================
+  // CARD CREATION & MANAGEMENT
+  // ============================================================================
+
+  private createCard(exp: Experience): HTMLElement {
+    const card = document.createElement('figure');
+    card.className = 'card card--hint-wiggle';
+    card.innerHTML = `
+      <img src="${exp.image}" alt="${exp.alt}" loading="lazy" />
+      <div class="swipe-label swipe-label--like" aria-hidden="true">Gift this!</div>
+      <div class="swipe-label swipe-label--nope" aria-hidden="true">Not today</div>
+      <figcaption>${exp.title}</figcaption>
+    `;
+    
+    const img = card.querySelector('img') as HTMLImageElement | null;
+    if (img) img.draggable = false;
+    
+    card.dataset.title = exp.title;
+    card.dataset.url = exp.url;
+    
+    this.setRandomBase(card);
+    
+    return card;
+  }
+
+  private setRandomBase(el: HTMLElement): void {
+    const randX = Math.floor(Math.random() * 9 - 4);
+    const randY = Math.floor(Math.random() * 9 - 4);
+    const randTilt = Math.floor(Math.random() * 13 - 6);
+    el.style.setProperty('--base-x', `${randX}px`);
+    el.style.setProperty('--base-y', `${randY}px`);
+    el.style.setProperty('--base-r', `${randTilt}deg`);
+  }
+
+  private getTopCard(): HTMLElement | null {
+    return this.activeCards[this.activeCards.length - 1] || null;
+  }
+
+  private getCardLabels(card: HTMLElement): CardLabels {
+    return {
+      like: card.querySelector('.swipe-label--like'),
+      nope: card.querySelector('.swipe-label--nope')
+    };
+  }
+
+  // ============================================================================
+  // DRAG HANDLING (Mobile-Optimized)
+  // ============================================================================
+
+  private attachDragHandlers(card: HTMLElement): void {
+    const dragState: DragState = {
+      active: false,
+      startX: 0,
+      startY: 0,
+      currentX: 0,
+      currentY: 0,
+      startTime: 0,
+      pointerId: null,
+      moved: false,
+      hapticTriggered: false
+    };
+
+    const labels = this.getCardLabels(card);
+
+    // Pointer Down - Start drag
+    const onPointerDown = (e: PointerEvent) => {
+      // Only allow top card to be dragged
+      if (card !== this.getTopCard()) return;
+      if (this.cardStates.get(card) !== CardState.IDLE) return;
+
+      e.preventDefault();
+
+      // Lock body scroll
+      this.lockBodyScroll();
+
+      // Cancel any running demo
+      this.cancelDemoIfAny();
+
+      // Initialize drag state
+      dragState.active = true;
+      dragState.startX = e.clientX;
+      dragState.startY = e.clientY;
+      dragState.currentX = e.clientX;
+      dragState.currentY = e.clientY;
+      dragState.startTime = performance.now();
+      dragState.pointerId = e.pointerId;
+      dragState.moved = false;
+      dragState.hapticTriggered = false;
+
+      // Capture pointer for reliable tracking
+      card.setPointerCapture(dragState.pointerId);
+
+      // Update visual state
+      card.classList.add('is-dragging');
+      card.style.transition = 'none';
+      card.style.zIndex = '10';
+      this.cardStates.set(card, CardState.DRAGGING);
+
+      // Mark as interacted
+      if (!this.hasInteracted) {
+        this.hasInteracted = true;
+        this.stopAllWiggles();
+      }
+    };
+
+    // Pointer Move - Update drag
+    const onPointerMove = (e: PointerEvent) => {
+      if (!dragState.active) return;
+
+      e.preventDefault();
+
+      dragState.currentX = e.clientX;
+      dragState.currentY = e.clientY;
+
+      const dx = dragState.currentX - dragState.startX;
+      const dy = dragState.currentY - dragState.startY;
+
+      // Check if moved beyond tolerance
+      if (!dragState.moved && (Math.abs(dx) > CLICK_TOLERANCE || Math.abs(dy) > CLICK_TOLERANCE)) {
+        dragState.moved = true;
+      }
+
+      // Update card position
+      this.updateCardTransform(card, dx, dy);
+
+      // Update label opacity
+      const intensity = clamp(Math.abs(dx) / LABEL_INTENSITY_DIVISOR, 0, 1);
+      this.updateLabelOpacity(labels, dx, intensity);
+
+      // Apply fifth card fade effect
+      this.applyFifthCardFade(card, dx);
+
+      // Trigger haptic feedback at threshold
+      if (!dragState.hapticTriggered && Math.abs(dx) > HAPTIC_THRESHOLD) {
+        dragState.hapticTriggered = true;
+        triggerHaptic(20);
+      }
+    };
+
+    // Pointer Up - End drag
+    const onPointerUp = (e: PointerEvent) => {
+      if (!dragState.active) return;
+
+      e.preventDefault();
+
+      // Release pointer capture
+      if (dragState.pointerId !== null) {
+        card.releasePointerCapture(dragState.pointerId);
+      }
+
+      // Unlock body scroll
+      this.unlockBodyScroll();
+
+      // Reset dragging state
+      dragState.active = false;
+      card.classList.remove('is-dragging');
+
+      const dx = dragState.currentX - dragState.startX;
+      const dy = dragState.currentY - dragState.startY;
+      const duration = performance.now() - dragState.startTime;
+
+      // Check if it was a click (minimal movement)
+      if (!dragState.moved || (Math.abs(dx) < CLICK_TOLERANCE && Math.abs(dy) < CLICK_TOLERANCE)) {
+        this.handleClick(card);
+        this.resetCardVisuals(card);
+        this.cardStates.set(card, CardState.IDLE);
+        return;
+      }
+
+      // Check if drag distance meets minimum
+      if (Math.abs(dx) < MIN_DRAG_DISTANCE) {
+        this.handleSnapBack(card);
+        return;
+      }
+
+      // Calculate velocity
+      const velocity = duration > 0 ? Math.abs(dx) / duration : 0;
+
+      // Determine if swipe should commit
+      const shouldCommit = Math.abs(dx) >= SWIPE_THRESHOLD || velocity >= VELOCITY_THRESHOLD;
+
+      if (shouldCommit) {
+        const dirRight = dx > 0;
+        this.handleSwipeCommit(card, dirRight, labels);
+      } else {
+        this.handleSnapBack(card);
+      }
+    };
+
+    // Pointer Cancel - Handle interruption
+    const onPointerCancel = () => {
+      if (!dragState.active) return;
+
+      dragState.active = false;
+      this.unlockBodyScroll();
+      this.handleSnapBack(card);
+    };
+
+    // Click handler
+    const onClick = (evt: Event) => {
+      // Block clicks during/after drag
+      if (dragState.moved || Date.now() < this.clickBlockUntil) {
+        evt.preventDefault();
+        evt.stopPropagation();
+      }
+    };
+
+    // Attach event listeners
+    card.addEventListener('pointerdown', onPointerDown);
+    card.addEventListener('pointermove', onPointerMove);
+    card.addEventListener('pointerup', onPointerUp);
+    card.addEventListener('pointercancel', onPointerCancel);
+    card.addEventListener('lostpointercapture', onPointerCancel);
+    card.addEventListener('click', onClick);
+  }
+
+  // ============================================================================
+  // VISUAL UPDATES
+  // ============================================================================
+
+  private updateCardTransform(card: HTMLElement, dx: number, dy: number): void {
+    const rot = dx * ROTATION_FACTOR;
+    card.style.setProperty('--drag-x', `${dx}px`);
+    card.style.setProperty('--drag-y', `${dy}px`);
+    card.style.setProperty('--drag-r', `${rot}deg`);
+  }
+
+  private clearCardTransform(card: HTMLElement): void {
+    card.style.removeProperty('--drag-x');
+    card.style.removeProperty('--drag-y');
+    card.style.removeProperty('--drag-r');
+  }
+
+  private updateLabelOpacity(labels: CardLabels, dx: number, intensity: number): void {
+    if (dx > 0) {
+      if (labels.like) labels.like.style.opacity = String(intensity);
+      if (labels.nope) labels.nope.style.opacity = '0';
+    } else if (dx < 0) {
+      if (labels.nope) labels.nope.style.opacity = String(intensity);
+      if (labels.like) labels.like.style.opacity = '0';
+    } else {
+      if (labels.like) labels.like.style.opacity = '0';
+      if (labels.nope) labels.nope.style.opacity = '0';
+    }
+  }
+
+  private resetCardVisuals(card: HTMLElement): void {
+    this.clearCardTransform(card);
+    card.style.transition = '';
+    card.style.zIndex = '';
+    const labels = this.getCardLabels(card);
+    if (labels.like) labels.like.style.opacity = '0';
+    if (labels.nope) labels.nope.style.opacity = '0';
+  }
+
+  private applyFifthCardFade(draggedCard: HTMLElement, dx: number): void {
+    if (this.likedExperiences.length !== 4) return;
+    
+    if (dx <= 0) {
+      this.resetStackOpacity(draggedCard);
+      return;
+    }
+    
+    const cardWidth = draggedCard.getBoundingClientRect().width;
+    const fullFadeAt = SWIPE_THRESHOLD + cardWidth * FIFTH_CARD_FADE_MULTIPLIER;
+    const fadeProgress = clamp(dx / fullFadeAt, 0, 1);
+    this.updateStackOpacity(draggedCard, fadeProgress);
+  }
+
+  private updateStackOpacity(excludeCard: HTMLElement, fadeProgress: number): void {
+    this.activeCards
+      .filter(c => c !== excludeCard)
+      .forEach(c => {
+        c.style.opacity = String(1 - fadeProgress);
+      });
+  }
+
+  private resetStackOpacity(excludeCard: HTMLElement): void {
+    this.activeCards
+      .filter(c => c !== excludeCard)
+      .forEach(c => {
+        c.style.opacity = '';
+      });
+  }
+
+  // ============================================================================
+  // SWIPE ACTIONS
+  // ============================================================================
+
+  private handleSwipeCommit(card: HTMLElement, dirRight: boolean, labels: CardLabels): void {
+    this.cardStates.set(card, CardState.FLYING_OUT);
+    
+    // Apply transition with reflow to ensure it takes effect
+    const flyOutDuration = FLY_OUT_DURATION / 1000; // Convert to seconds
+    card.style.transition = `transform ${flyOutDuration}s ease-in, opacity ${flyOutDuration}s ease-in`;
+    card.style.zIndex = '99';
+    void card.offsetWidth; // Force reflow
+
+    // Handle like/nope action
+    if (dirRight) {
+      this.handleLikeAction(card, labels);
+    } else {
+      this.handleNopeAction(labels);
+    }
+
+    // Dismiss hint
+    if (!this.hintDismissed) {
+      this.dragHint?.classList.add('drag-hint--fade');
+      this.hintDismissed = true;
+    }
+
+    // Apply fly-out class
+    card.classList.add(dirRight ? 'fly-out-right' : 'fly-out-left');
+
+    // Handle completion
+    let cleaned = false;
+    const handleEnd = () => {
+      if (cleaned) return;
+      cleaned = true;
+      card.removeEventListener('transitionend', handleEnd);
+      this.cleanupSwipedCard(card, dirRight);
+    };
+    
+    card.addEventListener('transitionend', handleEnd, { once: true });
+    
+    // Safety timeout
+    setTimeout(() => handleEnd(), FLY_OUT_DURATION + 100);
+  }
+
+  private handleSnapBack(card: HTMLElement): void {
+    this.cardStates.set(card, CardState.SNAPPING_BACK);
+    
+    card.classList.add('snap-back');
+    this.clearCardTransform(card);
+    this.resetStackOpacity(card);
+    
+    const labels = this.getCardLabels(card);
+    if (labels.like) labels.like.style.opacity = '0';
+    if (labels.nope) labels.nope.style.opacity = '0';
+
+    let cleaned = false;
+    const handleBack = () => {
+      if (cleaned) return;
+      cleaned = true;
+      card.classList.remove('snap-back');
+      card.style.transition = '';
+      card.style.zIndex = '';
+      card.removeEventListener('transitionend', handleBack);
+      
+      // Haptic bounce feedback
+      card.classList.add('haptic-bounce');
+      setTimeout(() => card.classList.remove('haptic-bounce'), 200);
+      
+      this.cardStates.set(card, CardState.IDLE);
+    };
+    
+    card.addEventListener('transitionend', handleBack, { once: true });
+    
+    // Safety timeout (snap-back duration is 220ms in CSS)
+    setTimeout(() => handleBack(), 320);
+  }
+
+  private handleClick(card: HTMLElement): void {
+    // Block subsequent clicks
+    this.clickBlockUntil = Date.now() + CLICK_BLOCK_DURATION;
+    
+    // Open URL
+    const url = card.dataset.url || DEFAULT_URL;
+    openInNewTab(url);
+  }
+
+  private handleLikeAction(card: HTMLElement, labels: CardLabels): void {
+    const title = card.dataset.title || '';
+    const url = card.dataset.url || '';
+    const imgEl = card.querySelector('img');
+    const image = imgEl ? imgEl.src : '';
+    
+    this.likedExperiences.push({ title, image, url });
+
+    if (!this.prefersReducedMotion) {
+      this.showCountNumber(this.likedExperiences.length);
+    }
+
+    if (labels.like) {
+      labels.like.style.opacity = '1';
+      labels.like.classList.add('shake-right');
+      setTimeout(() => labels.like?.classList.remove('shake-right'), 220);
+    }
+  }
+
+  private handleNopeAction(labels: CardLabels): void {
+    if (labels.nope) {
+      labels.nope.style.opacity = '1';
+      labels.nope.classList.add('shake-left');
+      setTimeout(() => labels.nope?.classList.remove('shake-left'), 220);
+    }
+  }
+
+  // ============================================================================
+  // CARD LIFECYCLE
+  // ============================================================================
+
+  private cleanupSwipedCard(card: HTMLElement, dirRight: boolean): void {
+    this.cardStates.set(card, CardState.REMOVED);
+    card.classList.remove('fly-out-right', 'fly-out-left');
+    this.resetCardVisuals(card);
+
+    // Check if max selections reached
+    if (this.likedExperiences.length >= MAX_SELECTIONS) {
+      this.showGiftBox();
+      return;
+    }
+
+    // Remove from active cards
+    const topIdx = this.activeCards.indexOf(card);
+    if (topIdx > -1) {
+      this.activeCards.splice(topIdx, 1);
+    }
+
+    // Recycle or remove card
+    if (this.nextExpIndex < this.experiences.length) {
+      this.recycleCard(card);
+    } else {
+      card.remove();
+    }
+
+    // Apply dribble effect for likes
+    if (dirRight) {
+      this.applyDribbleEffect();
+    }
+  }
+
+  private recycleCard(card: HTMLElement): void {
+    const nextExp = this.experiences[this.nextExpIndex++];
+    
+    // Update card content
+    const img = card.querySelector('img') as HTMLImageElement;
+    const caption = card.querySelector('figcaption') as HTMLElement;
+    img.src = nextExp.image;
+    img.alt = nextExp.alt;
+    caption.textContent = nextExp.title;
+    card.dataset.title = nextExp.title;
+    card.dataset.url = nextExp.url;
+    
+    // Reset visual state
+    this.resetCardVisuals(card);
+    this.setRandomBase(card);
+    
+    // Insert at bottom of stack
+    this.stack.insertBefore(card, this.stack.firstChild);
+    this.activeCards.unshift(card);
+    this.cardStates.set(card, CardState.IDLE);
+
+    // Animate other cards
+    const others = this.activeCards.slice(0, -1);
+    others.forEach(c => c.classList.add('base-animate'));
+    this.setRandomBase(this.activeCards[0]);
+    setTimeout(() => {
+      others.forEach(c => c.classList.remove('base-animate'));
+    }, 240);
+  }
+
+  private applyDribbleEffect(): void {
+    setTimeout(() => {
+      const others = this.activeCards.slice(0, -1);
+      others.forEach((c, idx) => {
+        const randomDelay = Math.random() * 80;
+        setTimeout(() => {
+          c.classList.add('dribble');
+          setTimeout(() => c.classList.remove('dribble'), 320);
+        }, idx * 60 + randomDelay);
+      });
+    }, 200);
+  }
+
+  // ============================================================================
+  // BODY SCROLL LOCK
+  // ============================================================================
+
+  private lockBodyScroll(): void {
+    this.prevBodyOverflow = document.body.style.overflow;
+    this.prevBodyTouchAction = document.body.style.touchAction;
+    document.body.style.overflow = 'hidden';
+    document.body.style.touchAction = 'none';
+  }
+
+  private unlockBodyScroll(): void {
+    document.body.style.overflow = this.prevBodyOverflow;
+    document.body.style.touchAction = this.prevBodyTouchAction;
+  }
+
+  // ============================================================================
+  // IDLE ANIMATIONS
+  // ============================================================================
+
+  private scheduleWiggleAnimations(): void {
+    setTimeout(() => {
+      if (!this.hasInteracted) this.startIdleWiggleDemoLoop();
+    }, WIGGLE_INITIAL_DELAY);
+  }
+
+  private async startIdleWiggleDemoLoop(): Promise<void> {
+    while (!this.hasInteracted) {
+      if (document.hidden) {
+        await this.sleep(300);
+        continue;
+      }
+      
+      this.triggerWiggle();
+      await this.sleep(WIGGLE_ANIMATION_DURATION);
+
+      if (this.hasInteracted || document.hidden) continue;
+      await this.sleep(WIGGLE_GAP_BETWEEN);
+
+      if (this.hasInteracted || document.hidden) continue;
+      await this.demoTopCardDragOnce();
+      
+      if (this.hasInteracted || document.hidden) continue;
+      await this.sleep(WIGGLE_GAP_BETWEEN);
+    }
+  }
+
+  private triggerWiggle(): void {
+    if (this.hasInteracted || document.hidden) return;
+    
+    this.activeCards.forEach((card, i) => {
+      card.style.setProperty('--wiggle-delay', `${1 + i * 0.3}s`);
+      if (!card.classList.contains('card--hint-wiggle')) {
+        card.classList.add('card--hint-wiggle');
+      } else {
+        card.classList.remove('card--hint-wiggle');
+        void card.offsetWidth;
+        card.classList.add('card--hint-wiggle');
+      }
+    });
+  }
+
+  private stopAllWiggles(): void {
+    this.activeCards.forEach(card => {
+      card.classList.remove('card--hint-wiggle');
+      card.style.animation = 'none';
+    });
+  }
+
+  private cancelDemoIfAny(): void {
+    if (!this.isDemoRunning) return;
+    
+    this.isDemoRunning = false;
+    if (this.demoRAF) cancelAnimationFrame(this.demoRAF);
+    this.demoRAF = null;
+    
+    const topCard = this.getTopCard();
+    if (topCard) {
+      this.clearCardTransform(topCard);
+      const labels = this.getCardLabels(topCard);
+      if (labels.like) labels.like.style.opacity = '0';
+      if (labels.nope) labels.nope.style.opacity = '0';
+    }
+  }
+
+  private demoTopCardDragOnce(): Promise<void> {
+    return new Promise<void>((resolve) => {
+      if (this.hasInteracted || this.isDemoRunning) return resolve();
+      
+      const card = this.getTopCard();
+      if (!card) return resolve();
+
+      this.isDemoRunning = true;
+      card.classList.remove('card--hint-wiggle');
+      void card.offsetWidth;
+
+      const labels = this.getCardLabels(card);
+      const autoThreshold = isMobileQuery.matches ? AUTO_DEMO_THRESHOLD / 2 : AUTO_DEMO_THRESHOLD;
+      const start = performance.now();
+
+      const step = (now: number) => {
+        if (this.hasInteracted) {
+          this.isDemoRunning = false;
+          this.demoRAF = null;
+          return resolve();
+        }
+        
+        const elapsed = now - start;
+        const progress = Math.min(1, elapsed / DEMO_ANIMATION_DURATION);
+
+        let dx = 0;
+        let dy = 0;
+
+        if (progress < 0.33) {
+          const phaseProgress = easeInOutCubic(progress / 0.33);
+          dx = -autoThreshold * phaseProgress;
+          dy = -Math.abs(Math.sin(phaseProgress * Math.PI)) * 15;
+        } else if (progress < 0.66) {
+          const phaseProgress = easeInOutCubic((progress - 0.33) / 0.33);
+          dx = -autoThreshold + (2 * autoThreshold * phaseProgress);
+          dy = -Math.abs(Math.sin(phaseProgress * Math.PI)) * 15;
+        } else {
+          const phaseProgress = easeInOutCubic((progress - 0.66) / 0.34);
+          dx = autoThreshold * (1 - phaseProgress);
+          dy = -Math.abs(Math.sin(phaseProgress * Math.PI)) * 10;
+        }
+
+        this.updateCardTransform(card, dx, dy);
+        const intensity = clamp(Math.abs(dx) / LABEL_INTENSITY_DIVISOR, 0, 1);
+        this.updateLabelOpacity(labels, dx, intensity);
+
+        if (progress < 1) {
+          this.demoRAF = requestAnimationFrame(step);
+        } else {
+          this.clearCardTransform(card);
+          if (labels.like) labels.like.style.opacity = '0';
+          if (labels.nope) labels.nope.style.opacity = '0';
+          this.isDemoRunning = false;
+          this.demoRAF = null;
+          resolve();
+        }
+      };
+
+      this.demoRAF = requestAnimationFrame(step);
+    });
+  }
+
+  private sleep(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  // ============================================================================
+  // GIFT BOX
+  // ============================================================================
+
+  private showGiftBox(): void {
+    if (this.stack) {
+      this.stack.classList.add('is-hidden');
+      setTimeout(() => {
+        this.activeCards.splice(0).forEach(node => node.remove());
+      }, 400);
+    }
+    
+    if (this.giftBox) {
+      this.giftBox.classList.remove('hidden');
+      this.giftBox.classList.add('is-visible');
+    }
+    
+    this.dragHint?.classList.add('drag-hint--fade');
+    this.stopAllWiggles();
+    this.cancelDemoIfAny();
+    
+    if (!this.prefersReducedMotion && this.giftBox) {
+      this.fireConfetti(this.giftBox);
+    }
+    
+    this.populateMiniCards();
+    
+    if (this.giftBox) {
+      this.giftBox.setAttribute('tabindex', '-1');
+      this.giftBox.focus({ preventScroll: true });
+    }
+  }
+
+  private populateMiniCards(): void {
+    if (!this.selectedCardsContainer) return;
+    
+    this.likedExperiences.forEach(exp => {
+      const mini = document.createElement('div');
+      mini.className = 'gift-box__card-mini';
+      mini.innerHTML = `<img src="${exp.image}" alt="${exp.title}" />`;
+      mini.title = exp.title;
+      mini.style.cursor = 'pointer';
+      mini.addEventListener('click', () => openInNewTab(exp.url));
+      this.selectedCardsContainer!.appendChild(mini);
+    });
+  }
+
+  // ============================================================================
+  // CONFETTI
+  // ============================================================================
+
+  private getStackBandCenter(): { x: number; y: number } {
+    const stackRect = this.stack.getBoundingClientRect();
+    const stackCenterX = stackRect.left + stackRect.width / 2;
+    const stackCenterY = stackRect.top + stackRect.height / 2;
+
+    const bandWidth = stackRect.width * 0.35;
+    const bandHeight = stackRect.height * 0.55;
+    const bandX1 = stackCenterX + stackRect.width * 0.05;
+    const bandX2 = stackCenterX + bandWidth;
+    const bandY1 = stackCenterY - bandHeight / 2;
+    const bandY2 = stackCenterY + bandHeight / 2;
+
+    return {
+      x: (bandX1 + bandX2) / 2,
+      y: (bandY1 + bandY2) / 2
+    };
+  }
+
+  private showCountNumber(countNumber: number): void {
+    const { x: centerX, y: centerY } = this.getStackBandCenter();
+    const num = document.createElement('div');
+    num.className = 'confetti-number';
+    num.textContent = String(countNumber);
+    
+    const dx = 140 + Math.random() * 100;
+    const dy = -(60 + Math.random() * 80);
+    const rot = Math.floor(Math.random() * 40 - 20);
+    
+    num.style.left = `${centerX}px`;
+    num.style.top = `${centerY}px`;
+    num.style.setProperty('--dx', `${dx}px`);
+    num.style.setProperty('--dy', `${dy}px`);
+    num.style.setProperty('--rot', `${rot}deg`);
+    num.style.setProperty('--dur', '1400ms');
+    num.style.setProperty('--delay', '0ms');
+    
+    document.body.appendChild(num);
+    num.addEventListener('animationend', () => num.remove(), { once: true });
+  }
+
+  private fireConfetti(targetElement: HTMLElement): void {
+    const { x: centerX, y: centerY } = getElementCenter(targetElement);
+
+    const emit = () => {
+      for (let i = 0; i < SUCCESS_CONFETTI_PARTICLES_PER_BURST; i++) {
+        const isEmoji = Math.random() < 0.15;
+        const angle = Math.random() * Math.PI * 2;
+        const distance = SUCCESS_CONFETTI_RADIUS.min + 
+                        Math.random() * (SUCCESS_CONFETTI_RADIUS.max - SUCCESS_CONFETTI_RADIUS.min);
+        const dx = Math.cos(angle) * distance;
+        const dy = Math.sin(angle) * distance;
+
+        if (isEmoji) {
+          const em = createConfettiEmoji(centerX, centerY, dx, dy, LIKE_EMOJIS);
+          em.style.setProperty('--emojiSize', `${20 + Math.random() * 10}px`);
+          document.body.appendChild(em);
+          em.addEventListener('animationend', () => em.remove(), { once: true });
+        } else {
+          const piece = createConfettiParticle(centerX, centerY, dx, dy);
+          document.body.appendChild(piece);
+          piece.addEventListener('animationend', () => piece.remove(), { once: true });
+        }
+      }
+    };
+
+    for (let b = 0; b < SUCCESS_CONFETTI_BURSTS; b++) {
+      setTimeout(emit, b * 100);
+    }
+  }
 }

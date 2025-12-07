@@ -25,42 +25,25 @@ const togglePageClass = (className: string, duration: number) => {
 const animateCards = (
   animationClass: string,
   animationDuration: number,
-  animationName: string,
   stackDelay: number,
   carouselDelay: number
 ) => {
   const stackCards = document.querySelectorAll<HTMLElement>('.card-stack .card');
   const carouselCards = document.querySelectorAll<HTMLElement>('.xp-card');
   const giftMinis = document.querySelectorAll<HTMLElement>('.gift-box__card-mini');
-  
-  // Animate swipeable stack cards
-  stackCards.forEach((card, idx) => {
-    setTimeout(() => {
-      card.classList.add(animationClass);
-      setTimeout(() => card.classList.remove(animationClass), animationDuration);
-    }, idx * stackDelay);
-  });
-  
-  // Animate gift box mini-cards the same way as stack cards
-  giftMinis.forEach((mini, idx) => {
-    setTimeout(() => {
-      mini.classList.add(animationClass);
-      setTimeout(() => mini.classList.remove(animationClass), animationDuration);
-    }, idx * stackDelay);
-  });
-  
-  // Animate carousel cards via keyframes
-  carouselCards.forEach((card, idx) => {
-    setTimeout(() => {
-      card.style.animation = 'none';
-      // Force reflow
-      void card.offsetHeight;
-      card.style.animation = `${animationName} ${animationDuration}ms cubic-bezier(0.4, 0.0, 0.2, 1) forwards`;
+
+  const runAnimation = (elements: Iterable<HTMLElement>, delay: number) => {
+    Array.from(elements).forEach((el, idx) => {
       setTimeout(() => {
-        card.style.animation = '';
-      }, animationDuration);
-    }, idx * carouselDelay);
-  });
+        el.classList.add(animationClass);
+        setTimeout(() => el.classList.remove(animationClass), animationDuration);
+      }, idx * delay);
+    });
+  };
+
+  runAnimation(stackCards, stackDelay);
+  runAnimation(giftMinis, stackDelay);
+  runAnimation(carouselCards, carouselDelay);
 };
 
 const triggerRainbowWave = () => {
@@ -71,7 +54,6 @@ const triggerDancingCards = () => {
   animateCards(
     'card--dancing',
     EASTER_EGG_DURATIONS.CARD_ANIMATION,
-    'card-dance',
     EASTER_EGG_DELAYS.STACK_CARD_STAGGER,
     EASTER_EGG_DELAYS.CAROUSEL_CARD_STAGGER_DANCE
   );
@@ -85,7 +67,6 @@ const triggerTumblingCards = () => {
   animateCards(
     'card--tumbling',
     EASTER_EGG_DURATIONS.CARD_ANIMATION,
-    'card-tumble',
     EASTER_EGG_DELAYS.STACK_CARD_STAGGER,
     EASTER_EGG_DELAYS.CAROUSEL_CARD_STAGGER_TUMBLE
   );
