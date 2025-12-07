@@ -606,8 +606,9 @@ class CardStack {
     }
     demoTopCardDragOnce() {
         return new Promise((resolve) => {
-            if (this.hasInteracted || this.isDemoRunning)
+            if (this.hasInteracted || this.isDemoRunning || isMobileQuery.matches) {
                 return resolve();
+            }
             const card = this.getTopCard();
             if (!card)
                 return resolve();

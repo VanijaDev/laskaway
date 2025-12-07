@@ -749,7 +749,9 @@ class CardStack {
 
   private demoTopCardDragOnce(): Promise<void> {
     return new Promise<void>((resolve) => {
-      if (this.hasInteracted || this.isDemoRunning) return resolve();
+      if (this.hasInteracted || this.isDemoRunning || isMobileQuery.matches) {
+        return resolve();
+      }
       
       const card = this.getTopCard();
       if (!card) return resolve();
