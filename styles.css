@@ -167,17 +167,7 @@ body {
 /* Hidden card (kept in DOM but not visible) */
 .card.card--invisible { display: none; }
 
-/* Desktop hover preview */
-@media (hover: hover) and (pointer: fine) {
-  .card:hover:not(.is-dragging) {
-    transform: translate(calc(var(--base-x, 0px)), calc(var(--base-y, 0px) - 8px)) rotate(var(--base-r, 0deg)) scale(1.02);
-    box-shadow: 0 16px 40px rgba(0,0,0,0.16);
-    cursor: grab;
-  }
-}
-
-.card img { width: 100%; height: 100%; object-fit: cover; filter: saturate(1.05) contrast(1.05); -webkit-user-drag: none; user-select: none; transition: transform 0.27s ease; }
-.card:hover img { transform: scale(1.1); }
+.card img { width: 100%; height: 100%; object-fit: cover; filter: saturate(1.05) contrast(1.05); -webkit-user-drag: none; user-select: none; transition: transform 0.27s ease; transform: none; }
 .card.is-dragging img { transform: none; transition: none; }
 .card figcaption {
   position: absolute; left: 14px; bottom: 14px; padding: 8px 12px; border-radius: 999px;
