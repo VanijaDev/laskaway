@@ -567,7 +567,6 @@ class CardStack {
 
     if (!this.prefersReducedMotion) {
       this.showCountNumber(this.likedExperiences.length);
-      this.createLikeEmojiConfetti(card);
     }
 
     if (labels.like) {
@@ -902,33 +901,6 @@ class CardStack {
     
     document.body.appendChild(num);
     num.addEventListener('animationend', () => num.remove(), { once: true });
-  }
-
-  private createLikeEmojiConfetti(card: HTMLElement): void {
-    const { x: cx, y: cy } = getElementCenter(card);
-    
-    for (let i = 0; i < 4; i++) {
-      const emoji = LIKE_EMOJIS[Math.floor(Math.random() * LIKE_EMOJIS.length)];
-      const emojiEl = document.createElement('div');
-      emojiEl.className = 'confetti-emoji';
-      emojiEl.textContent = emoji;
-      
-      const angle = Math.random() * Math.PI * 2;
-      const dist = 60 + Math.random() * 60;
-      const emDx = Math.cos(angle) * dist;
-      const emDy = Math.sin(angle) * dist;
-      
-      emojiEl.style.left = `${cx}px`;
-      emojiEl.style.top = `${cy}px`;
-      emojiEl.style.setProperty('--dx', `${emDx}px`);
-      emojiEl.style.setProperty('--dy', `${emDy}px`);
-      emojiEl.style.setProperty('--dur', `${900 + Math.random() * 300}ms`);
-      emojiEl.style.setProperty('--delay', `${i * 40}ms`);
-      emojiEl.style.setProperty('--emojiSize', `${24 + Math.random() * 8}px`);
-      
-      document.body.appendChild(emojiEl);
-      emojiEl.addEventListener('animationend', () => emojiEl.remove(), { once: true });
-    }
   }
 
   private fireConfetti(targetElement: HTMLElement): void {
