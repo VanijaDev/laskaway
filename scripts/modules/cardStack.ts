@@ -1,7 +1,7 @@
 /* Card Stack Module - Tinder-like swipeable card stack (Refactored) */
 
-import type { Experience } from '../types';
-import { openInNewTab, triggerHaptic } from '../utils.js';
+import type { Experience } from '../../types';
+import { openInNewTab, triggerHaptic } from '../../utils.js';
 
 // ============================================================================
 // CONSTANTS

@@ -1,54 +1,45 @@
 /* Main Application Entry Point */
 import { disableNativeImageDrag } from '../utils.js';
-import { initializeCardStack } from './cardStack.js';
-import { initializeCarousel } from './carousel.js';
-import { initializeEasterEgg } from './easterEgg.js';
-// Load HTML component
-async function loadComponent(elementId, componentPath) {
-    const container = document.getElementById(elementId);
-    if (!container)
-        return;
+import { initializeCardStack } from './modules/cardStack.js';
+import { initializeCarousel } from './modules/carousel.js';
+import { initializeEasterEgg } from './modules/easterEgg.js';
+import { loadComponent, loadComponents } from './services/componentLoader.js';
+import { fetchExperiences, shuffleExperiences } from './services/experienceService.js';
+const HERO_CONTENT_COMPONENT = {
+    hostId: 'heroContent',
+    url: './html_components/hero-waitinglist-subscription.html',
+};
+const STATIC_COMPONENTS = [
+    { hostId: 'experiencesCarousel', url: './html_components/experiences-carousel.html' },
+    { hostId: 'footerContent', url: './html_components/footer.html' },
+];
+const HERO_STACK_COMPONENT = {
+    hostId: 'heroVisual',
+    url: './html_components/hero-card-stack.html',
+};
+async function bootstrapApplication() {
     try {
-        const response = await fetch(componentPath);
-        if (!response.ok)
-            throw new Error(`Failed to load ${componentPath}`);
-        const html = await response.text();
-        container.innerHTML = html;
+        // Ensure hero shell exists before injecting the stack markup
+        await loadComponent(HERO_CONTENT_COMPONENT);
+        const [experiences] = await Promise.all([
+            fetchExperiences(),
+            loadComponents(STATIC_COMPONENTS),
+            loadComponent(HERO_STACK_COMPONENT),
+        ]);
+        if (!experiences.length) {
+            console.warn('No experiences available — skipping interactive modules.');
+            return;
+        }
+        const preparedExperiences = shuffleExperiences(experiences);
+        initializeCardStack(preparedExperiences);
+        initializeCarousel(preparedExperiences);
+        initializeEasterEgg();
+        disableNativeImageDrag('.card img, .xp-card img');
     }
     catch (error) {
-        console.error('Component loading error:', error);
+        console.error('App initialization failed:', error);
     }
 }
-// Load experiences data
-async function loadExperiences() {
-    try {
-        const response = await fetch('./data/experiences.json');
-        if (!response.ok)
-            throw new Error('Failed to load experiences data');
-        return await response.json();
-    }
-    catch (error) {
-        console.error('Experiences data loading error:', error);
-        return [];
-    }
-}
-document.addEventListener('DOMContentLoaded', async () => {
-    // Load experiences data first
-    const experiences = await loadExperiences();
-    // Randomize experience order on each page load
-    const shuffledExperiences = experiences.sort(() => Math.random() - 0.5);
-    // Load all components in parallel
-    await Promise.all([
-        loadComponent('heroContent', './html_components/hero-waitinglist-subscription.html'),
-        loadComponent('experiencesCarousel', './html_components/experiences-carousel.html'),
-        loadComponent('footerContent', './html_components/footer.html')
-    ]);
-    // Load card stack component
-    await loadComponent('heroVisual', './html_components/hero-card-stack.html');
-    // Initialize modules
-    initializeCardStack(shuffledExperiences);
-    initializeCarousel(shuffledExperiences);
-    initializeEasterEgg();
-    // Disable native image dragging once DOM nodes exist
-    disableNativeImageDrag('.card img, .xp-card img');
+document.addEventListener('DOMContentLoaded', () => {
+    void bootstrapApplication();
 });

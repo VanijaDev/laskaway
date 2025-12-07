@@ -323,38 +323,6 @@ body {
   50% { transform: translateY(-8px); }
 }
 
-/* Loading skeleton */
-.card-skeleton {
-  position: absolute;
-  inset: 0;
-}
-.card-skeleton.hidden {
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
-}
-.skeleton-card {
-  position: absolute;
-  inset: 0;
-  border-radius: 22px;
-  background: linear-gradient(90deg, #e5eaf5 25%, #f0f3f9 50%, #e5eaf5 75%);
-  background-size: 200% 100%;
-  animation: skeleton-shimmer 1.5s ease-in-out infinite;
-  border: 1px solid var(--border);
-}
-.skeleton-card--mid {
-  transform: translate(16px, -6px) rotate(4deg);
-  opacity: 0.7;
-}
-.skeleton-card--back {
-  transform: translate(-12px, 10px) rotate(-5deg);
-  opacity: 0.5;
-}
-@keyframes skeleton-shimmer {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
-}
-
 /* Drag hint below card stack */
 .drag-hint {
   position: absolute;
@@ -393,36 +361,6 @@ body {
 }
 
 
-/* Lightweight confetti */
-.confetti-piece {
-  position: fixed;
-  width: 12px; height: 12px; border-radius: 3px;
-  pointer-events: none; opacity: 1; will-change: transform, opacity;
-  animation: confetti-pop var(--dur, 900ms) cubic-bezier(.2,.8,.2,1) forwards;
-  animation-delay: var(--delay, 0ms);
-  filter: drop-shadow(0 2px 2px rgba(0,0,0,.12));
-  z-index: 9999;
-}
-@keyframes confetti-pop {
-  0% { transform: translate(0, 0) rotate(0deg) scale(var(--scale, 1)); opacity: 1; }
-  60% { transform: translate(calc(var(--dx, 0px) * .6), calc(var(--dy, -160px) * .6)) rotate(var(--rot, 0deg)) scale(var(--scale, 1)); opacity: 1; }
-  100% { transform: translate(var(--dx, 0px), var(--dy, -160px)) rotate(var(--rot, 0deg)) scale(var(--scale, 1)); opacity: 0; }
-}
-
-/* Emoji sparkles */
-.confetti-emoji {
-  position: fixed;
-  pointer-events: none; will-change: transform, opacity;
-  font-size: var(--emojiSize, 18px);
-  animation: confetti-emoji var(--dur, 1000ms) cubic-bezier(.2,.8,.2,1) forwards;
-  animation-delay: var(--delay, 0ms);
-  z-index: 9999;
-}
-@keyframes confetti-emoji {
-  0% { transform: translate(0, 0) scale(1); opacity: 1; }
-  70% { transform: translate(calc(var(--dx, 0px) * .7), calc(var(--dy, -180px) * .7)) rotate(6deg) scale(1.1); opacity: 1; }
-  100% { transform: translate(var(--dx, 0px), var(--dy, -180px)) rotate(12deg) scale(1); opacity: 0; }
-}
 
 /* Confetti number */
 .confetti-number {
@@ -449,21 +387,6 @@ body {
   15% { opacity: 0.85; }
   60% { transform: translate(calc(var(--dx, 0px) * .5), calc(var(--dy, -120px) * .5)) scale(1.2) rotate(var(--rot, 15deg)); opacity: 0.85; }
   100% { transform: translate(var(--dx, 0px), var(--dy, -160px)) scale(0.8) rotate(var(--rot, 30deg)); opacity: 0; }
-}
-
-/* (removed confetti ring; not used by JS) */
-
-/* Left-swipe vacuum suck effect */
-.confetti-suck {
-  position: fixed;
-  width: 8px; height: 8px; border-radius: 2px;
-  pointer-events: none;
-  will-change: transform, opacity;
-  animation: confetti-suck 420ms cubic-bezier(.3,.9,.3,1) forwards;
-}
-@keyframes confetti-suck {
-  0% { transform: translate(0,0) scale(1); opacity: .7; filter: none; }
-  100% { transform: translate(var(--toX, -200px), var(--toY, 0px)) scale(.3) rotate(-18deg); opacity: 0; filter: blur(1px); }
 }
 
 /* Experiences scroller */

@@ -1,5 +1,5 @@
 /* Carousel Module - Virtual scrolling infinite carousel */
-import { openInNewTab } from '../utils.js';
+import { openInNewTab } from '../../utils.js';
 // Constants
 const CARD_WIDTH = 340;
 const GAP = 32;
@@ -9,14 +9,11 @@ const VISIBLE_BUFFER = 2;
 const MAX_DELTA_TIME = 0.1;
 const TRACK_HEIGHT = '220px';
 const DEFAULT_URL = 'https://www.google.com';
-// Module state
-let filteredExperiences = [];
 // Initialize carousel with virtual scrolling
 export function initializeCarousel(experiences) {
-    filteredExperiences = [...experiences];
     const track = document.querySelector('.scroller__track');
     const scroller = document.querySelector('.scroller');
-    if (!track || !scroller || filteredExperiences.length === 0)
+    if (!track || !scroller || experiences.length === 0)
         return;
     const carousel = new VirtualCarousel(track, scroller, experiences);
     carousel.initialize();
@@ -40,7 +37,7 @@ class VirtualCarousel {
             let deltaTime = (timestamp - this.lastTimestamp) / 1000;
             deltaTime = Math.min(deltaTime, MAX_DELTA_TIME);
             this.lastTimestamp = timestamp;
-            if (!this.isAutoScrollPaused && deltaTime > 0 && filteredExperiences.length > 0) {
+            if (!this.isAutoScrollPaused && deltaTime > 0 && this.filteredExperiences.length > 0) {
                 this.scrollPosition += SCROLL_SPEED_PX_PER_SEC * deltaTime;
                 this.updateVisibleCards();
             }
@@ -51,6 +48,7 @@ class VirtualCarousel {
         this.track = track;
         this.scroller = scroller;
         this.experiences = experiences;
+        this.filteredExperiences = [...experiences];
         this.isDesktopHover = window.matchMedia('(hover: hover)').matches;
     }
     initialize() {
@@ -123,7 +121,10 @@ class VirtualCarousel {
         this.attachCardHandlers(card);
     }
     getExperienceIndex(virtualIndex) {
-        return ((virtualIndex % filteredExperiences.length) + filteredExperiences.length) % filteredExperiences.length;
+        if (this.filteredExperiences.length === 0)
+            return 0;
+        const length = this.filteredExperiences.length;
+        return ((virtualIndex % length) + length) % length;
     }
     calculateVisibleRange() {
         const viewportWidth = this.scroller.getBoundingClientRect().width;
@@ -150,10 +151,10 @@ class VirtualCarousel {
     }
     addNewVisibleCards(neededIndices) {
         neededIndices.forEach(virtualIndex => {
-            if (this.activeCards.has(virtualIndex))
+            if (this.activeCards.has(virtualIndex) || this.filteredExperiences.length === 0)
                 return;
             const expIndex = this.getExperienceIndex(virtualIndex);
-            const exp = filteredExperiences[expIndex];
+            const exp = this.filteredExperiences[expIndex];
             const card = this.getOrCreateCard();
             this.updateCardContent(card, exp, virtualIndex);
             const left = virtualIndex * ITEM_WIDTH - this.scrollPosition;
@@ -164,7 +165,7 @@ class VirtualCarousel {
         });
     }
     updateVisibleCards() {
-        if (filteredExperiences.length === 0) {
+        if (this.filteredExperiences.length === 0) {
             this.activeCards.forEach(card => this.recycleCard(card));
             this.activeCards.clear();
             return;
@@ -188,10 +189,10 @@ class VirtualCarousel {
     }
     applyFilter(tag) {
         if (tag === 'all') {
-            filteredExperiences = [...this.experiences];
+            this.filteredExperiences = [...this.experiences];
         }
         else {
-            filteredExperiences = this.experiences.filter(exp => exp.tags.some(t => t.toLowerCase() === tag.toLowerCase()));
+            this.filteredExperiences = this.experiences.filter(exp => exp.tags.some(t => t.toLowerCase() === tag.toLowerCase()));
         }
         this.activeCards.forEach(card => this.recycleCard(card));
         this.activeCards.clear();
