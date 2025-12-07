@@ -402,105 +402,112 @@ export class CardStack {
     // ========================================================================
     createPack() {
         console.log('Pack created with experiences:', this.likedCards);
-        // Trigger confetti effect
-        this.showConfetti();
-        // Replace card stack with gift pack
-        this.renderGiftPack();
+        // Fade out card stack first
+        this.container.style.transition = 'opacity 0.3s ease';
+        this.container.style.opacity = '0';
+        // Show confetti immediately
+        setTimeout(() => {
+            this.showGiftPackConfetti();
+        }, 300);
+        // Show gift pack 400ms after confetti starts
+        setTimeout(() => {
+            this.renderGiftPack();
+        }, 700);
     }
-    showConfetti() {
-        const count = 150;
+    showGiftPackConfetti() {
+        if (typeof window.confetti !== 'function')
+            return;
+        // Calculate center position of card stack
+        const cardStackRect = this.container.getBoundingClientRect();
+        const originX = (cardStackRect.left + cardStackRect.width / 2) / window.innerWidth;
+        const originY = (cardStackRect.top + cardStackRect.height / 2) / window.innerHeight;
+        const count = 300; // 2x more particles for density
         const defaults = {
-            origin: { y: 0.7 },
-            zIndex: 9999
+            origin: { x: originX, y: originY },
+            zIndex: 9999,
+            colors: ['#9D4EDD', '#FF6B9D', '#FFA07A', '#FFD700', '#FF1493']
         };
         function fire(particleRatio, opts) {
             window.confetti(Object.assign({}, defaults, opts, {
                 particleCount: Math.floor(count * particleRatio)
             }));
         }
-        // Check if confetti is available
-        if (typeof window.confetti === 'function') {
-            fire(0.25, {
-                spread: 26,
-                startVelocity: 55,
-            });
-            fire(0.2, {
-                spread: 60,
-            });
-            fire(0.35, {
-                spread: 100,
-                decay: 0.91,
-                scalar: 0.8
-            });
-            fire(0.1, {
-                spread: 120,
-                startVelocity: 25,
-                decay: 0.92,
-                scalar: 1.2
-            });
-            fire(0.1, {
-                spread: 120,
-                startVelocity: 45,
-            });
-        }
+        // Multiple bursts with 2x smaller spread (gift pack ~520px, confetti ~260px radius)
+        fire(0.25, {
+            spread: 90,
+            startVelocity: 40,
+        });
+        fire(0.2, {
+            spread: 75,
+            startVelocity: 35,
+        });
+        fire(0.35, {
+            spread: 100,
+            decay: 0.91,
+            scalar: 1.0
+        });
+        fire(0.1, {
+            spread: 85,
+            startVelocity: 30,
+            decay: 0.92,
+            scalar: 1.2
+        });
+        fire(0.1, {
+            spread: 95,
+            startVelocity: 38,
+            scalar: 1.1
+        });
     }
     renderGiftPack() {
         if (!this.parentElement)
             return;
-        // Fade out card stack container quickly
-        this.container.style.transition = 'opacity 0.2s ease';
-        this.container.style.opacity = '0';
-        setTimeout(() => {
-            // Hide card stack container
-            this.container.style.display = 'none';
-            // Create gift pack
-            const giftPack = document.createElement('div');
-            giftPack.className = 'gift-pack';
-            const giftIcon = document.createElement('div');
-            giftIcon.className = 'gift-pack__icon';
-            giftIcon.textContent = '🎁';
-            const header = document.createElement('div');
-            header.className = 'gift-pack__header';
-            header.innerHTML = `
+        // Hide card stack container immediately
+        this.container.style.display = 'none';
+        // Create gift pack
+        const giftPack = document.createElement('div');
+        giftPack.className = 'gift-pack';
+        const giftIcon = document.createElement('div');
+        giftIcon.className = 'gift-pack__icon';
+        giftIcon.textContent = '🎁';
+        const header = document.createElement('div');
+        header.className = 'gift-pack__header';
+        header.innerHTML = `
         <h3><span class="gift-pack__title-gradient">Your Gift Pack is Ready!</span></h3>
         <p>You've selected 5 amazing experiences</p>
       `;
-            const grid = document.createElement('div');
-            grid.className = 'gift-pack__grid';
-            this.likedCards.forEach((experience, index) => {
-                const card = document.createElement('a');
-                card.className = 'gift-pack__card';
-                card.href = experience.url;
-                card.target = '_blank';
-                card.rel = 'noopener noreferrer';
-                card.style.animationDelay = `${0.3 + index * 0.1}s`;
-                card.innerHTML = `
+        const grid = document.createElement('div');
+        grid.className = 'gift-pack__grid';
+        this.likedCards.forEach((experience, index) => {
+            const card = document.createElement('a');
+            card.className = 'gift-pack__card';
+            card.href = experience.url;
+            card.target = '_blank';
+            card.rel = 'noopener noreferrer';
+            card.style.animationDelay = `${0.3 + index * 0.1}s`;
+            card.innerHTML = `
           <img src="${experience.image}" alt="${experience.alt}" />
         `;
-                grid.appendChild(card);
-            });
-            const actions = document.createElement('div');
-            actions.className = 'gift-pack__actions';
-            actions.innerHTML = `
+            grid.appendChild(card);
+        });
+        const actions = document.createElement('div');
+        actions.className = 'gift-pack__actions';
+        actions.innerHTML = `
         <button class="gift-pack__button gift-pack__button--primary">Share Gift Pack</button>
       `;
-            giftPack.appendChild(giftIcon);
-            giftPack.appendChild(header);
-            giftPack.appendChild(grid);
-            giftPack.appendChild(actions);
-            this.parentElement.appendChild(giftPack);
-            // Fade in and bounce gift pack
-            setTimeout(() => {
-                this.container.style.transition = 'opacity 0.6s ease';
-                this.container.style.opacity = '1';
-                giftPack.classList.add('gift-pack--visible');
-            }, 50);
-            // Add button handler
-            const shareButton = actions.querySelector('.gift-pack__button--primary');
-            if (shareButton) {
-                shareButton.addEventListener('click', () => this.shareGiftPack());
-            }
-        }, 200);
+        giftPack.appendChild(giftIcon);
+        giftPack.appendChild(header);
+        giftPack.appendChild(grid);
+        giftPack.appendChild(actions);
+        this.parentElement.appendChild(giftPack);
+        // Fade in and bounce gift pack
+        setTimeout(() => {
+            giftPack.classList.add('gift-pack--visible');
+        }, 50);
+        // Add button handler
+        const shareButton = actions.querySelector('.gift-pack__button--primary');
+        if (shareButton) {
+            shareButton.addEventListener('click', () => this.shareGiftPack());
+        }
     }
     shareGiftPack() {
         // Create shareable text

@@ -506,18 +506,34 @@ export class CardStack {
   private createPack(): void {
     console.log('Pack created with experiences:', this.likedCards);
     
-    // Trigger confetti effect
-    this.showConfetti();
+    // Fade out card stack first
+    this.container.style.transition = 'opacity 0.3s ease';
+    this.container.style.opacity = '0';
     
-    // Replace card stack with gift pack
-    this.renderGiftPack();
+    // Show confetti immediately
+    setTimeout(() => {
+      this.showGiftPackConfetti();
+    }, 300);
+    
+    // Show gift pack 400ms after confetti starts
+    setTimeout(() => {
+      this.renderGiftPack();
+    }, 700);
   }
 
-  private showConfetti(): void {
-    const count = 150;
+  private showGiftPackConfetti(): void {
+    if (typeof (window as any).confetti !== 'function') return;
+
+    // Calculate center position of card stack
+    const cardStackRect = this.container.getBoundingClientRect();
+    const originX = (cardStackRect.left + cardStackRect.width / 2) / window.innerWidth;
+    const originY = (cardStackRect.top + cardStackRect.height / 2) / window.innerHeight;
+
+    const count = 300; // 2x more particles for density
     const defaults = {
-      origin: { y: 0.7 },
-      zIndex: 9999
+      origin: { x: originX, y: originY },
+      zIndex: 9999,
+      colors: ['#9D4EDD', '#FF6B9D', '#FFA07A', '#FFD700', '#FF1493']
     };
 
     function fire(particleRatio: number, opts: any) {
@@ -526,47 +542,42 @@ export class CardStack {
       }));
     }
 
-    // Check if confetti is available
-    if (typeof (window as any).confetti === 'function') {
-      fire(0.25, {
-        spread: 26,
-        startVelocity: 55,
-      });
-      fire(0.2, {
-        spread: 60,
-      });
-      fire(0.35, {
-        spread: 100,
-        decay: 0.91,
-        scalar: 0.8
-      });
-      fire(0.1, {
-        spread: 120,
-        startVelocity: 25,
-        decay: 0.92,
-        scalar: 1.2
-      });
-      fire(0.1, {
-        spread: 120,
-        startVelocity: 45,
-      });
-    }
+    // Multiple bursts with 2x smaller spread (gift pack ~520px, confetti ~260px radius)
+    fire(0.25, {
+      spread: 90,
+      startVelocity: 40,
+    });
+    fire(0.2, {
+      spread: 75,
+      startVelocity: 35,
+    });
+    fire(0.35, {
+      spread: 100,
+      decay: 0.91,
+      scalar: 1.0
+    });
+    fire(0.1, {
+      spread: 85,
+      startVelocity: 30,
+      decay: 0.92,
+      scalar: 1.2
+    });
+    fire(0.1, {
+      spread: 95,
+      startVelocity: 38,
+      scalar: 1.1
+    });
   }
 
   private renderGiftPack(): void {
     if (!this.parentElement) return;
     
-    // Fade out card stack container quickly
-    this.container.style.transition = 'opacity 0.2s ease';
-    this.container.style.opacity = '0';
+    // Hide card stack container immediately
+    this.container.style.display = 'none';
     
-    setTimeout(() => {
-      // Hide card stack container
-      this.container.style.display = 'none';
-      
-      // Create gift pack
-      const giftPack = document.createElement('div');
-      giftPack.className = 'gift-pack';
+    // Create gift pack
+    const giftPack = document.createElement('div');
+    giftPack.className = 'gift-pack';
       
       const giftIcon = document.createElement('div');
       giftIcon.className = 'gift-pack__icon';
@@ -603,26 +614,23 @@ export class CardStack {
         <button class="gift-pack__button gift-pack__button--primary">Share Gift Pack</button>
       `;
       
-      giftPack.appendChild(giftIcon);
-      giftPack.appendChild(header);
-      giftPack.appendChild(grid);
-      giftPack.appendChild(actions);
-      
-      this.parentElement!.appendChild(giftPack);
-      
-      // Fade in and bounce gift pack
-      setTimeout(() => {
-        this.container.style.transition = 'opacity 0.6s ease';
-        this.container.style.opacity = '1';
-        giftPack.classList.add('gift-pack--visible');
-      }, 50);
-      
-      // Add button handler
-      const shareButton = actions.querySelector('.gift-pack__button--primary') as HTMLButtonElement;
-      if (shareButton) {
-        shareButton.addEventListener('click', () => this.shareGiftPack());
-      }
-    }, 200);
+    giftPack.appendChild(giftIcon);
+    giftPack.appendChild(header);
+    giftPack.appendChild(grid);
+    giftPack.appendChild(actions);
+    
+    this.parentElement!.appendChild(giftPack);
+    
+    // Fade in and bounce gift pack
+    setTimeout(() => {
+      giftPack.classList.add('gift-pack--visible');
+    }, 50);
+    
+    // Add button handler
+    const shareButton = actions.querySelector('.gift-pack__button--primary') as HTMLButtonElement;
+    if (shareButton) {
+      shareButton.addEventListener('click', () => this.shareGiftPack());
+    }
   }
   
   private shareGiftPack(): void {
