@@ -369,6 +369,9 @@ export class CardStack {
       if (experience) {
         this.likedCards.push(experience);
         
+        // Show flying number
+        this.showFlyingNumber(this.likedCards.length);
+        
         // Check if we have 5 liked cards
         if (this.likedCards.length === 5) {
           this.shouldCreatePack = true;
@@ -427,6 +430,37 @@ export class CardStack {
       card.dataset.state = CardState.IDLE;
       card.style.transition = '';
     }, 300);
+  }
+
+  private showFlyingNumber(count: number): void {
+    const numberElement = document.createElement('div');
+    numberElement.className = 'flying-number';
+    numberElement.textContent = String(count);
+    
+    // Position it on the right edge of the card stack
+    const cardStackRect = this.container.getBoundingClientRect();
+    const startX = cardStackRect.right;
+    const startY = cardStackRect.top + cardStackRect.height / 2;
+    
+    // Add random rotation between -15 and 15 degrees
+    const randomRotation = (Math.random() - 0.5) * 30;
+    
+    numberElement.style.left = `${startX}px`;
+    numberElement.style.top = `${startY}px`;
+    numberElement.style.setProperty('--rotation', `${randomRotation}deg`);
+    numberElement.style.transform = `translate(-50%, -50%) rotate(var(--rotation))`;
+    
+    document.body.appendChild(numberElement);
+    
+    // Trigger animation
+    requestAnimationFrame(() => {
+      numberElement.classList.add('flying-number--animate');
+    });
+    
+    // Remove after animation completes
+    setTimeout(() => {
+      numberElement.remove();
+    }, 1000);
   }
 
   private removeCard(card: CardElement): void {

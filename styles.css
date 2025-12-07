@@ -162,6 +162,46 @@ body {
   margin: 0 auto;
 }
 
+/* Flying Number Animation */
+.flying-number {
+  position: fixed;
+  font-size: 128px;
+  font-weight: 700;
+  font-family: 'Poppins', sans-serif;
+  color: white;
+  text-shadow: 
+    -3px -3px 0 #9D4EDD,
+    3px -3px 0 #9D4EDD,
+    -3px 3px 0 #FF6B9D,
+    3px 3px 0 #FFA07A,
+    0 0 30px rgba(157, 78, 221, 0.6);
+  z-index: 9999;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  transition: all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.flying-number--animate {
+  opacity: 1;
+  animation: flying-number-fade 1s ease-out forwards;
+}
+
+@keyframes flying-number-fade {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) rotate(var(--rotation)) scale(0.8);
+  }
+  30% {
+    opacity: 1;
+    transform: translate(calc(-50% + 80px), -50%) rotate(var(--rotation)) scale(1.2);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(-50% + 200px), -50%) rotate(var(--rotation)) scale(1);
+  }
+}
+
 .card-stack-label {
   position: absolute;
   bottom: -40px;
