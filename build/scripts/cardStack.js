@@ -1,5 +1,5 @@
 /* Card Stack Module - Tinder-like swipeable card stack (Refactored) */
-import { openInNewTab, triggerHaptic, LIKE_EMOJIS, createConfettiParticle, createConfettiEmoji } from '../utils.js';
+import { openInNewTab, triggerHaptic } from '../utils.js';
 // ============================================================================
 // CONSTANTS
 // ============================================================================
@@ -22,10 +22,6 @@ const LABEL_INTENSITY_DIVISOR = 120;
 const AUTO_DEMO_THRESHOLD = 180;
 const FIFTH_CARD_FADE_MULTIPLIER = 0.5;
 const HAPTIC_THRESHOLD = 180;
-// Confetti Configuration
-const SUCCESS_CONFETTI_RADIUS = { min: 128, max: 480 };
-const SUCCESS_CONFETTI_PARTICLES_PER_BURST = 20;
-const SUCCESS_CONFETTI_BURSTS = 4;
 const CLICK_BLOCK_DURATION = 800;
 const DEFAULT_URL = 'https://www.google.com';
 const isMobileQuery = window.matchMedia('(max-width: 960px)');
@@ -745,30 +741,19 @@ class CardStack {
         num.addEventListener('animationend', () => num.remove(), { once: true });
     }
     fireConfetti(targetElement) {
-        const { x: centerX, y: centerY } = getElementCenter(targetElement);
-        const emit = () => {
-            for (let i = 0; i < SUCCESS_CONFETTI_PARTICLES_PER_BURST; i++) {
-                const isEmoji = Math.random() < 0.15;
-                const angle = Math.random() * Math.PI * 2;
-                const distance = SUCCESS_CONFETTI_RADIUS.min +
-                    Math.random() * (SUCCESS_CONFETTI_RADIUS.max - SUCCESS_CONFETTI_RADIUS.min);
-                const dx = Math.cos(angle) * distance;
-                const dy = Math.sin(angle) * distance;
-                if (isEmoji) {
-                    const em = createConfettiEmoji(centerX, centerY, dx, dy, LIKE_EMOJIS);
-                    em.style.setProperty('--emojiSize', `${20 + Math.random() * 10}px`);
-                    document.body.appendChild(em);
-                    em.addEventListener('animationend', () => em.remove(), { once: true });
-                }
-                else {
-                    const piece = createConfettiParticle(centerX, centerY, dx, dy);
-                    document.body.appendChild(piece);
-                    piece.addEventListener('animationend', () => piece.remove(), { once: true });
-                }
-            }
-        };
-        for (let b = 0; b < SUCCESS_CONFETTI_BURSTS; b++) {
-            setTimeout(emit, b * 100);
+        if (typeof window === 'undefined' || typeof window.confetti !== 'function') {
+            return;
         }
+        const { x, y } = getElementCenter(targetElement);
+        const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 1;
+        const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 1;
+        const originX = clamp(x / viewportWidth, 0, 1);
+        const originY = clamp(y / viewportHeight, 0, 1);
+        window.confetti({
+            particleCount: 300,
+            spread: 100,
+            origin: { x: originX, y: originY },
+            disableForReducedMotion: this.prefersReducedMotion,
+        });
     }
 }
