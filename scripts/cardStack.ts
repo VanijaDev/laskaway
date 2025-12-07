@@ -437,17 +437,21 @@ export class CardStack {
     numberElement.className = 'flying-number';
     numberElement.textContent = String(count);
     
-    // Position it on the right edge of the card stack
+    // Position it on the center of the card stack
     const cardStackRect = this.container.getBoundingClientRect();
-    const startX = cardStackRect.right;
+    const startX = cardStackRect.left + cardStackRect.width / 2;
     const startY = cardStackRect.top + cardStackRect.height / 2;
     
     // Add random rotation between -15 and 15 degrees
     const randomRotation = (Math.random() - 0.5) * 30;
     
+    // Add random vertical offset between -80px and +80px
+    const randomVertical = (Math.random() - 0.5) * 160;
+    
     numberElement.style.left = `${startX}px`;
     numberElement.style.top = `${startY}px`;
     numberElement.style.setProperty('--rotation', `${randomRotation}deg`);
+    numberElement.style.setProperty('--vertical-offset', `${randomVertical}px`);
     numberElement.style.transform = `translate(-50%, -50%) rotate(var(--rotation))`;
     
     document.body.appendChild(numberElement);
