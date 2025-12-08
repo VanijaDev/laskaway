@@ -17,7 +17,8 @@ const CLICK_TOLERANCE = 10; // Max movement to still register as click
 const MIN_DRAG_DISTANCE = 15; // Minimum drag to prevent accidental swipes
 
 // Animation Durations (ms)
-const FLY_OUT_DURATION = 500; // Fly-out for snappier releases
+const DESKTOP_FLY_OUT_DURATION = 500; // Fly-out for snappier releases
+const MOBILE_FLY_OUT_DURATION = 1500; // Slightly slower on touch devices
 const WIGGLE_ANIMATION_DURATION = 2000;
 const WIGGLE_INITIAL_DELAY = 1000;
 const WIGGLE_GAP_BETWEEN = 4000;
@@ -140,6 +141,10 @@ class CardStack {
     this.selectedCardsContainer = document.getElementById('selectedCards');
     this.dragHint = document.getElementById('dragHint');
     this.prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  }
+
+  private getFlyOutDuration(): number {
+    return isMobileQuery.matches ? MOBILE_FLY_OUT_DURATION : DESKTOP_FLY_OUT_DURATION;
   }
 
   // ============================================================================
@@ -480,7 +485,8 @@ class CardStack {
     this.cardStates.set(card, CardState.FLYING_OUT);
     
     // Apply transition with reflow to ensure it takes effect
-    const flyOutDuration = FLY_OUT_DURATION / 1000; // Convert to seconds
+    const flyOutDurationMs = this.getFlyOutDuration();
+    const flyOutDuration = flyOutDurationMs / 1000; // Convert to seconds
     card.style.transition = `transform ${flyOutDuration}s ease-in, opacity ${flyOutDuration}s ease-in`;
     card.style.zIndex = '99';
     void card.offsetWidth; // Force reflow
@@ -513,7 +519,7 @@ class CardStack {
     card.addEventListener('transitionend', handleEnd, { once: true });
     
     // Safety timeout
-    setTimeout(() => handleEnd(), FLY_OUT_DURATION + 100);
+    setTimeout(() => handleEnd(), flyOutDurationMs + 100);
   }
 
   private handleSnapBack(card: HTMLElement): void {
