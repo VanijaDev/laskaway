@@ -119,6 +119,7 @@ const experiences = [
 let selectedExperiences = [];
 let currentFilter = 'all';
 const MAX_SELECTIONS = 5;
+const BACKGROUND_CONFETTI_COUNT = 50;
 
 // DOM Elements
 const experienceGrid = document.getElementById('experienceGrid');
@@ -395,36 +396,66 @@ function createConfetti() {
   
   const colors = ['rgba(124, 92, 255, 0.3)', 'rgba(236, 72, 153, 0.3)', 'rgba(16, 185, 129, 0.3)'];
   
-  for (let i = 0; i < 20; i++) {
+  const randomRange = (min, max) => Math.random() * (max - min) + min;
+  const diagonal = Math.sqrt(window.innerWidth ** 2 + window.innerHeight ** 2);
+  const totalDots = BACKGROUND_CONFETTI_COUNT;
+
+  for (let i = 0; i < totalDots; i++) {
     const dot = document.createElement('div');
-    const size = 4 + Math.random() * 8;
-    
+    const size = 4 + Math.random() * 10;
+    const startX = Math.random() * 100;
+    const startY = Math.random() * 100;
+    const baseAngle = Math.random() * Math.PI * 2;
+    const driftAngles = [
+      baseAngle + randomRange(-0.25, 0.25),
+      baseAngle + randomRange(-0.15, 0.35),
+      baseAngle + randomRange(-0.3, 0.3)
+    ];
+    const distances = [
+      randomRange(0.25, 0.4),
+      randomRange(0.45, 0.7),
+      randomRange(0.85, 1.1)
+    ].map(ratio => ratio * diagonal);
+
     dot.style.cssText = `
       position: absolute;
       width: ${size}px;
       height: ${size}px;
       background: ${colors[Math.floor(Math.random() * colors.length)]};
-      border-radius: 50%;
-      left: ${Math.random() * 100}%;
-      top: ${Math.random() * 100}%;
-      animation: floatDot ${5 + Math.random() * 10}s ease-in-out infinite;
-      animation-delay: ${Math.random() * 5}s;
+      border-radius: ${Math.random() > 0.65 ? '999px' : '50%'};
+      left: ${startX}%;
+      top: ${startY}%;
+      opacity: 0.35;
+      transform: translate3d(0, 0, 0);
     `;
-    
+
+    const keyframes = [
+      { transform: 'translate3d(0, 0, 0)', opacity: 0.2 },
+      {
+        transform: `translate3d(${Math.cos(driftAngles[0]) * distances[0]}px, ${Math.sin(driftAngles[0]) * distances[0]}px, 0)`,
+        opacity: 0.45
+      },
+      {
+        transform: `translate3d(${Math.cos(driftAngles[1]) * distances[1]}px, ${Math.sin(driftAngles[1]) * distances[1]}px, 0)`,
+        opacity: 0.5
+      },
+      {
+        transform: `translate3d(${Math.cos(driftAngles[2]) * distances[2]}px, ${Math.sin(driftAngles[2]) * distances[2]}px, 0)`,
+        opacity: 0.2
+      }
+    ];
+
+    const duration = randomRange(22000, 36000);
+    const animation = dot.animate(keyframes, {
+      duration,
+      iterations: Infinity,
+      easing: 'linear',
+      delay: randomRange(0, 5000)
+    });
+
+    animation.currentTime = randomRange(0, duration);
     container.appendChild(dot);
   }
-  
-  // Add animation keyframes
-  const style = document.createElement('style');
-  style.textContent = `
-    @keyframes floatDot {
-      0%, 100% { transform: translate(0, 0); opacity: 0.5; }
-      25% { transform: translate(20px, -20px); opacity: 0.8; }
-      50% { transform: translate(-10px, -40px); opacity: 0.5; }
-      75% { transform: translate(-30px, -20px); opacity: 0.8; }
-    }
-  `;
-  document.head.appendChild(style);
 }
 
 // Smooth scroll for anchor links
