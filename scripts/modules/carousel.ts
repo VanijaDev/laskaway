@@ -13,6 +13,10 @@ const MAX_DELTA_TIME = 0.1;
 const TRACK_HEIGHT = '220px';
 const DEFAULT_URL = 'https://www.google.com';
 const MAX_INERTIA_VELOCITY_PX_PER_MS = 1.2; // 1200px/s
+const DRAG_THRESHOLD_PX = 6;
+const CLICK_SUPPRESS_MS = 280;
+const MIN_INERTIA_VELOCITY_PX_PER_MS = 0.02;
+const INERTIA_FRICTION_PER_MS = 0.0025; // higher => stops sooner
 
 // Initialize carousel with virtual scrolling
 export function initializeCarousel(experiences: Experience[]): void {
@@ -37,15 +41,14 @@ class VirtualCarousel {
   private isAutoScrollPaused = false;
 
   private isPointerDown = false;
-  private isUserDragging = false;
+  private isDragging = false;
   private dragStartX = 0;
   private dragStartScrollPosition = 0;
-  private suppressClickUntil = 0;
-
-  private lastPointerMoveX = 0;
-  private lastPointerMoveAt = 0;
-  private dragVelocityPxPerMs = 0;
+  private lastMoveX = 0;
+  private lastMoveAt = 0;
+  private velocityPxPerMs = 0;
   private inertiaRafId: number | null = null;
+  private suppressClickUntil = 0;
   
   private readonly cardPool: HTMLElement[] = [];
   private readonly activeCards = new Map<number, HTMLElement>();
@@ -105,8 +108,7 @@ class VirtualCarousel {
     // This avoids waiting for the next animation frame to see movement.
     {
       const dt = 16;
-      const friction = 0.0025; // 1/ms
-      velocity *= Math.exp(-friction * dt);
+      velocity *= Math.exp(-INERTIA_FRICTION_PER_MS * dt);
       this.scrollPosition += velocity * dt;
       this.updateVisibleCards();
     }
@@ -116,13 +118,12 @@ class VirtualCarousel {
       lastAt = now;
 
       // Exponential decay (ease-out feel).
-      const friction = 0.0025; // 1/ms
-      velocity *= Math.exp(-friction * dt);
+      velocity *= Math.exp(-INERTIA_FRICTION_PER_MS * dt);
 
       this.scrollPosition += velocity * dt;
       this.updateVisibleCards();
 
-      if (Math.abs(velocity) < 0.02) {
+      if (Math.abs(velocity) < MIN_INERTIA_VELOCITY_PX_PER_MS) {
         this.inertiaRafId = null;
         this.resumeAutoScroll();
         return;
@@ -138,11 +139,7 @@ class VirtualCarousel {
     // Only left mouse / primary touch.
     if (e.pointerType === 'mouse' && e.button !== 0) return;
 
-    this.stopInertia();
-
-    this.startDrag(e.clientX, e.timeStamp);
-
-    this.scroller.style.cursor = 'grabbing';
+    this.beginUserDrag(e.clientX, e.timeStamp);
 
     // Listen on window so dragging continues even if pointer leaves the scroller.
     // Do NOT use pointer capture here: it breaks card click targeting.
@@ -152,13 +149,13 @@ class VirtualCarousel {
   };
 
   private handleScrollerPointerMove = (e: PointerEvent): void => {
-    this.updateDrag(e.clientX, e.timeStamp, () => {
+    this.moveUserDrag(e.clientX, e.timeStamp, () => {
       if (e.cancelable) e.preventDefault();
     });
   };
 
-  private handleScrollerPointerUp = (e: PointerEvent): void => {
-    this.finishDrag(e.clientX, e.timeStamp);
+  private handleScrollerPointerUp = (_e: PointerEvent): void => {
+    this.endUserDrag();
 
     window.removeEventListener('pointermove', this.handleScrollerPointerMove);
     window.removeEventListener('pointerup', this.handleScrollerPointerUp);
@@ -167,22 +164,20 @@ class VirtualCarousel {
 
   private handleLegacyMouseDown = (e: MouseEvent): void => {
     if (e.button !== 0) return;
-    this.stopInertia();
-
-    this.startDrag(e.clientX, e.timeStamp);
+    this.beginUserDrag(e.clientX, e.timeStamp);
 
     window.addEventListener('mousemove', this.handleLegacyMouseMove);
     window.addEventListener('mouseup', this.handleLegacyMouseUp);
   };
 
   private handleLegacyMouseMove = (e: MouseEvent): void => {
-    this.updateDrag(e.clientX, e.timeStamp, () => {
+    this.moveUserDrag(e.clientX, e.timeStamp, () => {
       if (e.cancelable) e.preventDefault();
     });
   };
 
-  private handleLegacyMouseUp = (e: MouseEvent): void => {
-    this.finishDrag(e.clientX, e.timeStamp);
+  private handleLegacyMouseUp = (_e: MouseEvent): void => {
+    this.endUserDrag();
     window.removeEventListener('mousemove', this.handleLegacyMouseMove);
     window.removeEventListener('mouseup', this.handleLegacyMouseUp);
   };
@@ -190,9 +185,7 @@ class VirtualCarousel {
   private handleLegacyTouchStart = (e: TouchEvent): void => {
     const touch = e.touches[0];
     if (!touch) return;
-    this.stopInertia();
-
-    this.startDrag(touch.clientX, e.timeStamp);
+    this.beginUserDrag(touch.clientX, e.timeStamp);
 
     window.addEventListener('touchmove', this.handleLegacyTouchMove, { passive: false });
     window.addEventListener('touchend', this.handleLegacyTouchEnd);
@@ -202,7 +195,7 @@ class VirtualCarousel {
   private handleLegacyTouchMove = (e: TouchEvent): void => {
     const touch = e.touches[0];
     if (!touch) return;
-    this.updateDrag(touch.clientX, e.timeStamp, () => {
+    this.moveUserDrag(touch.clientX, e.timeStamp, () => {
       if (e.cancelable) e.preventDefault();
     });
   };
@@ -210,88 +203,78 @@ class VirtualCarousel {
   private handleLegacyTouchEnd = (e: TouchEvent): void => {
     const touch = e.changedTouches[0];
     if (!touch) return;
-    this.finishDrag(touch.clientX, e.timeStamp);
+    this.endUserDrag();
     window.removeEventListener('touchmove', this.handleLegacyTouchMove);
     window.removeEventListener('touchend', this.handleLegacyTouchEnd);
     window.removeEventListener('touchcancel', this.handleLegacyTouchEnd);
   };
 
-  private startDrag(clientX: number, timeStamp: number): void {
-    this.isPointerDown = true;
-    this.isUserDragging = false;
-    this.dragStartX = clientX;
-    this.dragStartScrollPosition = this.scrollPosition;
+  private beginUserDrag(clientX: number, timeStamp: number): void {
+    this.stopInertia();
     this.pauseAutoScroll();
 
-    this.lastPointerMoveX = clientX;
-    this.lastPointerMoveAt = timeStamp;
-    this.dragVelocityPxPerMs = 0;
+    this.isPointerDown = true;
+    this.isDragging = false;
+    this.dragStartX = clientX;
+    this.dragStartScrollPosition = this.scrollPosition;
+    this.lastMoveX = clientX;
+    this.lastMoveAt = timeStamp;
+    this.velocityPxPerMs = 0;
+
     this.scroller.style.cursor = 'grabbing';
+    // Allow vertical page scroll until we confirm horizontal dragging.
+    this.scroller.style.touchAction = 'pan-y';
   }
 
-  private updateDrag(clientX: number, timeStamp: number, preventDefault: () => void): void {
+  private moveUserDrag(clientX: number, timeStamp: number, preventDefault: () => void): void {
     if (!this.isPointerDown) return;
 
-    const deltaX = clientX - this.dragStartX;
-    if (!this.isUserDragging && Math.abs(deltaX) > 4) {
-      this.isUserDragging = true;
-      // iOS Safari can otherwise treat this gesture as page scrolling and
-      // throttle/cancel pointer events. Disable native touch handling for the
-      // duration of an active drag, then restore on release.
+    const totalDx = clientX - this.dragStartX;
+    if (!this.isDragging && Math.abs(totalDx) >= DRAG_THRESHOLD_PX) {
+      this.isDragging = true;
+      // iOS Safari: prevent the browser from taking over the gesture.
       this.scroller.style.touchAction = 'none';
     }
 
-    const dx = clientX - this.lastPointerMoveX;
-    const dt = Math.max(1, timeStamp - this.lastPointerMoveAt);
-    const instantVelocity = (-dx) / dt;
-    this.dragVelocityPxPerMs = this.dragVelocityPxPerMs * 0.8 + instantVelocity * 0.2;
-    this.dragVelocityPxPerMs = Math.max(
-      -MAX_INERTIA_VELOCITY_PX_PER_MS,
-      Math.min(MAX_INERTIA_VELOCITY_PX_PER_MS, this.dragVelocityPxPerMs)
-    );
-    this.lastPointerMoveX = clientX;
-    this.lastPointerMoveAt = timeStamp;
+    const dx = clientX - this.lastMoveX;
+    const dt = Math.max(1, timeStamp - this.lastMoveAt);
+    const instantVelocity = (-dx) / dt; // pointer right => scrollPosition decreases
 
-    if (this.isUserDragging) {
+    // Low-pass filter for stable inertial start.
+    this.velocityPxPerMs = this.velocityPxPerMs * 0.75 + instantVelocity * 0.25;
+    this.velocityPxPerMs = Math.max(
+      -MAX_INERTIA_VELOCITY_PX_PER_MS,
+      Math.min(MAX_INERTIA_VELOCITY_PX_PER_MS, this.velocityPxPerMs)
+    );
+    this.lastMoveX = clientX;
+    this.lastMoveAt = timeStamp;
+
+    if (this.isDragging) {
       preventDefault();
     }
 
-    this.scrollPosition = this.dragStartScrollPosition - deltaX;
+    this.scrollPosition = this.dragStartScrollPosition - totalDx;
     this.updateVisibleCards();
   }
 
-  private finishDrag(clientX: number, timeStamp: number): void {
+  private endUserDrag(): void {
     if (!this.isPointerDown) return;
 
     this.isPointerDown = false;
     this.scroller.style.cursor = 'grab';
     this.scroller.style.touchAction = 'pan-y';
 
-    if (this.isUserDragging) {
-      const finalDeltaX = clientX - this.dragStartX;
-      this.scrollPosition = this.dragStartScrollPosition - finalDeltaX;
-      this.updateVisibleCards();
+    if (!this.isDragging) {
+      this.resumeAutoScroll();
+      return;
+    }
 
-      const dx = clientX - this.lastPointerMoveX;
-      const dt = timeStamp - this.lastPointerMoveAt;
-      if (dt > 0) {
-        const instantVelocity = (-dx) / dt;
-        this.dragVelocityPxPerMs = this.dragVelocityPxPerMs * 0.5 + instantVelocity * 0.5;
-        this.dragVelocityPxPerMs = Math.max(
-          -MAX_INERTIA_VELOCITY_PX_PER_MS,
-          Math.min(MAX_INERTIA_VELOCITY_PX_PER_MS, this.dragVelocityPxPerMs)
-        );
-        this.lastPointerMoveX = clientX;
-        this.lastPointerMoveAt = timeStamp;
-      }
+    this.suppressClickUntil = performance.now() + CLICK_SUPPRESS_MS;
+    this.isDragging = false;
 
-      this.suppressClickUntil = performance.now() + 300;
-      this.isUserDragging = false;
-
-      if (Math.abs(this.dragVelocityPxPerMs) >= 0.02) {
-        this.startInertia(this.dragVelocityPxPerMs);
-        return;
-      }
+    if (Math.abs(this.velocityPxPerMs) >= MIN_INERTIA_VELOCITY_PX_PER_MS) {
+      this.startInertia(this.velocityPxPerMs);
+      return;
     }
 
     this.resumeAutoScroll();
