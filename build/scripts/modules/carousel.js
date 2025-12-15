@@ -50,34 +50,32 @@ class VirtualCarousel {
             this.dragStartX = e.clientX;
             this.dragStartScrollPosition = this.scrollPosition;
             this.pauseAutoScroll();
-            const now = performance.now();
+            const now = e.timeStamp;
             this.lastPointerMoveX = e.clientX;
             this.lastPointerMoveAt = now;
             this.dragVelocityPxPerMs = 0;
             this.scroller.style.cursor = 'grabbing';
             // Listen on window so dragging continues even if pointer leaves the scroller.
             // Do NOT use pointer capture here: it breaks card click targeting.
-            window.addEventListener('pointermove', this.handleScrollerPointerMove);
+            window.addEventListener('pointermove', this.handleScrollerPointerMove, { passive: false });
             window.addEventListener('pointerup', this.handleScrollerPointerUp);
             window.addEventListener('pointercancel', this.handleScrollerPointerUp);
         };
         this.handleScrollerPointerMove = (e) => {
             if (!this.isPointerDown)
                 return;
-            const now = performance.now();
+            const now = e.timeStamp;
             const deltaX = e.clientX - this.dragStartX;
             if (!this.isUserDragging && Math.abs(deltaX) > 4) {
                 this.isUserDragging = true;
             }
             const dx = e.clientX - this.lastPointerMoveX;
-            const dt = now - this.lastPointerMoveAt;
-            if (dt > 0) {
-                // Pointer right => scrollPosition decreases.
-                const instantVelocity = (-dx) / dt;
-                this.dragVelocityPxPerMs = this.dragVelocityPxPerMs * 0.8 + instantVelocity * 0.2;
-                this.lastPointerMoveX = e.clientX;
-                this.lastPointerMoveAt = now;
-            }
+            const dt = Math.max(1, now - this.lastPointerMoveAt);
+            // Pointer right => scrollPosition decreases.
+            const instantVelocity = (-dx) / dt;
+            this.dragVelocityPxPerMs = this.dragVelocityPxPerMs * 0.8 + instantVelocity * 0.2;
+            this.lastPointerMoveX = e.clientX;
+            this.lastPointerMoveAt = now;
             if (this.isUserDragging) {
                 // Prevent text selection / native drag behavior while dragging.
                 e.preventDefault();
@@ -86,7 +84,7 @@ class VirtualCarousel {
             this.scrollPosition = this.dragStartScrollPosition - deltaX;
             this.updateVisibleCards();
         };
-        this.handleScrollerPointerUp = (_e) => {
+        this.handleScrollerPointerUp = (e) => {
             if (!this.isPointerDown)
                 return;
             this.isPointerDown = false;
@@ -96,17 +94,17 @@ class VirtualCarousel {
             window.removeEventListener('pointercancel', this.handleScrollerPointerUp);
             if (this.isUserDragging) {
                 // Snap to the final drag position (in case the last move event was missed).
-                const finalDeltaX = _e.clientX - this.dragStartX;
+                const finalDeltaX = e.clientX - this.dragStartX;
                 this.scrollPosition = this.dragStartScrollPosition - finalDeltaX;
                 this.updateVisibleCards();
                 // Take a final velocity sample at release so inertia continues seamlessly.
-                const now = performance.now();
-                const dx = _e.clientX - this.lastPointerMoveX;
+                const now = e.timeStamp;
+                const dx = e.clientX - this.lastPointerMoveX;
                 const dt = now - this.lastPointerMoveAt;
                 if (dt > 0) {
                     const instantVelocity = (-dx) / dt;
                     this.dragVelocityPxPerMs = this.dragVelocityPxPerMs * 0.5 + instantVelocity * 0.5;
-                    this.lastPointerMoveX = _e.clientX;
+                    this.lastPointerMoveX = e.clientX;
                     this.lastPointerMoveAt = now;
                 }
                 // Suppress the click that may follow a drag release.
