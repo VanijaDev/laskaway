@@ -34,6 +34,12 @@ class VirtualCarousel {
   private scrollPosition = 0;
   private lastTimestamp = 0;
   private isAutoScrollPaused = false;
+
+  private isPointerDown = false;
+  private isUserDragging = false;
+  private dragStartX = 0;
+  private dragStartScrollPosition = 0;
+  private suppressClickUntil = 0;
   
   private readonly cardPool: HTMLElement[] = [];
   private readonly activeCards = new Map<number, HTMLElement>();
@@ -49,6 +55,7 @@ class VirtualCarousel {
   initialize(): void {
     this.setupTrack();
     this.updateVisibleCards();
+    this.setupUserScrolling();
     this.startAnimationLoop();
     this.setupTagFiltering();
     document.addEventListener('visibilitychange', () => {
@@ -70,6 +77,70 @@ class VirtualCarousel {
   private resumeAutoScroll = (): void => {
     this.isAutoScrollPaused = false;
   };
+
+  private handleScrollerPointerDown = (e: PointerEvent): void => {
+    // Only left mouse / primary touch.
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+
+    this.isPointerDown = true;
+    this.isUserDragging = false;
+    this.dragStartX = e.clientX;
+    this.dragStartScrollPosition = this.scrollPosition;
+    this.pauseAutoScroll();
+
+    this.scroller.style.cursor = 'grabbing';
+
+    // Listen on window so dragging continues even if pointer leaves the scroller.
+    // Do NOT use pointer capture here: it breaks card click targeting.
+    window.addEventListener('pointermove', this.handleScrollerPointerMove);
+    window.addEventListener('pointerup', this.handleScrollerPointerUp);
+    window.addEventListener('pointercancel', this.handleScrollerPointerUp);
+  };
+
+  private handleScrollerPointerMove = (e: PointerEvent): void => {
+    if (!this.isPointerDown) return;
+
+    const deltaX = e.clientX - this.dragStartX;
+    if (!this.isUserDragging && Math.abs(deltaX) > 4) {
+      this.isUserDragging = true;
+    }
+
+    if (this.isUserDragging) {
+      // Prevent text selection / native drag behavior while dragging.
+      e.preventDefault();
+    }
+
+    // Drag right => show earlier items (decrease scrollPosition), drag left => show later items.
+    this.scrollPosition = this.dragStartScrollPosition - deltaX;
+    this.updateVisibleCards();
+  };
+
+  private handleScrollerPointerUp = (_e: PointerEvent): void => {
+    if (!this.isPointerDown) return;
+
+    this.isPointerDown = false;
+    this.scroller.style.cursor = 'grab';
+
+    window.removeEventListener('pointermove', this.handleScrollerPointerMove);
+    window.removeEventListener('pointerup', this.handleScrollerPointerUp);
+    window.removeEventListener('pointercancel', this.handleScrollerPointerUp);
+
+    if (this.isUserDragging) {
+      // Suppress the click that may follow a drag release.
+      this.suppressClickUntil = performance.now() + 300;
+      this.isUserDragging = false;
+    }
+
+    this.resumeAutoScroll();
+  };
+
+  private setupUserScrolling(): void {
+    // Keep vertical scrolling on touch devices while enabling horizontal dragging here.
+    this.scroller.style.touchAction = 'pan-y';
+    this.scroller.style.cursor = 'grab';
+
+    this.scroller.addEventListener('pointerdown', this.handleScrollerPointerDown);
+  }
 
   private createCardElement(): HTMLElement {
     const card = document.createElement('article');
@@ -102,7 +173,13 @@ class VirtualCarousel {
   private attachCardHandlers(card: HTMLElement): void {
     if (card.dataset.hasClickHandler) return;
 
-    card.addEventListener('click', () => {
+    card.addEventListener('click', (e) => {
+      // Prevent accidental click after drag release.
+      if (performance.now() < this.suppressClickUntil) {
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+      }
       openInNewTab(card.dataset.url || DEFAULT_URL);
     });
     card.dataset.hasClickHandler = 'true';

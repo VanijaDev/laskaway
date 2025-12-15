@@ -23,6 +23,11 @@ class VirtualCarousel {
         this.scrollPosition = 0;
         this.lastTimestamp = 0;
         this.isAutoScrollPaused = false;
+        this.isPointerDown = false;
+        this.isUserDragging = false;
+        this.dragStartX = 0;
+        this.dragStartScrollPosition = 0;
+        this.suppressClickUntil = 0;
         this.cardPool = [];
         this.activeCards = new Map();
         this.pauseAutoScroll = () => {
@@ -30,6 +35,52 @@ class VirtualCarousel {
         };
         this.resumeAutoScroll = () => {
             this.isAutoScrollPaused = false;
+        };
+        this.handleScrollerPointerDown = (e) => {
+            // Only left mouse / primary touch.
+            if (e.pointerType === 'mouse' && e.button !== 0)
+                return;
+            this.isPointerDown = true;
+            this.isUserDragging = false;
+            this.dragStartX = e.clientX;
+            this.dragStartScrollPosition = this.scrollPosition;
+            this.pauseAutoScroll();
+            this.scroller.style.cursor = 'grabbing';
+            // Listen on window so dragging continues even if pointer leaves the scroller.
+            // Do NOT use pointer capture here: it breaks card click targeting.
+            window.addEventListener('pointermove', this.handleScrollerPointerMove);
+            window.addEventListener('pointerup', this.handleScrollerPointerUp);
+            window.addEventListener('pointercancel', this.handleScrollerPointerUp);
+        };
+        this.handleScrollerPointerMove = (e) => {
+            if (!this.isPointerDown)
+                return;
+            const deltaX = e.clientX - this.dragStartX;
+            if (!this.isUserDragging && Math.abs(deltaX) > 4) {
+                this.isUserDragging = true;
+            }
+            if (this.isUserDragging) {
+                // Prevent text selection / native drag behavior while dragging.
+                e.preventDefault();
+            }
+            // Drag right => show earlier items (decrease scrollPosition), drag left => show later items.
+            this.scrollPosition = this.dragStartScrollPosition - deltaX;
+            this.updateVisibleCards();
+        };
+        this.handleScrollerPointerUp = (_e) => {
+            if (!this.isPointerDown)
+                return;
+            this.isPointerDown = false;
+            this.scroller.style.cursor = 'grab';
+            window.removeEventListener('pointermove', this.handleScrollerPointerMove);
+            window.removeEventListener('pointerup', this.handleScrollerPointerUp);
+            window.removeEventListener('pointercancel', this.handleScrollerPointerUp);
+            if (this.isUserDragging) {
+                // Suppress the click that may follow a drag release.
+                this.suppressClickUntil = performance.now() + 300;
+                this.isUserDragging = false;
+            }
+            this.resumeAutoScroll();
         };
         this.tick = (timestamp) => {
             if (!this.lastTimestamp)
@@ -54,6 +105,7 @@ class VirtualCarousel {
     initialize() {
         this.setupTrack();
         this.updateVisibleCards();
+        this.setupUserScrolling();
         this.startAnimationLoop();
         this.setupTagFiltering();
         document.addEventListener('visibilitychange', () => {
@@ -65,6 +117,12 @@ class VirtualCarousel {
         this.track.style.height = TRACK_HEIGHT;
         this.track.style.overflow = 'visible';
         this.track.style.animation = 'none';
+    }
+    setupUserScrolling() {
+        // Keep vertical scrolling on touch devices while enabling horizontal dragging here.
+        this.scroller.style.touchAction = 'pan-y';
+        this.scroller.style.cursor = 'grab';
+        this.scroller.addEventListener('pointerdown', this.handleScrollerPointerDown);
     }
     createCardElement() {
         const card = document.createElement('article');
@@ -91,7 +149,13 @@ class VirtualCarousel {
     attachCardHandlers(card) {
         if (card.dataset.hasClickHandler)
             return;
-        card.addEventListener('click', () => {
+        card.addEventListener('click', (e) => {
+            // Prevent accidental click after drag release.
+            if (performance.now() < this.suppressClickUntil) {
+                e.preventDefault();
+                e.stopPropagation();
+                return;
+            }
             openInNewTab(card.dataset.url || DEFAULT_URL);
         });
         card.dataset.hasClickHandler = 'true';
