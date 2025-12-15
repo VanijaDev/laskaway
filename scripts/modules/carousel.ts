@@ -40,6 +40,11 @@ class VirtualCarousel {
   private dragStartX = 0;
   private dragStartScrollPosition = 0;
   private suppressClickUntil = 0;
+
+  private lastPointerMoveX = 0;
+  private lastPointerMoveAt = 0;
+  private dragVelocityPxPerMs = 0;
+  private inertiaRafId: number | null = null;
   
   private readonly cardPool: HTMLElement[] = [];
   private readonly activeCards = new Map<number, HTMLElement>();
@@ -78,15 +83,69 @@ class VirtualCarousel {
     this.isAutoScrollPaused = false;
   };
 
+  private stopInertia(): void {
+    if (this.inertiaRafId !== null) {
+      cancelAnimationFrame(this.inertiaRafId);
+      this.inertiaRafId = null;
+    }
+  }
+
+  private startInertia(initialVelocityPxPerMs: number): void {
+    this.stopInertia();
+    this.pauseAutoScroll();
+
+    let velocity = initialVelocityPxPerMs;
+    let lastAt = performance.now();
+
+    // Apply one immediate step so inertia starts without a visible pause.
+    // This avoids waiting for the next animation frame to see movement.
+    {
+      const dt = 16;
+      const friction = 0.0025; // 1/ms
+      velocity *= Math.exp(-friction * dt);
+      this.scrollPosition += velocity * dt;
+      this.updateVisibleCards();
+    }
+
+    const tick = (now: number): void => {
+      const dt = Math.min(32, Math.max(0, now - lastAt));
+      lastAt = now;
+
+      // Exponential decay (ease-out feel).
+      const friction = 0.0025; // 1/ms
+      velocity *= Math.exp(-friction * dt);
+
+      this.scrollPosition += velocity * dt;
+      this.updateVisibleCards();
+
+      if (Math.abs(velocity) < 0.02) {
+        this.inertiaRafId = null;
+        this.resumeAutoScroll();
+        return;
+      }
+
+      this.inertiaRafId = requestAnimationFrame(tick);
+    };
+
+    this.inertiaRafId = requestAnimationFrame(tick);
+  }
+
   private handleScrollerPointerDown = (e: PointerEvent): void => {
     // Only left mouse / primary touch.
     if (e.pointerType === 'mouse' && e.button !== 0) return;
+
+    this.stopInertia();
 
     this.isPointerDown = true;
     this.isUserDragging = false;
     this.dragStartX = e.clientX;
     this.dragStartScrollPosition = this.scrollPosition;
     this.pauseAutoScroll();
+
+    const now = performance.now();
+    this.lastPointerMoveX = e.clientX;
+    this.lastPointerMoveAt = now;
+    this.dragVelocityPxPerMs = 0;
 
     this.scroller.style.cursor = 'grabbing';
 
@@ -100,9 +159,21 @@ class VirtualCarousel {
   private handleScrollerPointerMove = (e: PointerEvent): void => {
     if (!this.isPointerDown) return;
 
+    const now = performance.now();
+
     const deltaX = e.clientX - this.dragStartX;
     if (!this.isUserDragging && Math.abs(deltaX) > 4) {
       this.isUserDragging = true;
+    }
+
+    const dx = e.clientX - this.lastPointerMoveX;
+    const dt = now - this.lastPointerMoveAt;
+    if (dt > 0) {
+      // Pointer right => scrollPosition decreases.
+      const instantVelocity = (-dx) / dt;
+      this.dragVelocityPxPerMs = this.dragVelocityPxPerMs * 0.8 + instantVelocity * 0.2;
+      this.lastPointerMoveX = e.clientX;
+      this.lastPointerMoveAt = now;
     }
 
     if (this.isUserDragging) {
@@ -126,9 +197,30 @@ class VirtualCarousel {
     window.removeEventListener('pointercancel', this.handleScrollerPointerUp);
 
     if (this.isUserDragging) {
+      // Snap to the final drag position (in case the last move event was missed).
+      const finalDeltaX = _e.clientX - this.dragStartX;
+      this.scrollPosition = this.dragStartScrollPosition - finalDeltaX;
+      this.updateVisibleCards();
+
+      // Take a final velocity sample at release so inertia continues seamlessly.
+      const now = performance.now();
+      const dx = _e.clientX - this.lastPointerMoveX;
+      const dt = now - this.lastPointerMoveAt;
+      if (dt > 0) {
+        const instantVelocity = (-dx) / dt;
+        this.dragVelocityPxPerMs = this.dragVelocityPxPerMs * 0.5 + instantVelocity * 0.5;
+        this.lastPointerMoveX = _e.clientX;
+        this.lastPointerMoveAt = now;
+      }
+
       // Suppress the click that may follow a drag release.
       this.suppressClickUntil = performance.now() + 300;
       this.isUserDragging = false;
+
+      if (Math.abs(this.dragVelocityPxPerMs) >= 0.02) {
+        this.startInertia(this.dragVelocityPxPerMs);
+        return;
+      }
     }
 
     this.resumeAutoScroll();
