@@ -12,6 +12,7 @@ const VISIBLE_BUFFER = 2;
 const MAX_DELTA_TIME = 0.1;
 const TRACK_HEIGHT = '220px';
 const DEFAULT_URL = 'https://www.google.com';
+const MAX_INERTIA_VELOCITY_PX_PER_MS = 1.2; // 1200px/s
 
 // Initialize carousel with virtual scrolling
 export function initializeCarousel(experiences: Experience[]): void {
@@ -94,7 +95,10 @@ class VirtualCarousel {
     this.stopInertia();
     this.pauseAutoScroll();
 
-    let velocity = initialVelocityPxPerMs;
+    let velocity = Math.max(
+      -MAX_INERTIA_VELOCITY_PX_PER_MS,
+      Math.min(MAX_INERTIA_VELOCITY_PX_PER_MS, initialVelocityPxPerMs)
+    );
     let lastAt = performance.now();
 
     // Apply one immediate step so inertia starts without a visible pause.
@@ -171,6 +175,10 @@ class VirtualCarousel {
     // Pointer right => scrollPosition decreases.
     const instantVelocity = (-dx) / dt;
     this.dragVelocityPxPerMs = this.dragVelocityPxPerMs * 0.8 + instantVelocity * 0.2;
+    this.dragVelocityPxPerMs = Math.max(
+      -MAX_INERTIA_VELOCITY_PX_PER_MS,
+      Math.min(MAX_INERTIA_VELOCITY_PX_PER_MS, this.dragVelocityPxPerMs)
+    );
     this.lastPointerMoveX = e.clientX;
     this.lastPointerMoveAt = now;
 
@@ -207,6 +215,10 @@ class VirtualCarousel {
       if (dt > 0) {
         const instantVelocity = (-dx) / dt;
         this.dragVelocityPxPerMs = this.dragVelocityPxPerMs * 0.5 + instantVelocity * 0.5;
+        this.dragVelocityPxPerMs = Math.max(
+          -MAX_INERTIA_VELOCITY_PX_PER_MS,
+          Math.min(MAX_INERTIA_VELOCITY_PX_PER_MS, this.dragVelocityPxPerMs)
+        );
         this.lastPointerMoveX = e.clientX;
         this.lastPointerMoveAt = now;
       }
