@@ -146,19 +146,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function setupHeaderCreateGiftVisibility() {
   const header = document.querySelector('.header');
-  const headerCreateGiftBtn = document.querySelector('.header a.btn.btn--primary.btn--sm[href="#create-gift"]');
+  const headerCtas = document.querySelectorAll('.header .header__actions a.btn.btn--sm');
   const startCreatingBtn = document.querySelector('.hero__cta a.btn.btn--primary[href="#create-gift"]');
 
-  if (!header || !headerCreateGiftBtn || !startCreatingBtn) return;
+  if (!header || headerCtas.length === 0 || !startCreatingBtn) return;
 
   const setHidden = (hidden) => {
-    headerCreateGiftBtn.classList.toggle('is-hidden', hidden);
-    headerCreateGiftBtn.setAttribute('aria-hidden', hidden ? 'true' : 'false');
-    if (hidden) {
-      headerCreateGiftBtn.setAttribute('tabindex', '-1');
-    } else {
-      headerCreateGiftBtn.removeAttribute('tabindex');
-    }
+    headerCtas.forEach((cta) => {
+      cta.classList.toggle('is-hidden', hidden);
+      cta.setAttribute('aria-hidden', hidden ? 'true' : 'false');
+      if (hidden) {
+        cta.setAttribute('tabindex', '-1');
+      } else {
+        cta.removeAttribute('tabindex');
+      }
+    });
   };
 
   let observer = null;

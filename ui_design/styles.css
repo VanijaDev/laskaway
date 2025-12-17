@@ -186,7 +186,18 @@ button {
   box-shadow: var(--shadow-md);
 }
 
+.btn--primary-reversed {
+  background: linear-gradient(135deg, #ec4899 0%, #7c5cff 100%);
+  color: white;
+  box-shadow: var(--shadow-md);
+}
+
 .btn--primary:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: var(--shadow-lg);
+}
+
+.btn--primary-reversed:hover {
   transform: translateY(-2px) scale(1.02);
   box-shadow: var(--shadow-lg);
 }
@@ -195,7 +206,17 @@ button {
   transform: translateY(0) scale(0.98);
 }
 
+.btn--primary-reversed:active {
+  transform: translateY(0) scale(0.98);
+}
+
 .btn--primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn--primary-reversed:disabled {
   opacity: 0.5;
   cursor: not-allowed;
   transform: none;
@@ -281,6 +302,12 @@ button {
   align-items: center;
   justify-content: space-between;
   height: 72px;
+}
+
+.header__actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .logo {
