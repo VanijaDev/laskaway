@@ -140,8 +140,62 @@ document.addEventListener('DOMContentLoaded', () => {
   renderExperienceShowcase();
   renderBuilderGrid();
   setupEventListeners();
+  setupHeaderCreateGiftVisibility();
   createConfetti();
 });
+
+function setupHeaderCreateGiftVisibility() {
+  const header = document.querySelector('.header');
+  const headerCreateGiftBtn = document.querySelector('.header a.btn.btn--primary.btn--sm[href="#create-gift"]');
+  const startCreatingBtn = document.querySelector('.hero__cta a.btn.btn--primary[href="#create-gift"]');
+
+  if (!header || !headerCreateGiftBtn || !startCreatingBtn) return;
+
+  const setHidden = (hidden) => {
+    headerCreateGiftBtn.classList.toggle('is-hidden', hidden);
+    headerCreateGiftBtn.setAttribute('aria-hidden', hidden ? 'true' : 'false');
+    if (hidden) {
+      headerCreateGiftBtn.setAttribute('tabindex', '-1');
+    } else {
+      headerCreateGiftBtn.removeAttribute('tabindex');
+    }
+  };
+
+  let observer = null;
+  let resizeRaf = 0;
+
+  const createObserver = () => {
+    if (observer) observer.disconnect();
+
+    const headerHeight = Math.ceil(header.getBoundingClientRect().height || 0);
+    observer = new IntersectionObserver(
+      (entries) => {
+        const isVisibleBelowHeader = entries.some((entry) => entry.isIntersecting);
+        setHidden(isVisibleBelowHeader);
+      },
+      {
+        root: null,
+        // Negative top margin means the element counts as visible only once it
+        // is below the fixed header.
+        rootMargin: `-${headerHeight}px 0px 0px 0px`,
+        threshold: 0.01
+      }
+    );
+
+    observer.observe(startCreatingBtn);
+  };
+
+  createObserver();
+
+  window.addEventListener(
+    'resize',
+    () => {
+      if (resizeRaf) cancelAnimationFrame(resizeRaf);
+      resizeRaf = requestAnimationFrame(createObserver);
+    },
+    { passive: true }
+  );
+}
 
 // Render experience showcase grid
 function renderExperienceShowcase() {
