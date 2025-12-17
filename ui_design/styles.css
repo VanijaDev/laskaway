@@ -493,8 +493,8 @@ button {
 }
 
 .logo__icon {
-  width: 44px;
-  height: 44px;
+  width: 32px;
+  height: 32px;
   border-radius: var(--radius-md);
   overflow: hidden;
   display: inline-flex;
@@ -537,6 +537,12 @@ button {
   padding: 140px 0 80px;
   position: relative;
   overflow: hidden;
+  background: linear-gradient(
+    180deg,
+    rgba(124, 92, 255, 0.10) 0%,
+    rgba(236, 72, 153, 0.06) 55%,
+    rgba(250, 251, 255, 0) 100%
+  );
 }
 
 .hero::before {
@@ -675,7 +681,7 @@ button {
    ============================================ */
 .how-it-works {
   padding: var(--section-gap) 0;
-  background: linear-gradient(180deg, transparent 0%, rgba(124, 92, 255, 0.03) 50%, transparent 100%);
+  background: var(--surface);
 }
 
 .steps {
@@ -728,6 +734,7 @@ button {
    ============================================ */
 .experiences {
   padding: var(--section-gap) 0;
+  background: rgba(249, 250, 251);
 }
 
 .category-tabs {
