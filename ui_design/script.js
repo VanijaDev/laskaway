@@ -7,10 +7,12 @@
 const experiences = [
   {
     id: 1,
-    title: 'Hot Air Balloon Ride',
+    title: 'Hot Air Balloon Adventure',
     category: 'adventure',
     price: 299,
     duration: '2-3 hours',
+    rating: 4.9,
+    description: 'Soar above breathtaking landscapes in a magical hot air balloon experience',
     image: 'https://images.unsplash.com/photo-1507608616759-54f48f0af0ee?w=600&h=400&fit=crop',
     badge: 'Popular'
   },
@@ -20,6 +22,8 @@ const experiences = [
     category: 'wellness and spa',
     price: 189,
     duration: '4-5 hours',
+    rating: 4.8,
+    description: 'Unwind with massages, sauna, and spa rituals designed to reset and recharge',
     image: 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=600&h=400&fit=crop',
     badge: null
   },
@@ -29,6 +33,8 @@ const experiences = [
     category: 'food',
     price: 350,
     duration: '2-3 hours',
+    rating: 4.9,
+    description: 'A multi-course tasting menu crafted by award-winning chefs in an unforgettable setting',
     image: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=600&h=400&fit=crop',
     badge: 'Premium'
   },
@@ -38,6 +44,8 @@ const experiences = [
     category: 'adventure',
     price: 399,
     duration: '3-4 hours',
+    rating: 4.7,
+    description: 'Feel the rush of freefall with a tandem jump and panoramic views from above',
     image: 'https://images.unsplash.com/photo-1521673461164-de300ebcfb17?w=600&h=400&fit=crop',
     badge: 'Thrill'
   },
@@ -47,6 +55,8 @@ const experiences = [
     category: 'food',
     price: 149,
     duration: '4-5 hours',
+    rating: 4.6,
+    description: 'Sip and discover local vineyards with guided tastings and beautiful countryside stops',
     image: 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=600&h=400&fit=crop',
     badge: null
   },
@@ -56,6 +66,8 @@ const experiences = [
     category: 'wellness and spa',
     price: 249,
     duration: '3 hours',
+    rating: 4.8,
+    description: 'Cruise into golden hour with drinks, music, and a stunning sunset on the water',
     image: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=600&h=400&fit=crop',
     badge: 'Romantic'
   },
@@ -65,6 +77,8 @@ const experiences = [
     category: 'culture',
     price: 129,
     duration: '2-3 hours',
+    rating: 4.5,
+    description: 'Explore iconic exhibits with a private guide and behind-the-scenes stories',
     image: 'https://images.unsplash.com/photo-1554907984-15263bfd63bd?w=600&h=400&fit=crop',
     badge: null
   },
@@ -74,6 +88,8 @@ const experiences = [
     category: 'food',
     price: 179,
     duration: '3-4 hours',
+    rating: 4.7,
+    description: 'Learn chef techniques and cook a delicious meal from scratch with expert guidance',
     image: 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=600&h=400&fit=crop',
     badge: null
   },
@@ -83,6 +99,8 @@ const experiences = [
     category: 'adventure',
     price: 99,
     duration: '2-3 hours',
+    rating: 4.4,
+    description: 'Climb real rock with a pro guide—perfect for first-timers and thrill seekers',
     image: 'https://images.unsplash.com/photo-1522163182402-834f871fd851?w=600&h=400&fit=crop',
     badge: null
   },
@@ -92,6 +110,8 @@ const experiences = [
     category: 'wellness and spa',
     price: 159,
     duration: 'Full day',
+    rating: 4.6,
+    description: 'A calming day of mindfulness, breathwork, and guided sessions in a serene space',
     image: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=600&h=400&fit=crop',
     badge: null
   },
@@ -101,6 +121,8 @@ const experiences = [
     category: 'culture',
     price: 219,
     duration: '4-5 hours',
+    rating: 4.7,
+    description: 'An evening of live performance paired with a curated dinner experience',
     image: 'https://images.unsplash.com/photo-1503095396549-807759245b35?w=600&h=400&fit=crop',
     badge: null
   },
@@ -110,10 +132,29 @@ const experiences = [
     category: 'adventure',
     price: 499,
     duration: '1-2 hours',
+    rating: 4.9,
+    description: 'Take in epic city and coastline views from the sky with a premium helicopter flight',
     image: 'https://images.unsplash.com/photo-1473968512647-3e447244af8f?w=600&h=400&fit=crop',
     badge: 'Exclusive'
   }
 ];
+
+function formatCategoryLabel(category) {
+  if (!category) return '';
+  if (category === 'wellness and spa') return 'Wellness & Spa';
+  return category
+    .split(' ')
+    .filter(Boolean)
+    .map((w) => w[0]?.toUpperCase() + w.slice(1))
+    .join(' ');
+}
+
+function categoryToClass(category) {
+  return String(category || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-');
+}
 
 // State
 let selectedExperiences = [];
@@ -342,17 +383,26 @@ function renderExperienceShowcase() {
         <button class="fav-toggle ${favouriteIds.has(exp.id) ? 'fav-toggle--active' : ''}" type="button" data-fav-toggle="true" data-id="${exp.id}" aria-pressed="${favouriteIds.has(exp.id) ? 'true' : 'false'}" aria-label="${favouriteIds.has(exp.id) ? 'Remove from favourites' : 'Add to favourites'}">
           ❤
         </button>
-        ${exp.badge ? `<span class="exp-card__badge">${exp.badge}</span>` : ''}
       </div>
       <div class="exp-card__content">
+        <div class="exp-card__top">
+          <span class="exp-card__tag exp-card__tag--${categoryToClass(exp.category)}">${formatCategoryLabel(exp.category)}</span>
+          <div class="exp-card__rating" aria-label="Rating">
+            <span class="exp-card__rating-star" aria-hidden="true">★</span>
+            <span class="exp-card__rating-value">${Number.isFinite(exp.rating) ? exp.rating.toFixed(1) : '4.9'}</span>
+          </div>
+        </div>
         <h3 class="exp-card__title">${exp.title}</h3>
-        <div class="exp-card__meta">
-          <span>🕐 ${exp.duration}</span>
-          <span class="exp-card__price">$${exp.price}</span>
+        <p class="exp-card__desc">${exp.description || ''}</p>
+        <div class="exp-card__bottom">
+          <div class="exp-card__price">$${exp.price}</div>
+          <button class="exp-card__book" type="button">Book Now</button>
         </div>
       </div>
     </article>
   `).join('');
+
+  updateFavouriteToggles();
 }
 
 // Render builder grid
