@@ -281,6 +281,18 @@ function setupHeaderCreateGiftVisibility() {
     });
   };
 
+  const isStartCreatingVisibleBelowHeader = () => {
+    const headerHeight = Math.ceil(header.getBoundingClientRect().height || 0);
+    const rect = startCreatingBtn.getBoundingClientRect();
+    return rect.bottom > headerHeight && rect.top < window.innerHeight;
+  };
+
+  // Default hidden (prevents initial blink), then immediately compute the real state.
+  setHidden(true);
+  requestAnimationFrame(() => {
+    setHidden(isStartCreatingVisibleBelowHeader());
+  });
+
   let observer = null;
   let resizeRaf = 0;
 
