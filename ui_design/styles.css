@@ -246,7 +246,19 @@ button {
 }
 
 .btn__icon {
-  font-size: 1.2em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.2em;
+  height: 1.2em;
+  flex: 0 0 auto;
+}
+
+.btn__icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
 }
 
 /* ============================================
@@ -481,8 +493,21 @@ button {
 }
 
 .logo__icon {
-  font-size: 1.6rem;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   animation: float 3s ease-in-out infinite;
+}
+
+.logo__icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 @keyframes float {
@@ -950,7 +975,20 @@ button {
 }
 
 .builder__pack-icon {
-  font-size: 1.4rem;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.builder__pack-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .builder__count {
@@ -1310,8 +1348,8 @@ button {
 }
 
 .footer__social-icon {
-  width: 30px;
-  height: 30px;
+  width: 22px;
+  height: 22px;
   display: block;
 }
 
