@@ -134,15 +134,133 @@ const successModal = document.getElementById('successModal');
 const recipientDisplay = document.getElementById('recipientDisplay');
 const closeModalBtn = document.getElementById('closeModal');
 const categoryTabs = document.querySelectorAll('.tab');
+const favsBtn = document.getElementById('favsBtn');
+const favsCount = document.getElementById('favsCount');
+const favsPanel = document.getElementById('favsPanel');
+const favsList = document.getElementById('favsList');
+const favsCloseBtn = document.getElementById('favsCloseBtn');
+
+const FAV_STORAGE_KEY = 'laskaway_favourites';
+let favouriteIds = new Set();
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
+  loadFavourites();
   renderExperienceShowcase();
   renderBuilderGrid();
   setupEventListeners();
   setupHeaderCreateGiftVisibility();
+  setupFavourites();
   createConfetti();
 });
+
+function loadFavourites() {
+  try {
+    const raw = localStorage.getItem(FAV_STORAGE_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    if (Array.isArray(parsed)) {
+      favouriteIds = new Set(parsed.filter(n => Number.isFinite(n)));
+    }
+  } catch {
+    favouriteIds = new Set();
+  }
+}
+
+function saveFavourites() {
+  localStorage.setItem(FAV_STORAGE_KEY, JSON.stringify(Array.from(favouriteIds)));
+}
+
+function updateFavouritesCounter() {
+  if (!favsCount) return;
+  const count = favouriteIds.size;
+  favsCount.textContent = String(count);
+  favsCount.classList.toggle('is-hidden', count === 0);
+}
+
+function renderFavouritesPanel() {
+  if (!favsList) return;
+
+  if (favouriteIds.size === 0) {
+    favsList.innerHTML = '<div class="favs-empty">No favourites yet. Tap the heart on an experience to save it here.</div>';
+    return;
+  }
+
+  const items = Array.from(favouriteIds)
+    .map((id) => experiences.find((e) => e.id === id))
+    .filter(Boolean);
+
+  favsList.innerHTML = items
+    .map((exp) => `
+      <div class="favs-item">
+        <img class="favs-item__img" src="${exp.image}" alt="${exp.title}" loading="lazy" />
+        <div class="favs-item__title">${exp.title}</div>
+        <button class="favs-item__remove" type="button" data-fav-toggle="true" data-id="${exp.id}" aria-label="Remove from favourites">✕</button>
+      </div>
+    `)
+    .join('');
+}
+
+function setFavouritesPanelOpen(isOpen) {
+  if (!favsPanel || !favsBtn) return;
+  favsPanel.classList.toggle('is-hidden', !isOpen);
+  favsBtn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+  if (isOpen) {
+    renderFavouritesPanel();
+  }
+}
+
+function toggleFavourite(id) {
+  if (favouriteIds.has(id)) {
+    favouriteIds.delete(id);
+  } else {
+    favouriteIds.add(id);
+  }
+  saveFavourites();
+  updateFavouritesCounter();
+  updateFavouriteToggles();
+  renderFavouritesPanel();
+}
+
+function updateFavouriteToggles() {
+  document.querySelectorAll('[data-fav-toggle="true"][data-id]').forEach((el) => {
+    const id = parseInt(el.getAttribute('data-id'), 10);
+    const isFav = favouriteIds.has(id);
+    el.classList.toggle('fav-toggle--active', isFav);
+    el.setAttribute('aria-pressed', isFav ? 'true' : 'false');
+    const label = isFav ? 'Remove from favourites' : 'Add to favourites';
+    el.setAttribute('aria-label', label);
+  });
+}
+
+function setupFavourites() {
+  updateFavouritesCounter();
+  renderFavouritesPanel();
+
+  if (favsBtn) {
+    favsBtn.addEventListener('click', () => {
+      const isOpen = favsPanel && !favsPanel.classList.contains('is-hidden');
+      setFavouritesPanelOpen(!isOpen);
+    });
+  }
+
+  if (favsCloseBtn) {
+    favsCloseBtn.addEventListener('click', () => setFavouritesPanelOpen(false));
+  }
+
+  document.addEventListener('click', (e) => {
+    const target = e.target;
+    if (!(target instanceof Element)) return;
+    const toggle = target.closest('[data-fav-toggle="true"][data-id]');
+    if (!toggle) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    const id = parseInt(toggle.getAttribute('data-id'), 10);
+    if (!Number.isFinite(id)) return;
+    toggleFavourite(id);
+  });
+}
 
 function setupHeaderCreateGiftVisibility() {
   const header = document.querySelector('.header');
@@ -209,6 +327,9 @@ function renderExperienceShowcase() {
     <article class="exp-card" data-id="${exp.id}">
       <div class="exp-card__image">
         <img src="${exp.image}" alt="${exp.title}" loading="lazy" />
+        <button class="fav-toggle ${favouriteIds.has(exp.id) ? 'fav-toggle--active' : ''}" type="button" data-fav-toggle="true" data-id="${exp.id}" aria-pressed="${favouriteIds.has(exp.id) ? 'true' : 'false'}" aria-label="${favouriteIds.has(exp.id) ? 'Remove from favourites' : 'Add to favourites'}">
+          ❤
+        </button>
         ${exp.badge ? `<span class="exp-card__badge">${exp.badge}</span>` : ''}
       </div>
       <div class="exp-card__content">
@@ -238,6 +359,9 @@ function renderBuilderGrid(searchQuery = '') {
                data-id="${exp.id}">
         <div class="builder-card__image">
           <img src="${exp.image}" alt="${exp.title}" loading="lazy" />
+          <button class="fav-toggle ${favouriteIds.has(exp.id) ? 'fav-toggle--active' : ''}" type="button" data-fav-toggle="true" data-id="${exp.id}" aria-pressed="${favouriteIds.has(exp.id) ? 'true' : 'false'}" aria-label="${favouriteIds.has(exp.id) ? 'Remove from favourites' : 'Add to favourites'}">
+            ❤
+          </button>
         </div>
         <div class="builder-card__content">
           <h4 class="builder-card__title">${exp.title}</h4>
@@ -255,6 +379,8 @@ function renderBuilderGrid(searchQuery = '') {
   document.querySelectorAll('.builder-card:not(.builder-card--disabled)').forEach(card => {
     card.addEventListener('click', () => toggleExperience(parseInt(card.dataset.id)));
   });
+
+  updateFavouriteToggles();
 }
 
 // Toggle experience selection

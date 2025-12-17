@@ -24,14 +24,30 @@
         <nav class="nav" aria-label="Main navigation">
           <a href="#how-it-works" class="nav__link">How It Works</a>
           <a href="#experiences" class="nav__link">Experiences</a>
-          <a href="#pricing" class="nav__link">Pricing</a>
+          <a href="#pricing" class="nav__link">For Business</a>
         </nav>
         <div class="header__actions">
           <a href="#create-gift" class="btn btn--primary btn--sm">✨ Create Gift</a>
           <a href="#redeem-gift" class="btn btn--primary-reversed btn--sm">Redeem Gift ✨</a>
+          <button class="header__favs" id="favsBtn" type="button" aria-label="Favourites" aria-expanded="false">
+            <span class="header__favs-inner" aria-hidden="true">
+              <svg class="header__favs-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M20.84 4.61c-1.54-1.34-3.77-1.28-5.24.14L12 8.09 8.4 4.75C6.93 3.33 4.7 3.27 3.16 4.61c-1.77 1.54-1.86 4.24-.27 5.89L12 21.35l9.11-10.85c1.59-1.65 1.5-4.35-.27-5.89Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </span>
+            <span class="header__favs-count is-hidden" id="favsCount">0</span>
+          </button>
         </div>
       </div>
     </header>
+
+    <aside class="favs-panel is-hidden" id="favsPanel" aria-label="Favourites">
+      <div class="favs-panel__header">
+        <div class="favs-panel__title">Favourites</div>
+        <button class="favs-panel__close" id="favsCloseBtn" type="button" aria-label="Close favourites">✕</button>
+      </div>
+      <div class="favs-panel__content" id="favsList"></div>
+    </aside>
 
     <!-- Hero -->
     <section class="hero">
