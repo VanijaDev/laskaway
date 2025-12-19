@@ -622,8 +622,8 @@ button {
 
 .gift-card {
   position: absolute;
-  width: 320px;
-  height: 220px;
+  width: 420px;
+  height: 290px;
   border-radius: var(--radius-xl);
   overflow: hidden;
   box-shadow: var(--shadow-xl);
