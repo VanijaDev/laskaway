@@ -159,6 +159,8 @@ function categoryToClass(category) {
 // State
 let selectedExperiences = [];
 let currentFilter = 'all';
+let experiencesExpanded = false;
+let experiencesPage = 1;
 const MAX_SELECTIONS = 5;
 const BACKGROUND_CONFETTI_COUNT = 50;
 
@@ -180,6 +182,8 @@ const favsCount = document.getElementById('favsCount');
 const favsPanel = document.getElementById('favsPanel');
 const favsList = document.getElementById('favsList');
 const favsCloseBtn = document.getElementById('favsCloseBtn');
+const expSeeMoreBtn = document.getElementById('expSeeMoreBtn');
+const expPagination = document.getElementById('expPagination');
 
 const FAV_STORAGE_KEY = 'laskaway_favourites';
 let favouriteIds = new Set();
@@ -194,6 +198,68 @@ document.addEventListener('DOMContentLoaded', () => {
   setupFavourites();
   createConfetti();
 });
+
+function getGridColumnCount(gridEl) {
+  if (!gridEl) return 1;
+  const value = window.getComputedStyle(gridEl).gridTemplateColumns;
+  const count = value
+    .split(' ')
+    .map((s) => s.trim())
+    .filter(Boolean).length;
+  return Math.max(1, count || 1);
+}
+
+function getExperienceRowsVisible() {
+  return experiencesExpanded ? 4 : 1;
+}
+
+function getExperiencePageSize() {
+  const columns = getGridColumnCount(experienceGrid);
+  return Math.max(1, columns * getExperienceRowsVisible());
+}
+
+function renderExperiencePagination(totalPages) {
+  if (!expPagination) return;
+
+  // Pagination should only appear after user expands the grid via "See more".
+  if (!experiencesExpanded) {
+    expPagination.classList.add('is-hidden');
+    expPagination.innerHTML = '';
+    return;
+  }
+
+  if (totalPages <= 1) {
+    expPagination.classList.add('is-hidden');
+    expPagination.innerHTML = '';
+    return;
+  }
+
+  expPagination.classList.remove('is-hidden');
+  expPagination.innerHTML = Array.from({ length: totalPages })
+    .map((_, index) => {
+      const page = index + 1;
+      const isActive = page === experiencesPage;
+      return `
+        <button class="exp-page ${isActive ? 'exp-page--active' : ''}" type="button" data-exp-page="${page}" ${isActive ? 'aria-current="page"' : ''}>
+          ${page}
+        </button>
+      `;
+    })
+    .join('');
+}
+
+function syncExperienceFooterVisibility(totalItems) {
+  if (!expSeeMoreBtn) return;
+
+  if (experiencesExpanded) {
+    expSeeMoreBtn.classList.add('is-hidden');
+    return;
+  }
+
+  const columns = getGridColumnCount(experienceGrid);
+  const canShowMoreRows = totalItems > columns;
+  expSeeMoreBtn.classList.toggle('is-hidden', !canShowMoreRows);
+}
 
 function loadFavourites() {
   try {
@@ -375,8 +441,14 @@ function renderExperienceShowcase() {
   const filtered = currentFilter === 'all' 
     ? experiences 
     : experiences.filter(exp => exp.category === currentFilter);
+
+  const pageSize = getExperiencePageSize();
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  experiencesPage = Math.min(Math.max(1, experiencesPage), totalPages);
+  const startIndex = (experiencesPage - 1) * pageSize;
+  const visible = filtered.slice(startIndex, startIndex + pageSize);
   
-  experienceGrid.innerHTML = filtered.map(exp => `
+  experienceGrid.innerHTML = visible.map(exp => `
     <article class="exp-card" data-id="${exp.id}">
       <div class="exp-card__image">
         <img src="${exp.image}" alt="${exp.title}" loading="lazy" />
@@ -407,6 +479,8 @@ function renderExperienceShowcase() {
   `).join('');
 
   updateFavouriteToggles();
+  renderExperiencePagination(totalPages);
+  syncExperienceFooterVisibility(filtered.length);
 }
 
 // Render builder grid
@@ -517,9 +591,43 @@ function setupEventListeners() {
       categoryTabs.forEach(t => t.classList.remove('tab--active'));
       tab.classList.add('tab--active');
       currentFilter = tab.dataset.category;
+      experiencesPage = 1;
       renderExperienceShowcase();
     });
   });
+
+  if (expPagination) {
+    expPagination.addEventListener('click', (e) => {
+      const target = e.target;
+      if (!(target instanceof Element)) return;
+      const btn = target.closest('[data-exp-page]');
+      if (!btn) return;
+      const page = parseInt(btn.getAttribute('data-exp-page') || '', 10);
+      if (!Number.isFinite(page)) return;
+      experiencesPage = page;
+      renderExperienceShowcase();
+    });
+  }
+
+  if (expSeeMoreBtn) {
+    expSeeMoreBtn.addEventListener('click', () => {
+      experiencesExpanded = true;
+      experiencesPage = 1;
+      renderExperienceShowcase();
+    });
+  }
+
+  let expResizeRaf = 0;
+  window.addEventListener(
+    'resize',
+    () => {
+      if (expResizeRaf) cancelAnimationFrame(expResizeRaf);
+      expResizeRaf = requestAnimationFrame(() => {
+        renderExperienceShowcase();
+      });
+    },
+    { passive: true }
+  );
   
   // Search
   searchInput.addEventListener('input', (e) => {
