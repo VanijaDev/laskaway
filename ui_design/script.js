@@ -381,7 +381,11 @@ function renderExperienceShowcase() {
       <div class="exp-card__image">
         <img src="${exp.image}" alt="${exp.title}" loading="lazy" />
         <button class="fav-toggle ${favouriteIds.has(exp.id) ? 'fav-toggle--active' : ''}" type="button" data-fav-toggle="true" data-id="${exp.id}" aria-pressed="${favouriteIds.has(exp.id) ? 'true' : 'false'}" aria-label="${favouriteIds.has(exp.id) ? 'Remove from favourites' : 'Add to favourites'}">
-          ❤
+          <span class="fav-toggle__inner" aria-hidden="true">
+            <svg class="fav-toggle__icon" width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+              <path d="M20.84 4.61c-1.54-1.34-3.77-1.28-5.24.14L12 8.09 8.4 4.75C6.93 3.33 4.7 3.27 3.16 4.61c-1.77 1.54-1.86 4.24-.27 5.89L12 21.35l9.11-10.85c1.59-1.65 1.5-4.35-.27-5.89Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </span>
         </button>
       </div>
       <div class="exp-card__content">
@@ -422,7 +426,11 @@ function renderBuilderGrid(searchQuery = '') {
         <div class="builder-card__image">
           <img src="${exp.image}" alt="${exp.title}" loading="lazy" />
           <button class="fav-toggle ${favouriteIds.has(exp.id) ? 'fav-toggle--active' : ''}" type="button" data-fav-toggle="true" data-id="${exp.id}" aria-pressed="${favouriteIds.has(exp.id) ? 'true' : 'false'}" aria-label="${favouriteIds.has(exp.id) ? 'Remove from favourites' : 'Add to favourites'}">
-            ❤
+            <span class="fav-toggle__inner" aria-hidden="true">
+              <svg class="fav-toggle__icon" width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+                <path d="M20.84 4.61c-1.54-1.34-3.77-1.28-5.24.14L12 8.09 8.4 4.75C6.93 3.33 4.7 3.27 3.16 4.61c-1.77 1.54-1.86 4.24-.27 5.89L12 21.35l9.11-10.85c1.59-1.65 1.5-4.35-.27-5.89Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </span>
           </button>
         </div>
         <div class="builder-card__content">
