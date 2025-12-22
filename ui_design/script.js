@@ -3,141 +3,90 @@
    Experience Gift Service
    ============================================ */
 
-// Sample experience data
-const experiences = [
-  {
-    id: 1,
-    title: 'Hot Air Balloon Adventure',
-    category: 'adventure',
-    price: 299,
-    duration: '2-3 hours',
-    rating: 4.9,
-    description: 'Soar above breathtaking landscapes in a magical hot air balloon experience',
-    image: 'https://images.unsplash.com/photo-1507608616759-54f48f0af0ee?w=600&h=400&fit=crop',
-    badge: 'Popular'
-  },
-  {
-    id: 2,
-    title: 'Luxury Spa Day',
-    category: 'wellness and spa',
-    price: 189,
-    duration: '4-5 hours',
-    rating: 4.8,
-    description: 'Unwind with massages, sauna, and spa rituals designed to reset and recharge',
-    image: 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=600&h=400&fit=crop',
-    badge: null
-  },
-  {
-    id: 3,
-    title: 'Michelin Star Dining',
-    category: 'food',
-    price: 350,
-    duration: '2-3 hours',
-    rating: 4.9,
-    description: 'A multi-course tasting menu crafted by award-winning chefs in an unforgettable setting',
-    image: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=600&h=400&fit=crop',
-    badge: 'Premium'
-  },
-  {
-    id: 4,
-    title: 'Skydiving Adventure',
-    category: 'adventure',
-    price: 399,
-    duration: '3-4 hours',
-    rating: 4.7,
-    description: 'Feel the rush of freefall with a tandem jump and panoramic views from above',
-    image: 'https://images.unsplash.com/photo-1521673461164-de300ebcfb17?w=600&h=400&fit=crop',
-    badge: 'Thrill'
-  },
-  {
-    id: 5,
-    title: 'Wine Tasting Tour',
-    category: 'food',
-    price: 149,
-    duration: '4-5 hours',
-    rating: 4.6,
-    description: 'Sip and discover local vineyards with guided tastings and beautiful countryside stops',
-    image: 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=600&h=400&fit=crop',
-    badge: null
-  },
-  {
-    id: 6,
-    title: 'Sunset Yacht Cruise',
-    category: 'wellness and spa',
-    price: 249,
-    duration: '3 hours',
-    rating: 4.8,
-    description: 'Cruise into golden hour with drinks, music, and a stunning sunset on the water',
-    image: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=600&h=400&fit=crop',
-    badge: 'Romantic'
-  },
-  {
-    id: 7,
-    title: 'Museum Private Tour',
-    category: 'culture',
-    price: 129,
-    duration: '2-3 hours',
-    rating: 4.5,
-    description: 'Explore iconic exhibits with a private guide and behind-the-scenes stories',
-    image: 'https://images.unsplash.com/photo-1554907984-15263bfd63bd?w=600&h=400&fit=crop',
-    badge: null
-  },
-  {
-    id: 8,
-    title: 'Cooking Masterclass',
-    category: 'food',
-    price: 179,
-    duration: '3-4 hours',
-    rating: 4.7,
-    description: 'Learn chef techniques and cook a delicious meal from scratch with expert guidance',
-    image: 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=600&h=400&fit=crop',
-    badge: null
-  },
-  {
-    id: 9,
-    title: 'Rock Climbing',
-    category: 'adventure',
-    price: 99,
-    duration: '2-3 hours',
-    rating: 4.4,
-    description: 'Climb real rock with a pro guide—perfect for first-timers and thrill seekers',
-    image: 'https://images.unsplash.com/photo-1522163182402-834f871fd851?w=600&h=400&fit=crop',
-    badge: null
-  },
-  {
-    id: 10,
-    title: 'Meditation Retreat',
-    category: 'wellness and spa',
-    price: 159,
-    duration: 'Full day',
-    rating: 4.6,
-    description: 'A calming day of mindfulness, breathwork, and guided sessions in a serene space',
-    image: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=600&h=400&fit=crop',
-    badge: null
-  },
-  {
-    id: 11,
-    title: 'Theater Show & Dinner',
-    category: 'culture',
-    price: 219,
-    duration: '4-5 hours',
-    rating: 4.7,
-    description: 'An evening of live performance paired with a curated dinner experience',
-    image: 'https://images.unsplash.com/photo-1503095396549-807759245b35?w=600&h=400&fit=crop',
-    badge: null
-  },
-  {
-    id: 12,
-    title: 'Helicopter Tour',
-    category: 'adventure',
-    price: 499,
-    duration: '1-2 hours',
-    rating: 4.9,
-    description: 'Take in epic city and coastline views from the sky with a premium helicopter flight',
-    image: 'https://images.unsplash.com/photo-1473968512647-3e447244af8f?w=600&h=400&fit=crop',
-    badge: 'Exclusive'
+// Experiences are loaded from ../data/experiences.json (shared with the main site)
+const EXPERIENCES_ENDPOINT = '../data/experiences.json';
+let experiences = [];
+
+function normalizeExperienceImagePath(image) {
+  if (!image) return '';
+  const value = String(image).trim();
+  // data/experiences.json paths are relative to repo root; ui_design lives one level deeper.
+  if (value.startsWith('./')) return `../${value.slice(2)}`;
+  return value;
+}
+
+function deriveExperienceCategory(tags) {
+  const list = Array.isArray(tags) ? tags.map((t) => String(t).trim().toLowerCase()) : [];
+  if (list.includes('wellness and spa')) return 'wellness and spa';
+  if (list.includes('food')) return 'food';
+  if (list.includes('adventure') || list.includes('thrill') || list.includes('weekend getaway')) return 'adventure';
+  return 'culture';
+}
+
+function normalizeUiExperience(raw, index) {
+  const id = raw?.id != null ? String(raw.id) : String(index);
+  const title = String(raw?.title || '').trim();
+  const tags = Array.isArray(raw?.tags) ? raw.tags : [];
+  const category = String(raw?.category || deriveExperienceCategory(tags));
+
+  const priceNumber = Number(raw?.price);
+  const price = Number.isFinite(priceNumber) ? priceNumber : 99;
+
+  const ratingNumber = Number(raw?.rating);
+  const rating = Number.isFinite(ratingNumber) ? ratingNumber : 4.9;
+
+  const duration = String(raw?.duration || '').trim() || '1-2 hours';
+  const description = String(raw?.description || '').trim() || `A great local experience: ${title}.`;
+  const image = normalizeExperienceImagePath(raw?.image);
+  const badge = raw?.badge ?? null;
+
+  return {
+    id,
+    title,
+    category,
+    price,
+    duration,
+    rating,
+    description,
+    image,
+    badge,
+    alt: raw?.alt,
+    tags,
+    url: raw?.url,
+  };
+}
+
+async function loadExperiences() {
+  const fallback = (typeof window !== 'undefined' && Array.isArray(window.__LASKAWAY_EXPERIENCES__))
+    ? window.__LASKAWAY_EXPERIENCES__
+    : null;
+
+  // When opening ui_design via file://, browsers block fetch() for local files.
+  if (typeof window !== 'undefined' && window.location && window.location.protocol === 'file:') {
+    if (fallback) {
+      experiences = fallback.map(normalizeUiExperience);
+      return;
+    }
+    experiences = [];
+    console.error('Experiences unavailable in file:// mode: missing ui_design/experiences.fallback.js');
+    return;
   }
-];
+
+  try {
+    const response = await fetch(EXPERIENCES_ENDPOINT);
+    if (!response.ok) throw new Error(`Failed to fetch experiences from ${EXPERIENCES_ENDPOINT}`);
+    const data = await response.json();
+    if (!Array.isArray(data)) throw new Error('Experiences payload is not an array');
+    experiences = data.map(normalizeUiExperience);
+  } catch (error) {
+    console.error('Experiences data loading error (ui_design):', error);
+    if (fallback) {
+      experiences = fallback.map(normalizeUiExperience);
+      return;
+    }
+    experiences = [];
+  }
+}
 
 function formatCategoryLabel(category) {
   if (!category) return '';
@@ -189,8 +138,9 @@ const FAV_STORAGE_KEY = 'laskaway_favourites';
 let favouriteIds = new Set();
 
 // Initialize
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   loadFavourites();
+  await loadExperiences();
   renderExperienceShowcase();
   renderBuilderGrid();
   setupEventListeners();
@@ -266,7 +216,12 @@ function loadFavourites() {
     const raw = localStorage.getItem(FAV_STORAGE_KEY);
     const parsed = raw ? JSON.parse(raw) : [];
     if (Array.isArray(parsed)) {
-      favouriteIds = new Set(parsed.filter(n => Number.isFinite(n)));
+      favouriteIds = new Set(
+        parsed
+          .map((v) => (v == null ? '' : String(v)))
+          .map((v) => v.trim())
+          .filter(Boolean)
+      );
     }
   } catch {
     favouriteIds = new Set();
@@ -330,8 +285,8 @@ function toggleFavourite(id) {
 
 function updateFavouriteToggles() {
   document.querySelectorAll('[data-fav-toggle="true"][data-id]').forEach((el) => {
-    const id = parseInt(el.getAttribute('data-id'), 10);
-    const isFav = favouriteIds.has(id);
+    const id = (el.getAttribute('data-id') || '').trim();
+    const isFav = id ? favouriteIds.has(id) : false;
     el.classList.toggle('fav-toggle--active', isFav);
     el.setAttribute('aria-pressed', isFav ? 'true' : 'false');
     const label = isFav ? 'Remove from favourites' : 'Add to favourites';
@@ -363,8 +318,8 @@ function setupFavourites() {
     e.preventDefault();
     e.stopPropagation();
 
-    const id = parseInt(toggle.getAttribute('data-id'), 10);
-    if (!Number.isFinite(id)) return;
+    const id = (toggle.getAttribute('data-id') || '').trim();
+    if (!id) return;
     toggleFavourite(id);
   });
 }
@@ -521,7 +476,11 @@ function renderBuilderGrid(searchQuery = '') {
   
   // Attach click handlers
   document.querySelectorAll('.builder-card:not(.builder-card--disabled)').forEach(card => {
-    card.addEventListener('click', () => toggleExperience(parseInt(card.dataset.id)));
+    card.addEventListener('click', () => {
+      const id = (card.dataset.id || '').trim();
+      if (!id) return;
+      toggleExperience(id);
+    });
   });
 
   updateFavouriteToggles();
@@ -577,7 +536,9 @@ function updatePackUI() {
     document.querySelectorAll('.builder__item-remove').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
-        toggleExperience(parseInt(btn.dataset.id));
+        const id = (btn.dataset.id || '').trim();
+        if (!id) return;
+        toggleExperience(id);
       });
     });
   }

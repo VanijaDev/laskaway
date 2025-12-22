@@ -1,4 +1,8 @@
-[
+/* Auto-generated from data/experiences.json
+ * Used as a fallback when ui_design runs from file:// (fetch is blocked by the browser).
+ * Re-generate by running: node scripts/generate-ui-design-experiences-fallback.js (optional)
+ */
+window.__LASKAWAY_EXPERIENCES__ = [
   {
     "id": "spinning-buns",
     "title": "Burgers",
@@ -655,4 +659,4 @@
     "rating": 4.9,
     "description": "A great local experience: Acerra Studio."
   }
-]
+];
