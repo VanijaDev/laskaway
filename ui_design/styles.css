@@ -476,7 +476,6 @@ button {
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: var(--gradient-primary);
   opacity: 0.5;
   pointer-events: none;
 }
