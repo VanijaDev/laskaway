@@ -7,6 +7,23 @@
 const EXPERIENCES_ENDPOINT = '../data/experiences.json';
 let experiences = [];
 
+const HEART_SVG = `
+  <svg class="fav-toggle__icon" width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+    <path d="M20.84 4.61c-1.54-1.34-3.77-1.28-5.24.14L12 8.09 8.4 4.75C6.93 3.33 4.7 3.27 3.16 4.61c-1.77 1.54-1.86 4.24-.27 5.89L12 21.35l9.11-10.85c1.59-1.65 1.5-4.35-.27-5.89Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+  </svg>
+`;
+
+const POP_CONFETTI_COLORS = ['#7c5cff', '#ec4899', '#10b981', '#f59e0b'];
+const CELEBRATION_CONFETTI_COLORS = ['#7c5cff', '#ec4899', '#10b981', '#f59e0b', '#6366f1'];
+
+function randomRange(min, max) {
+  return Math.random() * (max - min) + min;
+}
+
+function pickRandom(items) {
+  return items[Math.floor(Math.random() * items.length)];
+}
+
 function normalizeExperienceImagePath(image) {
   if (!image) return '';
   const value = String(image).trim();
@@ -61,10 +78,14 @@ async function loadExperiences() {
     ? window.__LASKAWAY_EXPERIENCES__
     : null;
 
+  const applyRaw = (raw) => {
+    experiences = Array.isArray(raw) ? raw.map(normalizeUiExperience) : [];
+  };
+
   // When opening ui_design via file://, browsers block fetch() for local files.
   if (typeof window !== 'undefined' && window.location && window.location.protocol === 'file:') {
     if (fallback) {
-      experiences = fallback.map(normalizeUiExperience);
+      applyRaw(fallback);
       return;
     }
     experiences = [];
@@ -77,11 +98,11 @@ async function loadExperiences() {
     if (!response.ok) throw new Error(`Failed to fetch experiences from ${EXPERIENCES_ENDPOINT}`);
     const data = await response.json();
     if (!Array.isArray(data)) throw new Error('Experiences payload is not an array');
-    experiences = data.map(normalizeUiExperience);
+    applyRaw(data);
   } catch (error) {
     console.error('Experiences data loading error (ui_design):', error);
     if (fallback) {
-      experiences = fallback.map(normalizeUiExperience);
+      applyRaw(fallback);
       return;
     }
     experiences = [];
@@ -209,6 +230,66 @@ function syncExperienceFooterVisibility(totalItems) {
   const columns = getGridColumnCount(experienceGrid);
   const canShowMoreRows = totalItems > columns;
   expSeeMoreBtn.classList.toggle('is-hidden', !canShowMoreRows);
+}
+
+function getSearchQuery() {
+  return (searchInput?.value || '').trim();
+}
+
+function renderFavToggle(expId) {
+  const isFav = favouriteIds.has(expId);
+  return `
+    <button class="fav-toggle ${isFav ? 'fav-toggle--active' : ''}" type="button" data-fav-toggle="true" data-id="${expId}" aria-pressed="${isFav ? 'true' : 'false'}" aria-label="${isFav ? 'Remove from favourites' : 'Add to favourites'}">
+      <span class="fav-toggle__inner" aria-hidden="true">${HEART_SVG}</span>
+    </button>
+  `;
+}
+
+function renderExperienceCard(exp) {
+  return `
+    <article class="exp-card" data-id="${exp.id}">
+      <div class="exp-card__image">
+        <img src="${exp.image}" alt="${exp.title}" loading="lazy" />
+        ${renderFavToggle(exp.id)}
+      </div>
+      <div class="exp-card__content">
+        <div class="exp-card__top">
+          <span class="exp-card__tag exp-card__tag--${categoryToClass(exp.category)}">${formatCategoryLabel(exp.category)}</span>
+          <div class="exp-card__rating" aria-label="Rating">
+            <span class="exp-card__rating-star" aria-hidden="true">★</span>
+            <span class="exp-card__rating-value">${Number.isFinite(exp.rating) ? exp.rating.toFixed(1) : '4.9'}</span>
+          </div>
+        </div>
+        <h3 class="exp-card__title">${exp.title}</h3>
+        <p class="exp-card__desc">${exp.description || ''}</p>
+        <div class="exp-card__bottom">
+          <div class="exp-card__price">$${exp.price}</div>
+          <button class="exp-card__book" type="button">Book Now</button>
+        </div>
+      </div>
+    </article>
+  `;
+}
+
+function renderBuilderCard(exp) {
+  const isSelected = selectedExperiences.some((e) => e.id === exp.id);
+  const isDisabled = !isSelected && selectedExperiences.length >= MAX_SELECTIONS;
+  return `
+    <article class="builder-card ${isSelected ? 'builder-card--selected' : ''} ${isDisabled ? 'builder-card--disabled' : ''}" data-id="${exp.id}">
+      <div class="builder-card__image">
+        <img src="${exp.image}" alt="${exp.title}" loading="lazy" />
+        ${renderFavToggle(exp.id)}
+      </div>
+      <div class="builder-card__content">
+        <h4 class="builder-card__title">${exp.title}</h4>
+        <div class="builder-card__meta">
+          <span>🕐 ${exp.duration}</span>
+          <span class="builder-card__price">$${exp.price}</span>
+        </div>
+      </div>
+      <div class="builder-card__check">✓</div>
+    </article>
+  `;
 }
 
 function loadFavourites() {
@@ -403,35 +484,9 @@ function renderExperienceShowcase() {
   const startIndex = (experiencesPage - 1) * pageSize;
   const visible = filtered.slice(startIndex, startIndex + pageSize);
   
-  experienceGrid.innerHTML = visible.map(exp => `
-    <article class="exp-card" data-id="${exp.id}">
-      <div class="exp-card__image">
-        <img src="${exp.image}" alt="${exp.title}" loading="lazy" />
-        <button class="fav-toggle ${favouriteIds.has(exp.id) ? 'fav-toggle--active' : ''}" type="button" data-fav-toggle="true" data-id="${exp.id}" aria-pressed="${favouriteIds.has(exp.id) ? 'true' : 'false'}" aria-label="${favouriteIds.has(exp.id) ? 'Remove from favourites' : 'Add to favourites'}">
-          <span class="fav-toggle__inner" aria-hidden="true">
-            <svg class="fav-toggle__icon" width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
-              <path d="M20.84 4.61c-1.54-1.34-3.77-1.28-5.24.14L12 8.09 8.4 4.75C6.93 3.33 4.7 3.27 3.16 4.61c-1.77 1.54-1.86 4.24-.27 5.89L12 21.35l9.11-10.85c1.59-1.65 1.5-4.35-.27-5.89Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-            </svg>
-          </span>
-        </button>
-      </div>
-      <div class="exp-card__content">
-        <div class="exp-card__top">
-          <span class="exp-card__tag exp-card__tag--${categoryToClass(exp.category)}">${formatCategoryLabel(exp.category)}</span>
-          <div class="exp-card__rating" aria-label="Rating">
-            <span class="exp-card__rating-star" aria-hidden="true">★</span>
-            <span class="exp-card__rating-value">${Number.isFinite(exp.rating) ? exp.rating.toFixed(1) : '4.9'}</span>
-          </div>
-        </div>
-        <h3 class="exp-card__title">${exp.title}</h3>
-        <p class="exp-card__desc">${exp.description || ''}</p>
-        <div class="exp-card__bottom">
-          <div class="exp-card__price">$${exp.price}</div>
-          <button class="exp-card__book" type="button">Book Now</button>
-        </div>
-      </div>
-    </article>
-  `).join('');
+  if (experienceGrid) {
+    experienceGrid.innerHTML = visible.map(renderExperienceCard).join('');
+  }
 
   updateFavouriteToggles();
   renderExperiencePagination(totalPages);
@@ -440,48 +495,14 @@ function renderExperienceShowcase() {
 
 // Render builder grid
 function renderBuilderGrid(searchQuery = '') {
-  const filtered = experiences.filter(exp => {
-    const matchesSearch = exp.title.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesSearch;
-  });
-  
-  builderGrid.innerHTML = filtered.map(exp => {
-    const isSelected = selectedExperiences.some(e => e.id === exp.id);
-    const isDisabled = !isSelected && selectedExperiences.length >= MAX_SELECTIONS;
-    
-    return `
-      <article class="builder-card ${isSelected ? 'builder-card--selected' : ''} ${isDisabled ? 'builder-card--disabled' : ''}" 
-               data-id="${exp.id}">
-        <div class="builder-card__image">
-          <img src="${exp.image}" alt="${exp.title}" loading="lazy" />
-          <button class="fav-toggle ${favouriteIds.has(exp.id) ? 'fav-toggle--active' : ''}" type="button" data-fav-toggle="true" data-id="${exp.id}" aria-pressed="${favouriteIds.has(exp.id) ? 'true' : 'false'}" aria-label="${favouriteIds.has(exp.id) ? 'Remove from favourites' : 'Add to favourites'}">
-            <span class="fav-toggle__inner" aria-hidden="true">
-              <svg class="fav-toggle__icon" width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
-                <path d="M20.84 4.61c-1.54-1.34-3.77-1.28-5.24.14L12 8.09 8.4 4.75C6.93 3.33 4.7 3.27 3.16 4.61c-1.77 1.54-1.86 4.24-.27 5.89L12 21.35l9.11-10.85c1.59-1.65 1.5-4.35-.27-5.89Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-              </svg>
-            </span>
-          </button>
-        </div>
-        <div class="builder-card__content">
-          <h4 class="builder-card__title">${exp.title}</h4>
-          <div class="builder-card__meta">
-            <span>🕐 ${exp.duration}</span>
-            <span class="builder-card__price">$${exp.price}</span>
-          </div>
-        </div>
-        <div class="builder-card__check">✓</div>
-      </article>
-    `;
-  }).join('');
-  
-  // Attach click handlers
-  document.querySelectorAll('.builder-card:not(.builder-card--disabled)').forEach(card => {
-    card.addEventListener('click', () => {
-      const id = (card.dataset.id || '').trim();
-      if (!id) return;
-      toggleExperience(id);
-    });
-  });
+  const query = String(searchQuery || '').trim().toLowerCase();
+  const filtered = query
+    ? experiences.filter((exp) => exp.title.toLowerCase().includes(query))
+    : experiences;
+
+  if (builderGrid) {
+    builderGrid.innerHTML = filtered.map(renderBuilderCard).join('');
+  }
 
   updateFavouriteToggles();
 }
@@ -505,15 +526,16 @@ function toggleExperience(id) {
   }
   
   updatePackUI();
-  renderBuilderGrid(searchInput.value);
+  renderBuilderGrid(getSearchQuery());
 }
 
 // Update pack UI
 function updatePackUI() {
-  packCount.textContent = `${selectedExperiences.length}/${MAX_SELECTIONS}`;
-  sendGiftBtn.disabled = selectedExperiences.length === 0;
+  if (packCount) packCount.textContent = `${selectedExperiences.length}/${MAX_SELECTIONS}`;
+  if (sendGiftBtn) sendGiftBtn.disabled = selectedExperiences.length === 0;
   
   if (selectedExperiences.length === 0) {
+    if (!packItems) return;
     packItems.innerHTML = `
       <div class="builder__empty">
         <span class="builder__empty-icon">💫</span>
@@ -521,6 +543,7 @@ function updatePackUI() {
       </div>
     `;
   } else {
+    if (!packItems) return;
     packItems.innerHTML = selectedExperiences.map(exp => `
       <div class="builder__item" data-id="${exp.id}">
         <img class="builder__item-image" src="${exp.image}" alt="${exp.title}" />
@@ -531,16 +554,6 @@ function updatePackUI() {
         <button class="builder__item-remove" data-id="${exp.id}">✕</button>
       </div>
     `).join('');
-    
-    // Attach remove handlers
-    document.querySelectorAll('.builder__item-remove').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const id = (btn.dataset.id || '').trim();
-        if (!id) return;
-        toggleExperience(id);
-      });
-    });
   }
 }
 
@@ -589,22 +602,59 @@ function setupEventListeners() {
     },
     { passive: true }
   );
+
+  if (builderGrid) {
+    builderGrid.addEventListener('click', (e) => {
+      const target = e.target;
+      if (!(target instanceof Element)) return;
+
+      // Clicking the favourites toggle should not select/deselect the card.
+      if (target.closest('[data-fav-toggle="true"][data-id]')) return;
+
+      const card = target.closest('.builder-card');
+      if (!card || card.classList.contains('builder-card--disabled')) return;
+
+      const id = (card.getAttribute('data-id') || '').trim();
+      if (!id) return;
+      toggleExperience(id);
+    });
+  }
+
+  if (packItems) {
+    packItems.addEventListener('click', (e) => {
+      const target = e.target;
+      if (!(target instanceof Element)) return;
+      const removeBtn = target.closest('.builder__item-remove');
+      if (!removeBtn) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const id = (removeBtn.getAttribute('data-id') || '').trim();
+      if (!id) return;
+      toggleExperience(id);
+    });
+  }
   
   // Search
-  searchInput.addEventListener('input', (e) => {
-    renderBuilderGrid(e.target.value);
-  });
+  if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+      const next = e.target;
+      if (!(next instanceof HTMLInputElement)) return;
+      renderBuilderGrid(next.value);
+    });
+  }
   
   // Send gift
-  sendGiftBtn.addEventListener('click', sendGift);
+  if (sendGiftBtn) sendGiftBtn.addEventListener('click', sendGift);
   
   // Close modal
-  closeModalBtn.addEventListener('click', closeModal);
-  successModal.querySelector('.modal__backdrop').addEventListener('click', closeModal);
+  if (closeModalBtn) closeModalBtn.addEventListener('click', closeModal);
+  const backdrop = successModal?.querySelector?.('.modal__backdrop');
+  if (backdrop) backdrop.addEventListener('click', closeModal);
 }
 
 // Send gift
 function sendGift() {
+  if (!recipientName || !recipientDisplay || !successModal) return;
   const name = recipientName.value.trim() || 'Your loved one';
   
   recipientDisplay.textContent = name;
@@ -618,10 +668,11 @@ function sendGift() {
 
 // Close modal and reset
 function closeModal() {
+  if (!successModal) return;
   successModal.hidden = true;
   selectedExperiences = [];
-  recipientName.value = '';
-  giftMessage.value = '';
+  if (recipientName) recipientName.value = '';
+  if (giftMessage) giftMessage.value = '';
   updatePackUI();
   renderBuilderGrid();
 }
@@ -635,7 +686,6 @@ function triggerHaptic() {
 
 // Simple confetti pop
 function triggerConfettiPop() {
-  const colors = ['#7c5cff', '#ec4899', '#10b981', '#f59e0b'];
   const container = document.body;
   
   for (let i = 0; i < 8; i++) {
@@ -644,7 +694,7 @@ function triggerConfettiPop() {
       position: fixed;
       width: 10px;
       height: 10px;
-      background: ${colors[Math.floor(Math.random() * colors.length)]};
+      background: ${pickRandom(POP_CONFETTI_COLORS)};
       border-radius: 50%;
       pointer-events: none;
       z-index: 9999;
@@ -672,7 +722,6 @@ function triggerConfettiPop() {
 
 // Create celebration confetti
 function createCelebrationConfetti() {
-  const colors = ['#7c5cff', '#ec4899', '#10b981', '#f59e0b', '#6366f1'];
   const container = document.body;
   
   for (let i = 0; i < 50; i++) {
@@ -685,7 +734,7 @@ function createCelebrationConfetti() {
         position: fixed;
         width: ${size}px;
         height: ${size}px;
-        background: ${colors[Math.floor(Math.random() * colors.length)]};
+        background: ${pickRandom(CELEBRATION_CONFETTI_COLORS)};
         border-radius: ${isCircle ? '50%' : '2px'};
         pointer-events: none;
         z-index: 9999;
@@ -716,8 +765,6 @@ function createConfetti() {
   if (!container) return;
   
   const colors = ['rgba(124, 92, 255, 0.3)', 'rgba(236, 72, 153, 0.3)', 'rgba(16, 185, 129, 0.3)'];
-  
-  const randomRange = (min, max) => Math.random() * (max - min) + min;
   const diagonal = Math.sqrt(window.innerWidth ** 2 + window.innerHeight ** 2);
   const totalDots = BACKGROUND_CONFETTI_COUNT;
 
