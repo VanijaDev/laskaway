@@ -55,7 +55,6 @@ function normalizeUiExperience(raw, index) {
   const duration = String(raw?.duration || '').trim() || '1-2 hours';
   const description = String(raw?.description || '').trim() || `A great local experience: ${title}.`;
   const image = normalizeExperienceImagePath(raw?.image);
-  const badge = raw?.badge ?? null;
 
   return {
     id,
@@ -66,10 +65,6 @@ function normalizeUiExperience(raw, index) {
     rating,
     description,
     image,
-    badge,
-    alt: raw?.alt,
-    tags,
-    url: raw?.url,
   };
 }
 
@@ -169,6 +164,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupFavourites();
   createConfetti();
 });
+
+// Experiences (pagination + expansion)
 
 function getGridColumnCount(gridEl) {
   if (!gridEl) return 1;
@@ -789,7 +786,7 @@ function createConfetti() {
       position: absolute;
       width: ${size}px;
       height: ${size}px;
-      background: ${colors[Math.floor(Math.random() * colors.length)]};
+      background: ${pickRandom(colors)};
       border-radius: ${Math.random() > 0.65 ? '999px' : '50%'};
       left: ${startX}%;
       top: ${startY}%;
