@@ -884,7 +884,7 @@ button {
 }
 
 .exp-card:hover .exp-card__image img {
-  transform: scale(1.05);
+  transform: scale(1.1);
 }
 
 .exp-card__content {
