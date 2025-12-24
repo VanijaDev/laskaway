@@ -190,13 +190,11 @@ function getExperiencePageSize() {
   return Math.max(1, columns * getExperienceRowsVisible());
 }
 
-function getBuilderRowsVisible() {
-  return builderExpanded ? 4 : 1;
-}
-
 function getBuilderPageSize() {
+  // Builder default should show a fixed count (9) regardless of responsive columns.
+  if (!builderExpanded) return 9;
   const columns = getGridColumnCount(builderGrid);
-  return Math.max(1, columns * getBuilderRowsVisible());
+  return Math.max(1, columns * 4);
 }
 
 function renderBuilderPagination(totalPages) {
@@ -231,9 +229,8 @@ function syncBuilderFooterVisibility(totalItems) {
     return;
   }
 
-  const columns = getGridColumnCount(builderGrid);
-  const canShowMoreRows = totalItems > columns;
-  builderSeeMoreBtn.classList.toggle('is-hidden', !canShowMoreRows);
+  const canShowMore = totalItems > 9;
+  builderSeeMoreBtn.classList.toggle('is-hidden', !canShowMore);
 }
 
 function renderExperiencePagination(totalPages) {
@@ -328,10 +325,18 @@ function renderBuilderCard(exp) {
         ${renderFavToggle(exp.id)}
       </div>
       <div class="builder-card__content">
+        <div class="builder-card__top">
+          <span class="exp-card__tag exp-card__tag--${categoryToClass(exp.category)}">${formatCategoryLabel(exp.category)}</span>
+          <div class="builder-card__rating" aria-label="Rating">
+            <span class="builder-card__rating-star" aria-hidden="true">★</span>
+            <span class="builder-card__rating-value">${Number.isFinite(exp.rating) ? exp.rating.toFixed(1) : '4.9'}</span>
+          </div>
+        </div>
         <h4 class="builder-card__title">${exp.title}</h4>
-        <div class="builder-card__meta">
-          <span>🕐 ${exp.duration}</span>
-          <span class="builder-card__price">$${exp.price}</span>
+        <p class="builder-card__desc">${exp.description || ''}</p>
+        <div class="builder-card__bottom">
+          <div class="builder-card__price">$${exp.price}</div>
+          <button class="builder-card__book" type="button">Book Now</button>
         </div>
       </div>
       <div class="builder-card__check">✓</div>
