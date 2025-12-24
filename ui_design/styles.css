@@ -889,7 +889,7 @@ button {
   cursor: pointer;
   display: flex;
   flex-direction: column;
-  height: 520px;
+  height: 470px;
 }
 
 .exp-card:hover {
@@ -916,7 +916,7 @@ button {
 }
 
 .exp-card__content {
-  padding: 22px 24px 24px;
+  padding: 18px 20px 20px;
   display: flex;
   flex-direction: column;
   flex: 1 1 auto;
@@ -979,7 +979,7 @@ button {
 
 .exp-card__title {
   font-weight: 800;
-  font-size: 1.35rem;
+  font-size: 1.25rem;
   line-height: 1.2;
   margin-bottom: 10px;
   display: -webkit-box;
@@ -991,9 +991,9 @@ button {
 
 .exp-card__desc {
   color: var(--text-muted);
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   line-height: 1.55;
-  margin-bottom: 20px;
+  margin-bottom: 14px;
   display: -webkit-box;
   line-clamp: 3;
   -webkit-line-clamp: 3;
@@ -1031,7 +1031,7 @@ button {
 
 @media (max-width: 520px) {
   .exp-card {
-    height: 560px;
+    height: 520px;
   }
 }
 
