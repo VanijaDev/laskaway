@@ -116,12 +116,43 @@ body {
   margin: 0 0 28px;
 }
 
+.hero__copy {
+  position: relative;
+}
+
+.show-design-btn {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform: translateY(-110%);
+  height: 24px;
+  padding: 0 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  z-index: 2;
+  opacity: 0;
+}
+
+@media (max-width: 720px) {
+  .show-design-btn {
+    transform: translateY(-95%);
+  }
+}
+
 
 .btn {
   display: inline-flex; align-items: center; justify-content: center;
   height: 54px; padding: 0 20px; border-radius: var(--radius-md);
   border: 0; cursor: pointer; font-weight: 600; font-size: 16px;
   color: #111; text-decoration: none; transition: transform .06s ease, box-shadow .2s ease, background .2s ease;
+}
+
+/* Override base button sizing for the design shortcut (must win over .btn). */
+.btn.show-design-btn {
+  height: 24px;
+  padding: 0 8px;
+  border-radius: 10px;
+  font-size: 11px;
 }
 .btn:active { transform: translateY(1px); }
 .btn[disabled] { opacity: .7; cursor: not-allowed; }
