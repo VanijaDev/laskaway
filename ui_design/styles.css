@@ -1240,6 +1240,32 @@ button {
   gap: 20px;
 }
 
+/* When expanded, the builder becomes a horizontally scrollable, paged track. */
+.builder__grid[data-paged="true"] {
+  display: block;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+
+.builder__track {
+  display: flex;
+  flex-wrap: nowrap;
+  width: 100%;
+}
+
+.builder__page {
+  flex: 0 0 100%;
+  scroll-snap-align: start;
+}
+
+.builder__page-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 20px;
+}
+
 .builder__footer {
   margin-top: 22px;
   display: flex;
@@ -1464,6 +1490,12 @@ button {
    ============================================ */
 .testimonials {
   padding: var(--section-gap) 0;
+  background: linear-gradient(
+    0deg,
+    rgba(124, 92, 255, 0.10) 0%,
+    rgba(236, 72, 153, 0.06) 55%,
+    rgba(250, 251, 255, 0) 100%
+  );
 }
 
 .testimonial-grid {

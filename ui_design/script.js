@@ -128,8 +128,10 @@ let experiencesExpanded = false;
 let experiencesPage = 1;
 let builderExpanded = false;
 let builderPage = 1;
+let builderTotalPages = 1;
 let builderMainLockedMinHeight = null;
 let builderHeightLockRaf = null;
+let builderScrollRaf = null;
 const MAX_SELECTIONS = 5;
 const BACKGROUND_CONFETTI_COUNT = 50;
 
@@ -224,6 +226,19 @@ function renderBuilderPagination(totalPages) {
     .join('');
 }
 
+function syncBuilderPaginationActive() {
+  if (!builderPagination) return;
+  const buttons = builderPagination.querySelectorAll('[data-builder-page]');
+  buttons.forEach((btn) => {
+    if (!(btn instanceof HTMLElement)) return;
+    const page = parseInt(btn.getAttribute('data-builder-page') || '', 10);
+    const isActive = Number.isFinite(page) && page === builderPage;
+    btn.classList.toggle('builder-page--active', isActive);
+    if (isActive) btn.setAttribute('aria-current', 'page');
+    else btn.removeAttribute('aria-current');
+  });
+}
+
 function syncBuilderFooterVisibility(totalItems) {
   if (!builderSeeMoreBtn) return;
 
@@ -266,6 +281,20 @@ function scheduleBuilderHeightLock() {
     }
     builderHeightLockRaf = null;
   });
+}
+
+function scrollBuilderToPage(page, behavior = 'smooth') {
+  if (!builderGrid || !builderExpanded) return;
+  const pageEl = builderGrid.querySelector(`.builder__page[data-page="${page}"]`);
+  if (pageEl instanceof HTMLElement) {
+    pageEl.scrollIntoView({ behavior, block: 'nearest', inline: 'start' });
+    return;
+  }
+
+  // Fallback if markup is missing for some reason.
+  const width = builderGrid.clientWidth || 0;
+  if (width <= 0) return;
+  builderGrid.scrollTo({ left: (page - 1) * width, behavior });
 }
 
 function renderExperiencePagination(totalPages) {
@@ -597,23 +626,39 @@ function renderBuilderGrid(searchQuery = '') {
 
   const pageSize = getBuilderPageSize();
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  builderTotalPages = totalPages;
   builderPage = Math.min(Math.max(1, builderPage), totalPages);
-  const startIndex = (builderPage - 1) * pageSize;
-  const visible = filtered.slice(startIndex, startIndex + pageSize);
 
   if (builderGrid) {
-    const itemsHtml = visible.map(renderBuilderCard);
+    builderGrid.dataset.paged = builderExpanded ? 'true' : 'false';
 
-    // When expanded, keep the grid height stable across pages by padding
-    // the last page with invisible placeholders (so rows don't collapse).
-    if (builderExpanded) {
-      const missing = Math.max(0, pageSize - visible.length);
-      for (let i = 0; i < missing; i += 1) {
-        itemsHtml.push('<article class="builder-card builder-card--placeholder" aria-hidden="true"></article>');
+    if (!builderExpanded) {
+      const visible = filtered.slice(0, pageSize);
+      builderGrid.innerHTML = visible.map(renderBuilderCard).join('');
+    } else {
+      const pagesHtml = [];
+      for (let page = 1; page <= totalPages; page += 1) {
+        const startIndex = (page - 1) * pageSize;
+        const items = filtered.slice(startIndex, startIndex + pageSize);
+        const itemsHtml = items.map(renderBuilderCard);
+        const missing = Math.max(0, pageSize - items.length);
+        for (let i = 0; i < missing; i += 1) {
+          itemsHtml.push('<article class="builder-card builder-card--placeholder" aria-hidden="true"></article>');
+        }
+        pagesHtml.push(
+          `<section class="builder__page" data-page="${page}" aria-label="Gift pack page ${page}">` +
+            `<div class="builder__page-grid">${itemsHtml.join('')}</div>` +
+          `</section>`
+        );
       }
-    }
+      builderGrid.innerHTML = `<div class="builder__track">${pagesHtml.join('')}</div>`;
 
-    builderGrid.innerHTML = itemsHtml.join('');
+      // Ensure the correct page is visible without re-rendering.
+      requestAnimationFrame(() => {
+        scrollBuilderToPage(builderPage, 'auto');
+        syncBuilderPaginationActive();
+      });
+    }
   }
 
   updateFavouriteToggles();
@@ -770,7 +815,8 @@ function setupEventListeners() {
       const page = parseInt(btn.getAttribute('data-builder-page') || '', 10);
       if (!Number.isFinite(page)) return;
       builderPage = page;
-      renderBuilderGrid(getSearchQuery());
+      syncBuilderPaginationActive();
+      scrollBuilderToPage(builderPage);
     });
   }
 
@@ -781,6 +827,30 @@ function setupEventListeners() {
       builderMainLockedMinHeight = null;
       renderBuilderGrid(getSearchQuery());
     });
+  }
+
+  if (builderGrid) {
+    builderGrid.addEventListener(
+      'scroll',
+      () => {
+        if (!builderExpanded) return;
+        if (builderScrollRaf) cancelAnimationFrame(builderScrollRaf);
+        builderScrollRaf = requestAnimationFrame(() => {
+          const width = builderGrid.clientWidth || 0;
+          if (width <= 0) return;
+          const nextPage = Math.min(
+            builderTotalPages,
+            Math.max(1, Math.round(builderGrid.scrollLeft / width) + 1)
+          );
+          if (nextPage !== builderPage) {
+            builderPage = nextPage;
+            syncBuilderPaginationActive();
+          }
+          builderScrollRaf = null;
+        });
+      },
+      { passive: true }
+    );
   }
   
   // Send gift
