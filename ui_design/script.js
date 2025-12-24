@@ -126,6 +126,8 @@ let selectedExperiences = [];
 let currentFilter = 'all';
 let experiencesExpanded = false;
 let experiencesPage = 1;
+let builderExpanded = false;
+let builderPage = 1;
 const MAX_SELECTIONS = 5;
 const BACKGROUND_CONFETTI_COUNT = 50;
 
@@ -149,6 +151,8 @@ const favsList = document.getElementById('favsList');
 const favsCloseBtn = document.getElementById('favsCloseBtn');
 const expSeeMoreBtn = document.getElementById('expSeeMoreBtn');
 const expPagination = document.getElementById('expPagination');
+const builderSeeMoreBtn = document.getElementById('builderSeeMoreBtn');
+const builderPagination = document.getElementById('builderPagination');
 
 const FAV_STORAGE_KEY = 'laskaway_favourites';
 let favouriteIds = new Set();
@@ -184,6 +188,52 @@ function getExperienceRowsVisible() {
 function getExperiencePageSize() {
   const columns = getGridColumnCount(experienceGrid);
   return Math.max(1, columns * getExperienceRowsVisible());
+}
+
+function getBuilderRowsVisible() {
+  return builderExpanded ? 4 : 1;
+}
+
+function getBuilderPageSize() {
+  const columns = getGridColumnCount(builderGrid);
+  return Math.max(1, columns * getBuilderRowsVisible());
+}
+
+function renderBuilderPagination(totalPages) {
+  if (!builderPagination) return;
+
+  // Pagination should only appear after user expands the grid via "See more".
+  if (!builderExpanded || totalPages <= 1) {
+    builderPagination.classList.add('is-hidden');
+    builderPagination.innerHTML = '';
+    return;
+  }
+
+  builderPagination.classList.remove('is-hidden');
+  builderPagination.innerHTML = Array.from({ length: totalPages })
+    .map((_, index) => {
+      const page = index + 1;
+      const isActive = page === builderPage;
+      return `
+        <button class="builder-page ${isActive ? 'builder-page--active' : ''}" type="button" data-builder-page="${page}" ${isActive ? 'aria-current="page"' : ''}>
+          ${page}
+        </button>
+      `;
+    })
+    .join('');
+}
+
+function syncBuilderFooterVisibility(totalItems) {
+  if (!builderSeeMoreBtn) return;
+
+  if (builderExpanded) {
+    builderSeeMoreBtn.classList.add('is-hidden');
+    return;
+  }
+
+  const columns = getGridColumnCount(builderGrid);
+  const canShowMoreRows = totalItems > columns;
+  builderSeeMoreBtn.classList.toggle('is-hidden', !canShowMoreRows);
 }
 
 function renderExperiencePagination(totalPages) {
@@ -497,11 +547,19 @@ function renderBuilderGrid(searchQuery = '') {
     ? experiences.filter((exp) => exp.title.toLowerCase().includes(query))
     : experiences;
 
+  const pageSize = getBuilderPageSize();
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  builderPage = Math.min(Math.max(1, builderPage), totalPages);
+  const startIndex = (builderPage - 1) * pageSize;
+  const visible = filtered.slice(startIndex, startIndex + pageSize);
+
   if (builderGrid) {
-    builderGrid.innerHTML = filtered.map(renderBuilderCard).join('');
+    builderGrid.innerHTML = visible.map(renderBuilderCard).join('');
   }
 
   updateFavouriteToggles();
+  renderBuilderPagination(totalPages);
+  syncBuilderFooterVisibility(filtered.length);
 }
 
 // Toggle experience selection
@@ -636,7 +694,30 @@ function setupEventListeners() {
     searchInput.addEventListener('input', (e) => {
       const next = e.target;
       if (!(next instanceof HTMLInputElement)) return;
+      builderExpanded = false;
+      builderPage = 1;
       renderBuilderGrid(next.value);
+    });
+  }
+
+  if (builderPagination) {
+    builderPagination.addEventListener('click', (e) => {
+      const target = e.target;
+      if (!(target instanceof Element)) return;
+      const btn = target.closest('[data-builder-page]');
+      if (!btn) return;
+      const page = parseInt(btn.getAttribute('data-builder-page') || '', 10);
+      if (!Number.isFinite(page)) return;
+      builderPage = page;
+      renderBuilderGrid(getSearchQuery());
+    });
+  }
+
+  if (builderSeeMoreBtn) {
+    builderSeeMoreBtn.addEventListener('click', () => {
+      builderExpanded = true;
+      builderPage = 1;
+      renderBuilderGrid(getSearchQuery());
     });
   }
   
