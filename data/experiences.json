@@ -12,7 +12,8 @@
     "price": 95,
     "duration": "1-2 hours",
     "rating": 4.9,
-    "description": "A curated food & drink experience — Burgers."
+    "description": "A curated food & drink experience — Burgers.",
+    "location_city": "Austin"
   },
   {
     "id": "smakota-catering",
@@ -27,7 +28,8 @@
     "price": 95,
     "duration": "1-2 hours",
     "rating": 4.9,
-    "description": "A curated food & drink experience — Bakeries & Desserts, Catering."
+    "description": "A curated food & drink experience — Bakeries & Desserts, Catering.",
+    "location_city": "Austin"
   },
   {
     "id": "golf-classes",
@@ -44,7 +46,8 @@
     "price": 85,
     "duration": "2-3 hours",
     "rating": 4.9,
-    "description": "A great local experience: Top Golf."
+    "description": "A great local experience: Top Golf.",
+    "location_city": "Austin"
   },
   {
     "id": "kava-oli",
@@ -59,7 +62,8 @@
     "price": 95,
     "duration": "1-2 hours",
     "rating": 4.9,
-    "description": "A curated food & drink experience — Kava Oli."
+    "description": "A curated food & drink experience — Kava Oli.",
+    "location_city": "Austin"
   },
   {
     "id": "kayak-tours",
@@ -76,7 +80,8 @@
     "price": 85,
     "duration": "2-3 hours",
     "rating": 4.9,
-    "description": "A great local experience: Kayak Tours."
+    "description": "A great local experience: Kayak Tours.",
+    "location_city": "Austin"
   },
   {
     "id": "bat-watching",
@@ -94,7 +99,8 @@
     "price": 85,
     "duration": "2-3 hours",
     "rating": 4.9,
-    "description": "A great local experience: Austin Bat Watching Tours."
+    "description": "A great local experience: Austin Bat Watching Tours.",
+    "location_city": "Austin"
   },
   {
     "id": "e-bike-tour",
@@ -111,7 +117,8 @@
     "price": 85,
     "duration": "2-3 hours",
     "rating": 4.9,
-    "description": "A great local experience: E-bike Tours."
+    "description": "A great local experience: E-bike Tours.",
+    "location_city": "Austin"
   },
   {
     "id": "cooking-classes",
@@ -128,7 +135,8 @@
     "price": 95,
     "duration": "1-2 hours",
     "rating": 4.9,
-    "description": "A curated food & drink experience — Cooking Classes."
+    "description": "A curated food & drink experience — Cooking Classes.",
+    "location_city": "Austin"
   },
   {
     "id": "food-tour-austin",
@@ -145,7 +153,8 @@
     "price": 95,
     "duration": "1-2 hours",
     "rating": 4.9,
-    "description": "A curated food & drink experience — Secret Food Tours: Austin."
+    "description": "A curated food & drink experience — Secret Food Tours: Austin.",
+    "location_city": "Austin"
   },
   {
     "id": "wine-tasting",
@@ -162,7 +171,8 @@
     "price": 95,
     "duration": "1-2 hours",
     "rating": 4.9,
-    "description": "A curated food & drink experience — Wine Tasting."
+    "description": "A curated food & drink experience — Wine Tasting.",
+    "location_city": "Austin"
   },
   {
     "id": "hot-air-balloon-rides",
@@ -179,7 +189,8 @@
     "price": 310,
     "duration": "2-4 hours",
     "rating": 4.9,
-    "description": "An unforgettable adventure: Hot Air Balloon Rides."
+    "description": "An unforgettable adventure: Hot Air Balloon Rides.",
+    "location_city": "Austin"
   },
   {
     "id": "skydive-experience",
@@ -196,7 +207,8 @@
     "price": 310,
     "duration": "2-4 hours",
     "rating": 4.9,
-    "description": "An unforgettable adventure: Skydive Experience."
+    "description": "An unforgettable adventure: Skydive Experience.",
+    "location_city": "Austin"
   },
   {
     "id": "indoor-kart-drive",
@@ -214,7 +226,8 @@
     "price": 310,
     "duration": "2-4 hours",
     "rating": 4.9,
-    "description": "An unforgettable adventure: Indoor Go-Kart Racing."
+    "description": "An unforgettable adventure: Indoor Go-Kart Racing.",
+    "location_city": "Austin"
   },
   {
     "id": "drive-supercars",
@@ -231,7 +244,8 @@
     "price": 310,
     "duration": "2-4 hours",
     "rating": 4.9,
-    "description": "An unforgettable adventure: Drive Supercars."
+    "description": "An unforgettable adventure: Drive Supercars.",
+    "location_city": "Austin"
   },
   {
     "id": "rock-climbing",
@@ -249,7 +263,8 @@
     "price": 310,
     "duration": "2-4 hours",
     "rating": 4.9,
-    "description": "An unforgettable adventure: Rock Climbing."
+    "description": "An unforgettable adventure: Rock Climbing.",
+    "location_city": "Austin"
   },
   {
     "id": "lake-travis-zip-line",
@@ -267,7 +282,8 @@
     "price": 85,
     "duration": "2-3 hours",
     "rating": 4.9,
-    "description": "A great local experience: Lake Travis Zip Line."
+    "description": "A great local experience: Lake Travis Zip Line.",
+    "location_city": "Austin"
   },
   {
     "id": "lake-austin-spa-resort",
@@ -285,7 +301,8 @@
     "price": 445,
     "duration": "1-2 days",
     "rating": 4.9,
-    "description": "Relax and recharge with Lake Austin Spa Resort."
+    "description": "Relax and recharge with Lake Austin Spa Resort.",
+    "location_city": "Austin"
   },
   {
     "id": "kuya",
@@ -302,7 +319,8 @@
     "price": 165,
     "duration": "2-4 hours",
     "rating": 4.9,
-    "description": "Relax and recharge with KUYA."
+    "description": "Relax and recharge with KUYA.",
+    "location_city": "Austin"
   },
   {
     "id": "oasis-spa",
@@ -319,7 +337,8 @@
     "price": 165,
     "duration": "2-4 hours",
     "rating": 4.9,
-    "description": "Relax and recharge with Oasis Spa."
+    "description": "Relax and recharge with Oasis Spa.",
+    "location_city": "Austin"
   },
   {
     "id": "painting-classes-twist",
@@ -338,7 +357,8 @@
     "price": 165,
     "duration": "2-4 hours",
     "rating": 4.9,
-    "description": "Relax and recharge with Painting Classes."
+    "description": "Relax and recharge with Painting Classes.",
+    "location_city": "Austin"
   },
   {
     "id": "the-yellow-rose",
@@ -355,7 +375,8 @@
     "price": 165,
     "duration": "2-4 hours",
     "rating": 4.9,
-    "description": "Relax and recharge with Gentleman's Club."
+    "description": "Relax and recharge with Gentleman's Club.",
+    "location_city": "Austin"
   },
   {
     "id": "massage-therapy-oak-haven",
@@ -372,7 +393,8 @@
     "price": 165,
     "duration": "2-4 hours",
     "rating": 4.9,
-    "description": "Relax and recharge with Massage Therapy."
+    "description": "Relax and recharge with Massage Therapy.",
+    "location_city": "Austin"
   },
   {
     "id": "axe-throwing-top-notch",
@@ -388,7 +410,8 @@
     "price": 85,
     "duration": "2-3 hours",
     "rating": 4.9,
-    "description": "A great local experience: Axe Throwing."
+    "description": "A great local experience: Axe Throwing.",
+    "location_city": "Austin"
   },
   {
     "id": "bathe",
@@ -405,7 +428,8 @@
     "price": 165,
     "duration": "2-4 hours",
     "rating": 4.9,
-    "description": "Relax and recharge with Bathe."
+    "description": "Relax and recharge with Bathe.",
+    "location_city": "Austin"
   },
   {
     "id": "dance-with-me",
@@ -422,7 +446,8 @@
     "price": 85,
     "duration": "2-3 hours",
     "rating": 4.9,
-    "description": "A great local experience: Dance With Me."
+    "description": "A great local experience: Dance With Me.",
+    "location_city": "Austin"
   },
   {
     "id": "museum-of-illusions-austin",
@@ -440,7 +465,8 @@
     "price": 85,
     "duration": "2-3 hours",
     "rating": 4.9,
-    "description": "A great local experience: Museum of Illusions Austin."
+    "description": "A great local experience: Museum of Illusions Austin.",
+    "location_city": "Austin"
   },
   {
     "id": "true-rest",
@@ -457,7 +483,8 @@
     "price": 165,
     "duration": "2-4 hours",
     "rating": 4.9,
-    "description": "Relax and recharge with Float Therapy."
+    "description": "Relax and recharge with Float Therapy.",
+    "location_city": "Austin"
   },
   {
     "id": "mr-olympia",
@@ -473,7 +500,8 @@
     "price": 85,
     "duration": "2-3 hours",
     "rating": 4.9,
-    "description": "A great local experience: Mr Olympia."
+    "description": "A great local experience: Mr Olympia.",
+    "location_city": "Austin"
   },
   {
     "id": "sandbox-vr",
@@ -491,7 +519,8 @@
     "price": 85,
     "duration": "2-3 hours",
     "rating": 4.9,
-    "description": "A great local experience: Sandbox VR."
+    "description": "A great local experience: Sandbox VR.",
+    "location_city": "Austin"
   },
   {
     "id": "the-escape-game",
@@ -509,7 +538,8 @@
     "price": 85,
     "duration": "2-3 hours",
     "rating": 4.9,
-    "description": "A great local experience: The Escape Game."
+    "description": "A great local experience: The Escape Game.",
+    "location_city": "Austin"
   },
   {
     "id": "quark-expeditions",
@@ -526,7 +556,8 @@
     "price": 220,
     "duration": "2-4 hours",
     "rating": 4.9,
-    "description": "An unforgettable adventure: Quark Expeditions."
+    "description": "An unforgettable adventure: Quark Expeditions.",
+    "location_city": "Austin"
   },
   {
     "id": "texas-hill-country",
@@ -545,7 +576,8 @@
     "price": 445,
     "duration": "1-2 days",
     "rating": 4.9,
-    "description": "Relax and recharge with Texas Hill Country."
+    "description": "Relax and recharge with Texas Hill Country.",
+    "location_city": "Austin"
   },
   {
     "id": "mesa-rim-climbing-center",
@@ -564,7 +596,8 @@
     "price": 310,
     "duration": "2-4 hours",
     "rating": 4.9,
-    "description": "An unforgettable adventure: Mesa Rim Climbing Center."
+    "description": "An unforgettable adventure: Mesa Rim Climbing Center.",
+    "location_city": "Austin"
   },
   {
     "id": "ifly-indoor-skydiving",
@@ -583,7 +616,8 @@
     "price": 310,
     "duration": "2-4 hours",
     "rating": 4.9,
-    "description": "An unforgettable adventure: iFLY Indoor Skydiving."
+    "description": "An unforgettable adventure: iFLY Indoor Skydiving.",
+    "location_city": "Austin"
   },
   {
     "id": "your-startup-sucks",
@@ -600,7 +634,8 @@
     "price": 85,
     "duration": "2-3 hours",
     "rating": 4.9,
-    "description": "A great local experience: Your Startup Sucks."
+    "description": "A great local experience: Your Startup Sucks.",
+    "location_city": "Austin"
   },
   {
     "id": "atx-ecosystem-resources",
@@ -617,7 +652,8 @@
     "price": 85,
     "duration": "2-3 hours",
     "rating": 4.9,
-    "description": "A great local experience: ATX Ecosystem Resources."
+    "description": "A great local experience: ATX Ecosystem Resources.",
+    "location_city": "Austin"
   },
   {
     "id": "two-hives-honey",
@@ -635,7 +671,8 @@
     "price": 95,
     "duration": "1-2 hours",
     "rating": 4.9,
-    "description": "A curated food & drink experience — Two Hives Honey."
+    "description": "A curated food & drink experience — Two Hives Honey.",
+    "location_city": "Austin"
   },
   {
     "id": "acerra_studio",
@@ -653,6 +690,7 @@
     "price": 85,
     "duration": "2-3 hours",
     "rating": 4.9,
-    "description": "A great local experience: Acerra Studio."
+    "description": "A great local experience: Acerra Studio.",
+    "location_city": "Austin"
   }
 ]
