@@ -620,6 +620,34 @@ button {
 .hero__stats {
   display: flex;
   gap: 40px;
+  align-items: center;
+  flex-wrap: wrap;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+
+.hero__benefit {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.hero__benefit-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary);
+  flex: 0 0 auto;
+}
+
+.hero__benefit-icon svg {
+  width: 20px;
+  height: 20px;
+  display: block;
+}
+
+.hero__benefit-text {
+  font-weight: 500;
 }
 
 .stat {
@@ -1611,6 +1639,7 @@ button {
   .hero__stats {
     flex-direction: column;
     gap: 20px;
+    align-items: flex-start;
   }
   
   .stat {
