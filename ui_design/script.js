@@ -128,6 +128,8 @@ let experiencesExpanded = false;
 let experiencesPage = 1;
 let builderExpanded = false;
 let builderPage = 1;
+let builderMainLockedMinHeight = null;
+let builderHeightLockRaf = null;
 const MAX_SELECTIONS = 5;
 const BACKGROUND_CONFETTI_COUNT = 50;
 
@@ -153,6 +155,7 @@ const expSeeMoreBtn = document.getElementById('expSeeMoreBtn');
 const expPagination = document.getElementById('expPagination');
 const builderSeeMoreBtn = document.getElementById('builderSeeMoreBtn');
 const builderPagination = document.getElementById('builderPagination');
+const builderMain = builderGrid?.closest('.builder__main') || document.querySelector('.builder__main');
 
 const FAV_STORAGE_KEY = 'laskaway_favourites';
 let favouriteIds = new Set();
@@ -231,6 +234,38 @@ function syncBuilderFooterVisibility(totalItems) {
 
   const canShowMore = totalItems > 9;
   builderSeeMoreBtn.classList.toggle('is-hidden', !canShowMore);
+}
+
+function clearBuilderHeightLock() {
+  builderMainLockedMinHeight = null;
+  if (builderHeightLockRaf) cancelAnimationFrame(builderHeightLockRaf);
+  builderHeightLockRaf = null;
+  if (builderMain instanceof HTMLElement) builderMain.style.minHeight = '';
+}
+
+function scheduleBuilderHeightLock() {
+  if (!(builderMain instanceof HTMLElement)) return;
+
+  if (!builderExpanded) {
+    clearBuilderHeightLock();
+    return;
+  }
+
+  if (typeof builderMainLockedMinHeight === 'number') {
+    builderMain.style.minHeight = `${builderMainLockedMinHeight}px`;
+    return;
+  }
+
+  if (builderHeightLockRaf) cancelAnimationFrame(builderHeightLockRaf);
+  builderHeightLockRaf = requestAnimationFrame(() => {
+    // Measure after layout settles (post render) and lock the expanded height.
+    const measured = Math.ceil(builderMain.getBoundingClientRect().height);
+    if (measured > 0) {
+      builderMainLockedMinHeight = measured;
+      builderMain.style.minHeight = `${builderMainLockedMinHeight}px`;
+    }
+    builderHeightLockRaf = null;
+  });
 }
 
 function renderExperiencePagination(totalPages) {
@@ -547,6 +582,14 @@ function renderExperienceShowcase() {
 
 // Render builder grid
 function renderBuilderGrid(searchQuery = '') {
+  if (
+    builderExpanded &&
+    builderMain instanceof HTMLElement &&
+    typeof builderMainLockedMinHeight === 'number'
+  ) {
+    builderMain.style.minHeight = `${builderMainLockedMinHeight}px`;
+  }
+
   const query = String(searchQuery || '').trim().toLowerCase();
   const filtered = query
     ? experiences.filter((exp) => exp.title.toLowerCase().includes(query))
@@ -559,12 +602,24 @@ function renderBuilderGrid(searchQuery = '') {
   const visible = filtered.slice(startIndex, startIndex + pageSize);
 
   if (builderGrid) {
-    builderGrid.innerHTML = visible.map(renderBuilderCard).join('');
+    const itemsHtml = visible.map(renderBuilderCard);
+
+    // When expanded, keep the grid height stable across pages by padding
+    // the last page with invisible placeholders (so rows don't collapse).
+    if (builderExpanded) {
+      const missing = Math.max(0, pageSize - visible.length);
+      for (let i = 0; i < missing; i += 1) {
+        itemsHtml.push('<article class="builder-card builder-card--placeholder" aria-hidden="true"></article>');
+      }
+    }
+
+    builderGrid.innerHTML = itemsHtml.join('');
   }
 
   updateFavouriteToggles();
   renderBuilderPagination(totalPages);
   syncBuilderFooterVisibility(filtered.length);
+  scheduleBuilderHeightLock();
 }
 
 // Toggle experience selection
@@ -701,6 +756,7 @@ function setupEventListeners() {
       if (!(next instanceof HTMLInputElement)) return;
       builderExpanded = false;
       builderPage = 1;
+      clearBuilderHeightLock();
       renderBuilderGrid(next.value);
     });
   }
@@ -722,6 +778,7 @@ function setupEventListeners() {
     builderSeeMoreBtn.addEventListener('click', () => {
       builderExpanded = true;
       builderPage = 1;
+      builderMainLockedMinHeight = null;
       renderBuilderGrid(getSearchQuery());
     });
   }
