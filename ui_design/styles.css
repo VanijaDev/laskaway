@@ -751,12 +751,23 @@ button {
 }
 
 .step {
+  display: block;
+  width: 100%;
   text-align: center;
   padding: 40px 32px;
   background: var(--surface);
   border-radius: var(--radius-xl);
   border: 1px solid var(--border);
   transition: all 0.3s var(--ease-smooth);
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.step:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(124, 92, 255, 0.18);
+  border-color: var(--primary-light);
 }
 
 .step:hover {
