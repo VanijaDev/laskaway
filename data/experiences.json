@@ -1,5 +1,23 @@
 [
   {
+    "id": "temple-airsoft",
+    "title": "Temple Airsoft",
+    "image": "./assets/experience_images/temple-airsoft.png",
+    "alt": "Temple Airsoft",
+    "tags": [
+      "thrill",
+      "fun time",
+      "for him"
+    ],
+    "url": "https://www.templeairsoft.com/",
+    "category": "thrill",
+    "price": 25,
+    "duration": "2-8 hours",
+    "rating": 4.9,
+    "description": "Temple Airsoft is the destination for Temple area locals who want to have a fun, safe recreational gun sport experience.",
+    "location_city": "Temple"
+  },
+  {
     "id": "spinning-buns",
     "title": "Burgers",
     "image": "./assets/experience_images/spinning-buns.jpg",
@@ -7,7 +25,7 @@
     "tags": [
       "food"
     ],
-    "url": " https://www.instagram.com/spinningbuns/",
+    "url": "https://www.instagram.com/spinningbuns/",
     "category": "food",
     "price": 95,
     "duration": "1-2 hours",
